@@ -145,3 +145,49 @@ For hg38ref, write 'yes' if you want this option. If you want to use hg19, simpl
 ### Yearly statistics
 
 After running the pipeline for the first time, a yearly\_statistics text file is created in the repo. Every time the pipeline is run, sample name and date/time is added to this text file.
+
+### Databases
+
+The pipeline uses some databases to filter variants and to get a better alignment.
+
+#### Realign mapping
+
+Since indels are difficult to map, known indels are utilized for realignment to get a better alignment after mapping. For hg19, 1000G\_phase1.indels.b37.vcf.gz and Mills\_and\_1000G\_gold\_standard.indels.b37.vcf.gz from [broadinstitute](https://gatk.broadinstitute.org/hc/en-us) are used as a set of known indels for realignment.
+
+Hg38 version of pipeline uses Mills\_and\_1000G\_gold\_standard.indels.hg38.vcf.gz.
+
+#### Filter structural variants
+
+Manta generates variants. These results are then filtered based on three different databases (gnomAD, SweGen, local db) using tool SVDB. Manta detects structural variants but has many artefacts. Filtering is needed to get an easier overview and remove false positives. gnomAD, SweGen and local db are vcf:s with known variants that are filtered away after running Manta.  
+
+* SVDB
+
+SVDB is a tool used for creating and querying structural variant databases. 
+
+Creating: Databases can be created using the vcf output files from Manta (or other structural variant callers, but this pipeline uses Manta). 
+
+Querying: By running svdb query, results from Manta are filtered based on a control database.
+
+* gnomAD
+
+Dataset with SV sites for hg19 can be downloaded from [gnomad\_v2\_sv.sites](https://storage.googleapis.com/gnomad-public/papers/2019-sv/gnomad_v2_sv.sites.vcf.gz). 
+
+Dataset with SV sites for hg38 can be downloaded from [nstd166](https://ftp.ncbi.nlm.nih.gov/pub/dbVar/data/Homo_sapiens/by_study/vcf/nstd166.GRCh38.variant_region.vcf.gz). 
+
+For more information about gnomAD structural variants, see [A structural variation reference for medical and population genetics](https://pubmed.ncbi.nlm.nih.gov/32461652/).
+
+* SweGen
+
+Collection of variant frequencies in the Swedish population. For more information about the SweGen dataset, see [SweGen: a whole-genome data resource of genetic variability in a cross-section of the Swedish population](https://www.nature.com/articles/ejhg2017130).
+
+hg38 version of pipeline uses `/apps/bio/dependencies/wgs_somatic/hg38/sv_dbs/manta_db_2020.deidentified.vcf`. README with more info can be found in `/apps/bio/dependencies/wgs_somatic/hg38/sv_dbs/swegen_frequencies_SVDB_GRCh38_20200608.zip`.
+
+hg19 version of pipeline uses `/apps/bio/dependencies/wgs_somatic/hg19/sv_dbs/SweGen_MANTA.sort.vcf`.
+
+* Local DB
+
+Local DB is a database built using SVDB, using samples analyzed with manta. Currently we only have this database for hg19 and not for hg38.
+
+Script /medstore/Development/SV\_development/wgs/manta\_database/germline\_calls/svdb\_createdb.sh has been used to create the database for hg19 from vcfs in folder /medstore/Development/SV\_development/wgs/manta\_database/germline\_calls/all\_mantadiploidfiles\_20200318. 
+
+For hg38, a small database has been built based on manta vcfs from samples run on hg38, but it needs to be rebuilt when more samples run on hg38 are available.  
