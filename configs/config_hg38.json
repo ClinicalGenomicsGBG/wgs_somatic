@@ -40,6 +40,12 @@
         {
             "outputdir": "recal"
         },
+        "insilico":
+        {
+        "samtools": "/apps/bio/software/samtools/1.9/bin/samtools",
+        "insilico_main": "workflows/scripts/in_silico/insilico_main.py",
+        "python": "/apps/bio/software/anaconda2/envs/sentieon_py/bin/python"
+        },
         "tnscope":
         {
             "outputdir": "tumor/tnscope",

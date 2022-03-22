@@ -24,4 +24,4 @@ logfiles/commandlogs/*
 <<<<<<< HEAD
 !logfiles/README.md
 yearly_stats.txt
-
+*.swp

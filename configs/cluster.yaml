@@ -1,5 +1,5 @@
 __default__:
-    queue: wgs.q
+    queue: test.q
     threads: 20
     excl: excl=1
     name: "WS-{rule}_{wildcards.sname}"
@@ -10,7 +10,7 @@ mapping:
     name: "WS-{rule}_{wildcards.fastqpattern}"
     output: "WS-{rule}_{wildcards.fastqpattern}.stdout"
     error: "WS-{rule}_{wildcards.fastqpattern}.stderr"
-    threads: 20
+    threads: 40
 
 rtgtools_eval:
     threads: 10
@@ -67,6 +67,6 @@ manta_summary:
     threads: 4
 
 cutadapt:
-    queue: wgs.q
+    queue: test.q
     threads:  1
     excl: excl=1
