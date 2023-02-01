@@ -36,6 +36,9 @@ if tumorid:
                 #expand("{workingdir}/{stype}/manta/{sname}_germline_MantaBNDs.vcf.gzi.csi", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
                 expand("{workingdir}/{stype}/manta/{sname}_germline_MantaNOBNDs.vcf", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"])
                 #expand("{workingdir}/{stype}/manta/{sname}_germline_MantaNOBNDs.vcf.gz.csi", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"])
+            params:
+                bgzip = pipeconfig["rules"]["share_to_resultdir"]["bgzip"],
+                bcftools = pipeconfig["rules"]["share_to_resultdir"]["bcftools"]
             output:
                 "{workingdir}/reporting/shared_result_files.txt"
             run:
@@ -73,6 +76,9 @@ if tumorid:
                 #expand("{workingdir}/{stype}/manta/{sname}_somatic_MantaBNDs.vcf.gz.csi", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{workingdir}/{stype}/manta/{sname}_somatic_MantaNOBNDs.vcf", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"])
                 #expand("{workingdir}/{stype}/manta/{sname}_somatic_MantaNOBNDs.vcf.gzi.csi", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"])
+            params:
+                bgzip = pipeconfig["rules"]["share_to_resultdir"]["bgzip"],
+                bcftools = pipeconfig["rules"]["share_to_resultdir"]["bcftools"]
             output:
                 "{workingdir}/reporting/shared_result_files.txt"
             run:
@@ -109,6 +115,9 @@ else:
             expand("{workingdir}/{stype}/manta/{sname}_germline_MantaNOBNDs.vcf", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
             #expand("{workingdir}/{stype}/manta/{sname}_germline_MantaNOBNDs.vcf.csi", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
             expand("{workingdir}/{stype}/reports/{sname}_baf.igv", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"])
+        params:
+            bgzip = pipeconfig["rules"]["share_to_resultdir"]["bgzip"],
+            bcftools = pipeconfig["rules"]["share_to_resultdir"]["bcftools"]
         output:
             "{workingdir}/reporting/shared_result_files.txt"
         run:

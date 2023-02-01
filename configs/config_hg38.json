@@ -102,6 +102,11 @@
             "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
             "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
         },
+        "share_to_resultdir":
+        {
+            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
+            "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
+        },
         "filter_variants_in_bed":
         {
             "rtg": "/apps/bio/dependencies/wgs_somatic/rtg-tools-3.11/rtg",
