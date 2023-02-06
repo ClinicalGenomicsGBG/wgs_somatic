@@ -54,6 +54,8 @@ if tumorid:
                         copyfile(f"{resultfile}.bai", f"{wildcards.workingdir}/{filebase}.bai")
                         continue
                     if resultfile.endswith(".vcf.gz"):
+                        if not os.path.isfile(f"{resultfile}.csi"):
+                            shell(f"{params.bcftools} index -f {resultfile}")
                         copyfile(f"{resultfile}.csi", f"{wildcards.workingdir}/{filebase}.csi")
                     copyfile(f"{resultfile}", f"{wildcards.workingdir}/{filebase}")
                 shell("echo {input} >> {output}")
@@ -94,6 +96,8 @@ if tumorid:
                         copyfile(f"{resultfile}.bai", f"{wildcards.workingdir}/{filebase}.bai")
                         continue
                     if resultfile.endswith(".vcf.gz"):
+                        if not os.path.isfile(f"{resultfile}.csi"):
+                            shell(f"{params.bcftools} index -f {resultfile}")
                         copyfile(f"{resultfile}.csi", f"{wildcards.workingdir}/{filebase}.csi")
                     copyfile(f"{resultfile}", f"{wildcards.workingdir}/{filebase}")
                 shell("echo {input} >> {output}")
@@ -133,6 +137,8 @@ else:
                         copyfile(f"{resultfile}.bai", f"{wildcards.workingdir}/{filebase}.bai")
                         continue
                     if resultfile.endswith(".vcf.gz"):
+                        if not os.path.isfile(f"{resultfile}.csi"):
+                            shell(f"{params.bcftools} index -f {resultfile}")
                         copyfile(f"{resultfile}.csi", f"{wildcards.workingdir}/{filebase}.csi")
                     copyfile(f"{resultfile}", f"{wildcards.workingdir}/{filebase}")
                 shell("echo {input} >> {output}")
