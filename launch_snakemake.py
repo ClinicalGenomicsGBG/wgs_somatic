@@ -196,10 +196,10 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
                 if not os.path.isdir(normalfastqs):
                     error_list.append(f"{normalfastqs} does not appear to be a directory")
                 else:
-                    f_normalfastqs = glob.glob(f"{normalfastqs}/{normalname}*fastq.gz")
+                    f_normalfastqs = glob.glob(f"{normalfastqs}/*{normalname}*fastq.gz")
                     if not f_normalfastqs:
                         logger(f"Warning: No fastqs found in normaldir")
-                        f_normalfastqs = glob.glob(f"{normalfastqs}/{normalname}*fasterq")
+                        f_normalfastqs = glob.glob(f"{normalfastqs}/*{normalname}*fasterq")
                         if not f_normalfastqs:
                             error_list.append(f"No fastqs or fasterqs found in normaldir")
 
@@ -207,10 +207,10 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
                 if not os.path.isdir(tumorfastqs):
                     error_list.append(f"{tumorfastqs} does not appear to be a directory")
                 else:
-                    f_tumorfastqs = glob.glob(f"{tumorfastqs}/{tumorname}*fastq.gz")
+                    f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fastq.gz")
                     if not f_tumorfastqs:
                         logger(f"Warning: No fastqs found in tumordir")
-                        f_tumorfastqs = glob.glob(f"{tumorfastqs}/{tumorname}*fasterq")
+                        f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fasterq")
                         if not f_tumorfastqs:
                             error_list.append(f"No fastqs or fasterqs found in tumordir")
         # validate igv users if supplied
