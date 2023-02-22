@@ -110,7 +110,7 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
                 logger(f"Error occurred while copying {sharefile}")
 
 
-def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, igvuser=False, hg38ref=False, starttype=False, nocompress=False):
+def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, nocompress=False):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -184,12 +184,6 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
                         f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fasterq")
                         if not f_tumorfastqs:
                             error_list.append(f"No fastqs or fasterqs found in tumordir")
-        # validate igv users if supplied
-        if igvuser:
-            mainconf = helpers.read_config(mainconf_path)
-            igvdatadir = mainconf["rules"]["share_to_igv"]["igvdatadir"]
-            if not os.path.isdir(f"{igvdatadir}/{igvuser}"):
-                error_list.append(f"{igvuser} does not appear to be a valid preconfigured IGV user")
        
         # prepare outputdirectory
         if not os.path.isdir(output):
@@ -245,7 +239,6 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         analysisdict["tumorname"] = tumorname
         analysisdict["tumorid"] = tumorid
         analysisdict["tumorfastqs"] = [tumorfastqs]
-        analysisdict["igvuser"] = igvuser
         analysisdict["workingdir"] = output
         #insilico
         analysisdict["insilico"] = config["insilicopanels"]
@@ -282,12 +275,6 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             source = binddirs[binddir]["source"]
             if not analysisdict["reference"] in source:
                 if not "petagene" in source:
-                #print("Wrong reference")
-                #print(f"analysisdict_reference: {analysisdict['reference']}")
-                #print(f"source: {source}")
-            #elif not "petagene" in source:    
-               # print("not petegene")
-                #print(f"source: {source}")
                     continue
             destination = binddirs[binddir]["destination"]
             logger(f"preparing binddir variable {binddir} source: {source} destination: {destination}")
@@ -340,13 +327,12 @@ if __name__ == '__main__':
     parser.add_argument('-rt', '--runtumor', nargs='?', help='the sequencing run the tumorsample was sequenced in',     required=False)
     parser.add_argument('-tn', '--tumorsample', nargs='?', help='tumor samplename', required=False)
     parser.add_argument('-tf', '--tumorfastqs', nargs='?', help='path to directory containing tumor fastqs', required=False)
-    parser.add_argument('-igv', '--igvuser', nargs='?', help='location to output results', required=False)
     parser.add_argument('-hg38', '--hg38ref', nargs='?', help='run analysis on hg38 reference (write yes if you want this option)', required=False)
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
     parser.add_argument('-na', '--noalissa', action="store_true", help='Disables Alissa upload', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
     args = parser.parse_args()
-    analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.igvuser, args.hg38ref, args.starttype, args.nocompress)
+    analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.nocompress)
 
     if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
         if args.tumorsample:

@@ -85,8 +85,6 @@ def generate_context_objects(Rctx, logger):
 
 def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
 
-    igvuser = config['igv']['GMS-BT']
-    #igvuser = 'alvar.almstedt' # use for testing
     # FIXME Use boolean values instead of 'yes' for hg38ref and handle the translation later on
     hg38ref = config['hg38ref']['GMS-BT']
 
@@ -97,7 +95,7 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         if not t:
             outputdir = os.path.join(config['workingdir'], "normal_only", normalsample)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "normal_only", normalsample) #use for testing
-            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'igvuser': f'{igvuser}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
+            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
     if t:
         runtumor = Rctx_run.run_name
         tumorsample = t
@@ -105,11 +103,11 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         if not n:
             outputdir = os.path.join(config['workingdir'], "tumor_only", tumorsample)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "tumor_only", tumorsample) #use for testing
-            pipeline_args = {'output': f'{outputdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'igvuser': f'{igvuser}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
+            pipeline_args = {'output': f'{outputdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
         else:
             outputdir = os.path.join(config['workingdir'], tumorsample)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", tumorsample) #use for testing
-            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'igvuser': f'{igvuser}', 'hg38ref': f'{hg38ref}'}
+            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}'}
 
     if os.path.exists(outputdir):
         if t:
@@ -136,7 +134,7 @@ def check_ok(outputdir):
         return False
 
 
-def analysis_end(outputdir, igvuser, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
+def analysis_end(outputdir, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
     '''Function to check if analysis has finished correctly and add to yearly stats, upload to alissa and copy results'''
 
     if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
@@ -242,7 +240,7 @@ def wrapper(instrument):
 
                             outputdir = pipeline_args.get('output')
                             check_ok_outdirs.append(outputdir)
-                            end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, pipeline_args['igvuser'], t, n, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
+                            end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t, n, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
 
                             paired_samples.append(t)
                             paired_samples.append(n)
@@ -271,7 +269,7 @@ def wrapper(instrument):
 
                 outputdir = pipeline_args.get('output')
                 check_ok_outdirs.append(outputdir)
-                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, pipeline_args['igvuser'], tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
 
         # Start several samples at the same time
         for t in threads:

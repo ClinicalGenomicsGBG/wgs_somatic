@@ -54,9 +54,6 @@ wgs_coverage:
 y_coverage:
     threads: 4
 
-share_to_igv:
-    threads: 2
-
 manta_somatic:
     threads: 20
 

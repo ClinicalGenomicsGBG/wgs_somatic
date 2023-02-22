@@ -53,7 +53,6 @@ $ ./launch_snakemake.py \
     --normalfastqs <path to directory containing normal fastqs> \
     --tumorsample <Name of tumor sample> \
     --tumorfastqs <path to directory containing tumor fastqs> \
-    --igvuser <name of igv user> \
     --hg38ref yes
 ```
 
