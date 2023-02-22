@@ -68,35 +68,6 @@ def yearly_stats(tumorname, normalname):
     yearly_stats.close()
 
 
-def petagene_compress_bam(outputdir, igvuser, hg38ref, tumorname=False, normalname=False):
-    '''Petagene compress bam file to save space'''
-    if hg38ref == "yes":
-        mainconf = "hg38conf"
-    else:
-        mainconf = "hg19conf"
-    config = read_wrapperconf()
-    configdir = config["configdir"]
-    mainconf_name = config[mainconf]
-    mainconf_path = f"{configdir}/{mainconf_name}"
-    mainconf = helpers.read_config(mainconf_path)
-    igvdatadir = mainconf["rules"]["share_to_igv"]["igvdatadir"]
-    igvdir = f"{igvdatadir}/{igvuser}"
-
-    logger(f"Starting petagene compression on bamfiles for sample {outputdir}")
-    queue = config["petagene"]["queue"]
-    threads = config["petagene"]["threads"]
-    qsub_script = config["petagene"]["qsub_script"]
-    if tumorname:
-        standardout = f"{outputdir}/logs/{tumorname}_petagene_compression_standardout.txt"
-        standarderr = f"{outputdir}/logs/{tumorname}_petagene_compression_standarderr.txt"
-        qsub_args = ["qsub", "-N", f"WGSSomatic-{tumorname}_petagene_compress_bam", "-q", queue, "-o", standardout, "-e", standarderr, qsub_script, igvdir, tumorname]
-        subprocess.call(qsub_args, shell=False)
-    if normalname:
-        standardout = f"{outputdir}/logs/{normalname}_petagene_compression_standardout.txt"
-        standarderr = f"{outputdir}/logs/{normalname}_petagene_compression_standarderr.txt"
-        qsub_args = ["qsub", "-N", f"WGSSomatic-{normalname}_petagene_compress_bam", "-q", queue, "-o", standardout, "-e", standarderr, qsub_script, igvdir, normalname]
-        subprocess.call(qsub_args, shell=False)
-
 def alissa_upload(outputdir, normalname, runnormal, ref=False):
     '''Upload germline SNV_CNV vcf to Alissa'''
     ref = 'hg38' # reference genome, change so it can also be hg19. but probably shouldn't upload vcf for hg19 samples
@@ -372,7 +343,6 @@ if __name__ == '__main__':
     parser.add_argument('-igv', '--igvuser', nargs='?', help='location to output results', required=False)
     parser.add_argument('-hg38', '--hg38ref', nargs='?', help='run analysis on hg38 reference (write yes if you want this option)', required=False)
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
-    parser.add_argument('-nc', '--nocompress', action="store_true", help='Disables petagene compression', required=False)
     parser.add_argument('-na', '--noalissa', action="store_true", help='Disables Alissa upload', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
     args = parser.parse_args()
@@ -387,19 +357,13 @@ if __name__ == '__main__':
                     copy_results(args.outputdir, args.runnormal, args.normalsample, args.runtumor, args.tumorsample)
                 if args.hg38ref and not args.noalissa:
                     alissa_upload(args.outputdir, args.normalsample, args.runnormal, args.hg38ref)
-                if not args.nocompress:
-                    petagene_compress_bam(args.outputdir, args.igvuser, args.hg38ref, args.tumorsample, args.normalsample)    
             else:
                 yearly_stats(args.tumorsample, 'None')
                 if args.copyresults:
                     copy_results(args.outputdir, runtumor=args.runtumor, tumorname=args.tumorsample)
-                if not args.nocompress:
-                    petagene_compress_bam(args.outputdir, args.igvuser, args.hg38ref, tumorname=args.tumorsample)
         else:
             yearly_stats('None', args.normalsample)
             if args.copyresults:
                 copy_results(args.outputdir, runnormal=args.runnormal, normalname=args.normalsample)
             if args.hg38ref and not args.noalissa:
                 alissa_upload(args.outputdir, args.normalsample, args.runnormal, args.hg38ref)
-            if not args.nocompress:
-                petagene_compress_bam(args.outputdir, args.igvuser, args.hg38ref, normalname=args.normalsample)

@@ -20,7 +20,7 @@ from context import RunContext, SampleContext
 from helpers import setup_logger
 from tools.slims import get_sample_slims_info, SlimsSample, find_more_fastqs, get_pair_dict
 from tools.email import start_email, end_email, error_email
-from launch_snakemake import analysis_main, petagene_compress_bam, yearly_stats, alissa_upload, copy_results
+from launch_snakemake import analysis_main, yearly_stats, alissa_upload, copy_results
 
 
 # Store info about samples to use for sending report emails
@@ -137,7 +137,7 @@ def check_ok(outputdir):
 
 
 def analysis_end(outputdir, igvuser, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
-    '''Function to check if analysis has finished correctly and add to yearly stats, upload to alissa, copy results and start petagene compression'''
+    '''Function to check if analysis has finished correctly and add to yearly stats, upload to alissa and copy results'''
 
     if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
         if tumorsample:
@@ -146,16 +146,13 @@ def analysis_end(outputdir, igvuser, tumorsample=None, normalsample=None, runtum
                 alissa_upload(outputdir, normalsample, runnormal, hg38ref)
                 yearly_stats(tumorsample, normalsample)
                 copy_results(outputdir, runnormal=runnormal, normalname=normalsample, runtumor=runtumor, tumorname=tumorsample)
-                #petagene_compress_bam(outputdir, igvuser, hg38ref, tumorname=tumorsample, normalname=normalsample)
             else:
                 yearly_stats(tumorsample, 'None')
                 copy_results(outputdir, runtumor=runtumor, tumorname=tumorsample)
-                #petagene_compress_bam(outputdir, igvuser, hg38ref, tumorname=tumorsample)
         else:
             yearly_stats('None', normalsample)
             copy_results(outputdir, runnormal=runnormal, normalname=normalsample)
             alissa_upload(outputdir, normalsample, runnormal, hg38ref)
-            #petagene_compress_bam(outputdir, igvuser, hg38ref, normalname=normalsample)
     else:
         pass
 
@@ -302,9 +299,9 @@ def wrapper(instrument):
             # send emails about which samples ok and which not ok
             error_email(Rctx_run.run_name, ok_samples, bad_samples)
             if ok_samples:
-                # yearly stats and petagene compress ok samples
+                # yearly stats ok samples
                 # even though thread starts for all samples, function checks if sample ok 
-                # so it will only do yearly stats and petagene compress for ok samples
+                # so it will only do yearly stats for ok samples
                 for t in end_threads:
                     t.start()
                 for u in end_threads:
@@ -314,7 +311,7 @@ def wrapper(instrument):
         logger.info('All jobs have finished successfully')
         end_email(Rctx_run.run_name, final_pairs)
 
-        # If all jobs have finished successfully - add to yearly stats and start petagene compression of bamfiles
+        # If all jobs have finished successfully - add to yearly stats
         for t in end_threads:
             t.start()
         for u in end_threads:

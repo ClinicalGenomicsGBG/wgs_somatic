@@ -71,8 +71,6 @@ Runnormal and runtumor is only used to create a unique samplename based on the s
 
 Optional arguments to launch_snakemake.py:
 
-```--nocompress``` Disables petagene compression of bamfiles after snakemake has finished.
-
 ```--noalissa``` Disables automatic upload of germline SNV_CNV vcf to Alissa. 
 
 ```--copyresults``` Use this argument if you want to automatically copy result files to result directory on seqstore webfolders.
