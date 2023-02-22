@@ -66,9 +66,6 @@ manta_germline:
 manta_summary:
     threads: 4
 
-alissa_vcf:
-    threads: 1
-
 pindel:
     threads: 4
 

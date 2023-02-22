@@ -149,8 +149,6 @@ include:        "workflows/rules/qc/insilico_coverage.smk"
 include:        "workflows/rules/results_sharing/share_to_igv.smk"
 include:        "workflows/rules/results_sharing/share_to_resultdir.smk"
 include:        "workflows/rules/results_sharing/upload_to_iva.smk"
-if tumorid:
-    include:        "workflows/rules/results_sharing/alissa_vcf.smk"
 
 
 if reference == "hg38":
@@ -209,12 +207,6 @@ def upload_somatic_iva(wildcards):
     return []
 
 
-def alissa_vcf_conversion(wildcards):
-    if tumorid:
-        return expand("{workingdir}/{sname}_somatic_refseq3kfilt_Alissa.vcf", workingdir=workingdir, sname=tumorid)
-    return []
-
-
 def insilico_coverage(wildcards):
     if tumorid:
         return expand("{workingdir}/{sname}_insilicostuffplaceholder", workingdir=workingdir, sname=normalid)
@@ -225,4 +217,3 @@ rule all:
         get_igv_input,
         #get_igv_webstore_input,
         expand("{workingdir}/reporting/workflow_finished.txt", workingdir=workingdir),
-        alissa_vcf_conversion
