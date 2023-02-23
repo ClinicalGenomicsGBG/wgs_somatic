@@ -93,19 +93,23 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         normalsample = n
         normalfastqs = os.path.join(Rctx_run.run_path, "fastq")
         if not t:
-            outputdir = os.path.join(config['workingdir'], "normal_only", normalsample)
+            date, _, _, chip, *_ = runnormal.split('_')
+            normalid= '_'.join([normalsample, date, chip])
+            outputdir = os.path.join(config['workingdir'], "normal_only", normalid)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "normal_only", normalsample) #use for testing
             pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
     if t:
         runtumor = Rctx_run.run_name
         tumorsample = t
         tumorfastqs = os.path.join(Rctx_run.run_path, "fastq")
+        date, _, _, chip, *_ = runtumor.split('_')
+        tumorid = '_'.join([tumorname, date, chip])
         if not n:
-            outputdir = os.path.join(config['workingdir'], "tumor_only", tumorsample)
+            outputdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "tumor_only", tumorsample) #use for testing
             pipeline_args = {'output': f'{outputdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
         else:
-            outputdir = os.path.join(config['workingdir'], tumorsample)
+            outputdir = os.path.join(config['workingdir'], tumorid)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", tumorsample) #use for testing
             pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}'}
 
