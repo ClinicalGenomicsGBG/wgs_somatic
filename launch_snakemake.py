@@ -10,6 +10,7 @@ import traceback
 from shutil import copyfile, copy
 import subprocess
 import stat
+import requests
 #from snakemake import snakemake
 
 
@@ -87,6 +88,9 @@ def alissa_upload(outputdir, normalname, runnormal, ref=False):
 
 def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumorname=None):
     '''Rsync result files from workingdir to resultdir'''
+
+    config = read_wrapperconf()
+
     # Find correct resultdir on webstore from sample config in workingdir
     normalid, tumorid = get_normalid_tumorid(runnormal, normalname, runtumor, tumorname)
     if tumorid:
@@ -108,6 +112,13 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
                 logger(f"{sharefile} copied successfully")
             except:
                 logger(f"Error occurred while copying {sharefile}")
+
+    # Make webstore portal API call to make path searchable
+    webstore_api_url = config["webstore_api_url"]
+    json_payload = {'path': resultdir}
+    response = requests.post(webstore_api_url, json=json_payload)
+    if response.status_code != 200:
+        raise WebstoreError(f'Webstore api call returned a non 200 return: {response.text}')
 
 
 def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, nocompress=False):
