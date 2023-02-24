@@ -243,24 +243,26 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         #insilico
         analysisdict["insilico"] = config["insilicopanels"]
 
+        basename_output = os.path.basename(output)
+
         if hg38ref == "yes":
             analysisdict["reference"] = "hg38"
             if tumorname:
                 if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{tumorname}' #Use f'{config["testresultdir"]}/{tumorname}'for testing
+                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_output}' #Use f'{config["testresultdir"]}/{tumorname}'for testing
                 else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{tumorname}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_output}'
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{normalname}'
+                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_output}'
         else:
             analysisdict["reference"] = "hg19"
             if tumorname:
                 if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/{tumorname}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/{basename_output}'
                 else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/tumor_only/{tumorname}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/tumor_only/{basename_output}'
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/normal_only/{normalname}'
+                analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/normal_only/{basename_output}'
         if tumorname:
             with open(f"{runconfigs}/{tumorid}_config.json", 'w') as analysisconf:
                 json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
