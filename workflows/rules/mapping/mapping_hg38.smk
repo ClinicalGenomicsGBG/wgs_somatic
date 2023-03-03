@@ -39,6 +39,7 @@ rule mapping:
         referencegenome = pipeconfig["singularities"]["sentieon"]["reference"],
         fwd_fmt = format_fwd,
         rev_fmt = format_rev
+    shadow: "copy-minimal"
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
