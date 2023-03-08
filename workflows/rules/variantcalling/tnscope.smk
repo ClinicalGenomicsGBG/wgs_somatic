@@ -4,10 +4,10 @@
 if normalid:
     rule tnscope:
         input:
-            tumorbam = expand("{workingdir}/{stype}/realign/{sname}_REALIGNED.bam", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            normalbam = expand("{workingdir}/{stype}/realign/{sname}_REALIGNED.bam", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            tumortable = expand("{workingdir}/{stype}/recal/{sname}_RECAL_DATA.TABLE", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            normaltable = expand("{workingdir}/{stype}/recal/{sname}_RECAL_DATA.TABLE", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            tumorbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            normalbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            tumortable = expand("{stype}/recal/{sname}_RECAL_DATA.TABLE", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            normaltable = expand("{stype}/recal/{sname}_RECAL_DATA.TABLE", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         params:
             threads = clusterconf["tnscope"]["threads"],
             tumorname = tumorname,
@@ -19,8 +19,8 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            tnscope = "{workingdir}/{stype}/tnscope/{sname}_TNscope_tn.vcf",
-            tnscope_bam = "{workingdir}/{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"
+            tnscope = "{stype}/tnscope/{sname}_TNscope_tn.vcf",
+            tnscope_bam = "{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"
         shell:
             "echo $HOSTNAME;"
             "{params.sentieon} driver -t {params.threads} -r {params.reference} "
@@ -30,8 +30,8 @@ if normalid:
 else:
     rule tnscope:
         input:
-            tumorbam = expand("{workingdir}/{stype}/realign/{sname}_REALIGNED.bam", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            tumortable = expand("{workingdir}/{stype}/recal/{sname}_RECAL_DATA.TABLE", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumortable = expand("{stype}/recal/{sname}_RECAL_DATA.TABLE", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         params:
             threads = clusterconf["tnscope"]["threads"],
             tumorname = tumorname,
@@ -43,8 +43,8 @@ else:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            tnscope = "{workingdir}/{stype}/tnscope/{sname}_TNscope_tn.vcf",
-            tnscope_bam = "{workingdir}/{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"
+            tnscope = "{stype}/tnscope/{sname}_TNscope_tn.vcf",
+            tnscope_bam = "{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"
         shell:
             "echo $HOSTNAME;"
             "{params.sentieon} driver -t {params.threads} -r {params.reference} "
@@ -55,7 +55,7 @@ else:
 if normalid:
     rule tnscope_modelfilter:
         input:
-            tnscopevcf = "{workingdir}/{stype}/tnscope/{sname}_TNscope_tn.vcf"
+            tnscopevcf = "{stype}/tnscope/{sname}_TNscope_tn.vcf"
         params:
             threads = clusterconf["tnscope_modelfilter"]["threads"],
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
@@ -64,7 +64,7 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            "{workingdir}/{stype}/tnscope/{sname}_TNscope_tn_ML.vcf"
+            "{stype}/tnscope/{sname}_TNscope_tn_ML.vcf"
         shell:
             "echo $HOSTNAME;"
             "{params.sentieon} driver -t {params.threads} -r {params.reference} "
@@ -73,27 +73,27 @@ if normalid:
 if normalid:
     rule tnscope_vcffilter:
         input:
-            tnscopevcf_ml = "{workingdir}/{stype}/tnscope/{sname}_TNscope_tn_ML.vcf"
+            tnscopevcf_ml = "{stype}/tnscope/{sname}_TNscope_tn_ML.vcf"
         params:
             threads = clusterconf["tnscope_vcffilter"]["threads"],
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
-            somatic_n = "{workingdir}/{stype}/tnscope/{sname}_somatic_w_normal.vcf",
-            somatic = "{workingdir}/{stype}/tnscope/{sname}_somatic.vcf"
+            somatic_n = "{stype}/tnscope/{sname}_somatic_w_normal.vcf",
+            somatic = "{stype}/tnscope/{sname}_somatic.vcf"
         run:
             vcfname = os.path.basename(f"{input.tnscopevcf_ml}")
             vcfname = vcfname.replace(".vcf", "")
-            shell_command = [f"{params.bcftools} filter -s LowQual -e 'QUAL < 1' -m + {input.tnscopevcf_ml}", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_lowqual1.vcf ;",
-                            f"{params.bcftools} annotate -x FILTER/triallelic_site {wildcards.workingdir}/{params.outputdir}/{vcfname}_lowqual1.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_triallelic2.vcf ;",
-                            f"{params.bcftools} annotate -x FILTER/alt_allele_in_normal {wildcards.workingdir}/{params.outputdir}/{vcfname}_triallelic2.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_altalleleinnormal4.vcf ;",
-                            f"{params.bcftools} filter -s uncertainAF -e 'FORMAT/AF[0]<0.045 && FORMAT/AD[0:1]<4' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_altalleleinnormal4.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_uncertainaf6.vcf ;",
-                            f"{params.bcftools} filter -s likely_artifact -e 'FORMAT/AF[0]<0.1 && FORMAT/AF[1]>0.06' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_likelyartifact7.vcf ;",
-                            f"{params.bcftools} filter -s lowAD -e 'FORMAT/AD[0:1] < 3' {wildcards.workingdir}/{params.outputdir}/{vcfname}_likelyartifact7.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_lowad8.vcf ;",
-                            f"{params.bcftools} filter -s MLrejected -e 'INFO/ML_PROB<0.37' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_lowad8.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_mladjusted9.vcf ;",
-                            f"{params.bcftools} filter -s 'orientation_bias' -e 'FMT/FOXOG[0] == 1' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_mladjusted9.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_foxogadj.vcf ;",
-                            f"{params.bcftools} filter -s 'strand_bias' -e 'SOR > 3' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_foxogadj.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_strandbiasadj.vcf ;",
-                            f"{params.bcftools} filter -i 'FILTER=\"PASS\"' {wildcards.workingdir}/{params.outputdir}/{vcfname}_strandbiasadj.vcf > {output.somatic_n} ;",
+            shell_command = [f"{params.bcftools} filter -s LowQual -e 'QUAL < 1' -m + {input.tnscopevcf_ml}", f"> {params.outputdir}/{vcfname}_lowqual1.vcf ;",
+                            f"{params.bcftools} annotate -x FILTER/triallelic_site {params.outputdir}/{vcfname}_lowqual1.vcf", f"> {params.outputdir}/{vcfname}_triallelic2.vcf ;",
+                            f"{params.bcftools} annotate -x FILTER/alt_allele_in_normal {params.outputdir}/{vcfname}_triallelic2.vcf", f"> {params.outputdir}/{vcfname}_altalleleinnormal4.vcf ;",
+                            f"{params.bcftools} filter -s uncertainAF -e 'FORMAT/AF[0]<0.045 && FORMAT/AD[0:1]<4' -m + {params.outputdir}/{vcfname}_altalleleinnormal4.vcf", f"> {params.outputdir}/{vcfname}_uncertainaf6.vcf ;",
+                            f"{params.bcftools} filter -s likely_artifact -e 'FORMAT/AF[0]<0.1 && FORMAT/AF[1]>0.06' -m + {params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {params.outputdir}/{vcfname}_likelyartifact7.vcf ;",
+                            f"{params.bcftools} filter -s lowAD -e 'FORMAT/AD[0:1] < 3' {params.outputdir}/{vcfname}_likelyartifact7.vcf", f"> {params.outputdir}/{vcfname}_lowad8.vcf ;",
+                            f"{params.bcftools} filter -s MLrejected -e 'INFO/ML_PROB<0.37' -m + {params.outputdir}/{vcfname}_lowad8.vcf", f"> {params.outputdir}/{vcfname}_mladjusted9.vcf ;",
+                            f"{params.bcftools} filter -s 'orientation_bias' -e 'FMT/FOXOG[0] == 1' -m + {params.outputdir}/{vcfname}_mladjusted9.vcf", f"> {params.outputdir}/{vcfname}_foxogadj.vcf ;",
+                            f"{params.bcftools} filter -s 'strand_bias' -e 'SOR > 3' -m + {params.outputdir}/{vcfname}_foxogadj.vcf", f"> {params.outputdir}/{vcfname}_strandbiasadj.vcf ;",
+                            f"{params.bcftools} filter -i 'FILTER=\"PASS\"' {params.outputdir}/{vcfname}_strandbiasadj.vcf > {output.somatic_n} ;",
                             f"{params.bcftools} view -s {tumorname} {output.somatic_n} > {output.somatic}"]
             shell_command = " ".join(shell_command)
             print(shell_command)      
@@ -102,27 +102,27 @@ if normalid:
 else:
     rule tnscope_vcffilter:
         input:
-            tnscopevcf_ml = "{workingdir}/{stype}/tnscope/{sname}_TNscope_tn.vcf"
+            tnscopevcf_ml = "{stype}/tnscope/{sname}_TNscope_tn.vcf"
         params:
             threads = clusterconf["tnscope_vcffilter"]["threads"],
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
-            somatic_n = "{workingdir}/{stype}/tnscope/{sname}_somatic_w_normal.vcf",
-            somatic = "{workingdir}/{stype}/tnscope/{sname}_somatic.vcf"
+            somatic_n = "{stype}/tnscope/{sname}_somatic_w_normal.vcf",
+            somatic = "{stype}/tnscope/{sname}_somatic.vcf"
         run:
             vcfname = os.path.basename(f"{input.tnscopevcf_ml}")
             vcfname = vcfname.replace(".vcf", "")
-            shell_command = [f"{params.bcftools} filter -s LowQual -e 'QUAL < 1' -m + {input.tnscopevcf_ml}", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_lowqual1.vcf ;",
-                            f"{params.bcftools} annotate -x FILTER/triallelic_site {wildcards.workingdir}/{params.outputdir}/{vcfname}_lowqual1.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_triallelic2.vcf ;",
-                            f"{params.bcftools} annotate -x FILTER/alt_allele_in_normal {wildcards.workingdir}/{params.outputdir}/{vcfname}_triallelic2.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_altalleleinnormal4.vcf ;",
-                            f"{params.bcftools} filter -s uncertainAF -e 'FORMAT/AF[0]<0.045 && FORMAT/AD[0:1]<4' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_altalleleinnormal4.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_uncertainaf6.vcf ;",
-                            #f"{params.bcftools} filter -s likely_artifact -e 'FORMAT/AF[0]<0.1 && FORMAT/AF[1]>0.06' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_likelyartifact7.vcf ;",
-                            #f"{params.bcftools} filter -s lowAD -e 'FORMAT/AD[0:1] < 3' {wildcards.workingdir}/{params.outputdir}/{vcfname}_likelyartifact7.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_lowad8.vcf ;",
-                            #f"{params.bcftools} filter -s MLrejected -e 'INFO/ML_PROB<0.37' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_lowad8.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_mladjusted9.vcf ;",
-                            f"{params.bcftools} filter -s 'orientation_bias' -e 'FMT/FOXOG[0] == 1' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_foxogadj.vcf ;",
-                            f"{params.bcftools} filter -s 'strand_bias' -e 'SOR > 3' -m + {wildcards.workingdir}/{params.outputdir}/{vcfname}_foxogadj.vcf", f"> {wildcards.workingdir}/{params.outputdir}/{vcfname}_strandbiasadj.vcf ;",
-                            f"{params.bcftools} filter -i 'FILTER=\"PASS\"' {wildcards.workingdir}/{params.outputdir}/{vcfname}_strandbiasadj.vcf > {output.somatic_n} ;",
+            shell_command = [f"{params.bcftools} filter -s LowQual -e 'QUAL < 1' -m + {input.tnscopevcf_ml}", f"> {params.outputdir}/{vcfname}_lowqual1.vcf ;",
+                            f"{params.bcftools} annotate -x FILTER/triallelic_site {params.outputdir}/{vcfname}_lowqual1.vcf", f"> {params.outputdir}/{vcfname}_triallelic2.vcf ;",
+                            f"{params.bcftools} annotate -x FILTER/alt_allele_in_normal {params.outputdir}/{vcfname}_triallelic2.vcf", f"> {params.outputdir}/{vcfname}_altalleleinnormal4.vcf ;",
+                            f"{params.bcftools} filter -s uncertainAF -e 'FORMAT/AF[0]<0.045 && FORMAT/AD[0:1]<4' -m + {params.outputdir}/{vcfname}_altalleleinnormal4.vcf", f"> {params.outputdir}/{vcfname}_uncertainaf6.vcf ;",
+                            #f"{params.bcftools} filter -s likely_artifact -e 'FORMAT/AF[0]<0.1 && FORMAT/AF[1]>0.06' -m + {params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {params.outputdir}/{vcfname}_likelyartifact7.vcf ;",
+                            #f"{params.bcftools} filter -s lowAD -e 'FORMAT/AD[0:1] < 3' {params.outputdir}/{vcfname}_likelyartifact7.vcf", f"> {params.outputdir}/{vcfname}_lowad8.vcf ;",
+                            #f"{params.bcftools} filter -s MLrejected -e 'INFO/ML_PROB<0.37' -m + {params.outputdir}/{vcfname}_lowad8.vcf", f"> {params.outputdir}/{vcfname}_mladjusted9.vcf ;",
+                            f"{params.bcftools} filter -s 'orientation_bias' -e 'FMT/FOXOG[0] == 1' -m + {params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {params.outputdir}/{vcfname}_foxogadj.vcf ;",
+                            f"{params.bcftools} filter -s 'strand_bias' -e 'SOR > 3' -m + {params.outputdir}/{vcfname}_foxogadj.vcf", f"> {params.outputdir}/{vcfname}_strandbiasadj.vcf ;",
+                            f"{params.bcftools} filter -i 'FILTER=\"PASS\"' {params.outputdir}/{vcfname}_strandbiasadj.vcf > {output.somatic_n} ;",
                             f"{params.bcftools} view -s {tumorname} {output.somatic_n} > {output.somatic}"]
             shell_command = " ".join(shell_command)
             print(shell_command)

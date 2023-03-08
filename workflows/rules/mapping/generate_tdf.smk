@@ -3,11 +3,11 @@
 
 rule generate_tdf:
     input:
-        "{workingdir}/{stype}/realign/{sname}_REALIGNED.bam"
+        "{stype}/realign/{sname}_REALIGNED.bam"
     params:
         igvtools_jar_path = pipeconfig["rules"]["generate_tdf"]["igvtools_jar_path"],
         igvtools_memory_limit = pipeconfig["rules"]["generate_tdf"]["igvtools_memory_limit"]
     output:
-        "{workingdir}/{stype}/reports/{sname}_REALIGNED.bam.tdf"
+        "{stype}/reports/{sname}_REALIGNED.bam.tdf"
     run:
         shell("nohup java -Xmx{params.igvtools_memory_limit} -jar {params.igvtools_jar_path} count {input} {output} hg19")

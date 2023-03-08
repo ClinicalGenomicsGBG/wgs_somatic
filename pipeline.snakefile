@@ -7,6 +7,7 @@ from pathlib import Path
 import yaml
 import helpers
 import os
+from definitions import ROOT_DIR
 
 __author__ = "Rickard 'Ricksy' Rickardsson"
 
@@ -29,9 +30,9 @@ insilico_panels = config["insilico"]
 # ---------------------------------------------
 
 if reference == "hg38":
-    configfilepath = "configs/config_hg38.json"
+    configfilepath = f"{ROOT_DIR}/configs/config_hg38.json"
 else:
-    configfilepath = "configs/config_hg19.json"
+    configfilepath = f"{ROOT_DIR}/configs/config_hg19.json"
 #----------------------------------------------
 
 
@@ -176,8 +177,8 @@ else:
 
 def insilico_coverage(wildcards):
     if tumorid:
-        return expand("{workingdir}/{sname}_insilicostuffplaceholder", workingdir=workingdir, sname=normalid)
+        return expand("{sname}_insilicostuffplaceholder", sname=normalid)
 
 rule all:
     input: 
-        expand("{workingdir}/reporting/workflow_finished.txt", workingdir=workingdir)
+        "reporting/workflow_finished.txt"

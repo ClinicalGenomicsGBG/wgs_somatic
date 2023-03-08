@@ -1,20 +1,14 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 
-def get_fwd_pattern(wcs):
-    return fastq_dict[f"{wcs.stype}"]["fastqpair_patterns"][f"{wcs.fastqpattern}"]["fwd"] 
-
-def get_rev_pattern(wcs):
-    return fastq_dict[f"{wcs.stype}"]["fastqpair_patterns"][f"{wcs.fastqpattern}"]["rev"]
-
 def format_fwd(wcs):
-    fastq = fastq_dict[f"{wcs.stype}"]["fastqpair_patterns"][f"{wcs.fastqpattern}"]["rev"]
+    fastq = fastq_dict[f"{wcs.stype}"]["fastqpair_patterns"][f"{wcs.fastqpattern}"]["fwd"]
     if fastq.endswith(".fasterq"):
         fastq = fastq.replace(".fasterq", ".fastq.gz")
     return fastq
 
 def format_rev(wcs):
-    fastq = fastq_dict[f"{wcs.stype}"]["fastqpair_patterns"][f"{wcs.fastqpattern}"]["fwd"]
+    fastq = fastq_dict[f"{wcs.stype}"]["fastqpair_patterns"][f"{wcs.fastqpattern}"]["rev"]
     if fastq.endswith(".fasterq"):
         fastq = fastq.replace(".fasterq", ".fastq.gz")
     return fastq
@@ -26,36 +20,34 @@ def get_mapping(wcs):
     fastqpatterns = []
     for fastqpattern in fastq_dict[f"{wcs.stype}"]["fastqpair_patterns"]:
         fastqpatterns.append(fastqpattern)
-    return expand("{workingdir}/{stype}/mapping/{fastqpattern}.bam", workingdir=f"{wcs.workingdir}", stype=f"{wcs.stype}", fastqpattern=fastqpatterns)
+    return expand("{stype}/mapping/{fastqpattern}.bam", stype=f"{wcs.stype}", fastqpattern=fastqpatterns)
 
 rule mapping:
     input:
-        fwd = get_fwd_pattern,
-        rev = get_rev_pattern
+        fwd_fmt = format_fwd,
+        rev_fmt = format_rev
     params:
         threads = clusterconf["mapping"]["threads"],
         sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
         samplename = get_samplename,
         referencegenome = pipeconfig["singularities"]["sentieon"]["reference"],
-        fwd_fmt = format_fwd,
-        rev_fmt = format_rev
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
-        temp("{workingdir}/{stype}/mapping/{fastqpattern}.bam")
+        temp("{stype}/mapping/{fastqpattern}.bam")
     shell:
         "echo $HOSTNAME;"
         "{params.sentieon} bwa mem "
             "-M -R '@RG\\tID:{wildcards.fastqpattern}\\tSM:{params.samplename}\\tPL:ILLUMINA' "
-            "-t {params.threads} {params.referencegenome} {params.fwd_fmt} {params.rev_fmt} "
+            "-t {params.threads} {params.referencegenome} {input.fwd_fmt} {input.rev_fmt} "
         "| {params.sentieon} util sort -o {output} -t {params.threads} --sam2bam -i -"
 
 rule dedup:
     input:
         bamfiles = get_mapping
     output:
-        temp("{workingdir}/{stype}/dedup/{sname}_DEDUP.bam"),
-        "{workingdir}/{stype}/dedup/{sname}_DEDUP.txt"
+        temp("{stype}/dedup/{sname}_DEDUP.bam"),
+        "{stype}/dedup/{sname}_DEDUP.txt"
     params:
         threads = clusterconf["dedup"]["threads"],
         samplename = get_samplename,
@@ -69,23 +61,23 @@ rule dedup:
             "-i $shellbamfiles "
             "--algo LocusCollector "
             "--fun score_info "
-            "{wildcards.workingdir}/{wildcards.stype}/dedup/{wildcards.sname}_DEDUP_score.txt ;"
+            "{wildcards.stype}/dedup/{wildcards.sname}_DEDUP_score.txt ;"
         "{params.sentieon} driver "
             "-t {params.threads} "
             "-i $shellbamfiles "
             "--algo Dedup "
             "--rmdup "
-            "--score_info {wildcards.workingdir}/{wildcards.stype}/dedup/{wildcards.sname}_DEDUP_score.txt "
-            "--metrics {wildcards.workingdir}/{wildcards.stype}/dedup/{wildcards.sname}_DEDUP.txt "
-            "{wildcards.workingdir}/{wildcards.stype}/dedup/{wildcards.sname}_DEDUP.bam"
+            "--score_info {wildcards.stype}/dedup/{wildcards.sname}_DEDUP_score.txt "
+            "--metrics {wildcards.stype}/dedup/{wildcards.sname}_DEDUP.txt "
+            "{wildcards.stype}/dedup/{wildcards.sname}_DEDUP.bam"
 
 rule realign_mapping:
     input:
-        "{workingdir}/{stype}/dedup/{sname}_DEDUP.bam"
+        "{stype}/dedup/{sname}_DEDUP.bam"
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
-        "{workingdir}/{stype}/realign/{sname}_REALIGNED.bam"
+        "{stype}/realign/{sname}_REALIGNED.bam"
     params:
         threads = clusterconf["realign_mapping"]["threads"],
         sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
@@ -98,7 +90,7 @@ rule realign_mapping:
 
 rule baserecal:
     input:
-        "{workingdir}/{stype}/realign/{sname}_REALIGNED.bam"
+        "{stype}/realign/{sname}_REALIGNED.bam"
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     params:
@@ -109,7 +101,7 @@ rule baserecal:
         mills = pipeconfig["singularities"]["sentieon"]["mills"],
         tgenomes = pipeconfig["singularities"]["sentieon"]["tgenomes"]
     output:
-        "{workingdir}/{stype}/recal/{sname}_RECAL_DATA.TABLE"
+        "{stype}/recal/{sname}_RECAL_DATA.TABLE"
     shell:
         "echo $HOSTNAME;"
         "{params.sentieon} driver -t {params.threads} -r {params.referencegenome} -i {input} --algo QualCal -k {params.mills} -k {params.dbsnp} -k {params.tgenomes} {output}"

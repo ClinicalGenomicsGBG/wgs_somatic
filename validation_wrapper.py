@@ -9,9 +9,10 @@ import time
 import traceback
 from shutil import copyfile
 import subprocess
+from definitions import ROOT_DIR
 
 def read_wrapperconf():
-    with open("configs/wrapper_conf.json", 'r') as configfile:
+    with open(f"{ROOT_DIR}/configs/wrapper_conf.json", 'r') as configfile:
         config_data = json.load(configfile)
         return config_data
 
@@ -34,7 +35,7 @@ def logger(message, logfile=False):
 
 
 config = read_wrapperconf()
-valconf = "validation_scripts/validation_config.json"
+valconf = f"{ROOT_DIR}/validation_scripts/validation_config.json"
 valconf = helpers.read_config(valconf)
 current_date = time.strftime("%Y-%m-%d")
 
@@ -141,6 +142,6 @@ for trange in valconf["fractions"]["hg38"]:
     snakemake_args = f"snakemake -s tnscope_eval.snakefile --configfile {runconfigs}/{tumorid}_config.json --dag | dot -Tsvg > {samplelogs}/dag_{current_date}.svg"
     # >>>>>>>>>>>> Create Dag of pipeline
     subprocess.run(snakemake_args, shell=True, env=my_env) # CREATE DAG
-    snakemake_args = f"snakemake -s tnscope_eval.snakefile --configfile {runconfigs}/{tumorid}_config.json --use-singularity --singularity-args '--bind {binddir_string}' --cluster-config configs/cluster.yaml --cluster \"qsub -S /bin/bash -pe mpi {{cluster.threads}} -q {{cluster.queue}} -N {{cluster.name}} -o {samplelogs}/{{cluster.output}} -e {samplelogs}/{{cluster.error}} -l {{cluster.excl}}\" --jobs 999 --latency-wait 60 --directory {scriptdir} &>> {samplelog}"
+    snakemake_args = f"snakemake -s tnscope_eval.snakefile --configfile {runconfigs}/{tumorid}_config.json --use-singularity --singularity-args '--bind {binddir_string}' --cluster-config {ROOT_DIR}/configs/cluster.yaml --cluster \"qsub -S /bin/bash -pe mpi {{cluster.threads}} -q {{cluster.queue}} -N {{cluster.name}} -o {samplelogs}/{{cluster.output}} -e {samplelogs}/{{cluster.error}} -l {{cluster.excl}}\" --jobs 999 --latency-wait 60 --directory {output} &>> {samplelog}"
     # >>>>>>>>>>>> Start pipeline
     subprocess.run(snakemake_args, shell=True, env=my_env) # Shellscript pipeline

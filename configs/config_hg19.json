@@ -89,7 +89,6 @@
         },
         "canvas":
         {
-            "annotate": "workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py",
             "annotate_ref": "/apps/bio/dependencies/wgs_somatic/hg19/refseq/refseq_20190301_ncbiRefSeq"            
         },
         "share_to_resultdir":
@@ -106,7 +105,6 @@
         {
             "svdb": "/apps/bio/software/anaconda2/envs/svdb2.3/bin/svdb",
             "mantaconf": "/apps/bio/software/Manta/manta-1.6.0.centos6_x86_64/bin/configManta.py",
-            "annotate": "/apps/bio/repos/wgs_somatic/workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py",
             "annotate_ref": "/apps/bio/dependencies/wgs_somatic/hg19/refseq/refseq_20190301_ncbiRefSeq",
             "swegendb": "/apps/bio/dependencies/wgs_somatic/hg19/sv_dbs/SweGen_MANTA.sort.vcf",
             "gnomaddb": "/apps/bio/dependencies/wgs_somatic/hg19/sv_dbs/gnomad_v2_sv.sites.vcf",
