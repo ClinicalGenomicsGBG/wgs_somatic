@@ -11,7 +11,9 @@ rule filter_variants_in_bed:
         rtg = pipeconfig["rules"]["filter_variants_in_bed"]["rtg"],
         bedfile = pipeconfig["rules"]["filter_variants_in_bed"]["bedfile"],
     output:
-        "{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf"
+        temp("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf")
+    shadow:
+        pipeconfig["rules"].get("filter_variants_in_bed", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
         if not os.path.isfile(f"{output}.gz"):
             shell("{params.rtg} vcffilter --include-bed={params.bedfile} --output={output} --input={input}")
@@ -35,6 +37,8 @@ rule upload_to_iva:
         clcivadir_servpath = pipeconfig["rules"]["upload_to_iva"]["clcivadir_servpath"]
     output:
         "reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}.txt"
+    shadow:
+        pipeconfig["rules"].get("upload_to_iva", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
         # copy to clc accessible directory
         vcfbase = os.path.basename(f"{input}")
@@ -73,6 +77,8 @@ rule upload_to_iva_test:
         clcivadir_servpath = pipeconfig["rules"]["upload_to_iva"]["clcivadir_servpath"]
     output:
         "reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}_test.txt"
+    shadow:
+        pipeconfig["rules"].get("upload_to_iva_test", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
         # copy to clc accessible directory
         vcfbase = os.path.basename(f"{input}")

@@ -27,6 +27,7 @@
             "sing": "/apps/bio/singularities/gms_hematology/pindel-0.2.5b8.simg"
         }
     },
+    "shadow": "copy-minimal",
     "rules":
     {
         "mapping":
@@ -95,8 +96,6 @@
         },
         "share_to_resultdir":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
-            "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
         },
         "filter_variants_in_bed":
         {
@@ -129,8 +128,7 @@
         },
         "merge_snvs_cnvs":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
-            "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
+            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools"
         },
         "manta_summary":
         {
@@ -141,6 +139,11 @@
         {
             "bed": "/apps/bio/dependencies/wgs_somatic/hg38/new_twist_shortlist_pindel_hg38_padded50.bed",
             "python": "/apps/bio/software/anaconda2/envs/wgs_somatic/bin/python"
+        },
+        "bgzip":
+        {
+            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
+            "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
         }
     }
 }

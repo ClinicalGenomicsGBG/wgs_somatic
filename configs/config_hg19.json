@@ -23,6 +23,7 @@
             "filter13": "/medstore/External_References/Canvas_CLC_HG19_Dataset/hs37d5/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta/filter13.bed"
         }
     },
+    "shadow": "copy-minimal",
     "rules":
     {
         "mapping":
@@ -93,8 +94,6 @@
         },
         "share_to_resultdir":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
-            "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
         },
         "filter_variants_in_bed":
         {
@@ -131,12 +130,16 @@
         },
         "merge_snvs_cnvs":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
-            "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
+            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools"
         },
         "manta_summary":
         {
             "genelist": "/apps/bio/dependencies/wgs_somatic/genelist.txt"
+        },
+        "bgzip":
+        {
+            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
+            "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
         }
     }
 }

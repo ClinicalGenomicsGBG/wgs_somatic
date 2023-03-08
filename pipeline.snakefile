@@ -137,6 +137,7 @@ if tumorid:
 include:        "workflows/rules/variantcalling/dnascope.smk"
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"
+include:        "workflows/rules/small_tools/bgzip.smk"
 
 #########################################
 # QC
@@ -174,6 +175,12 @@ else:
     # Generate tdf
     include:    "workflows/rules/mapping/generate_tdf.smk"
 
+
+ruleorder: merge_snvs_cnvs > dnascope_vcffilter
+ruleorder: canvas_germline > bgzip_vcf
+
+if tumorid and normalid:
+    ruleorder: canvas_somatic > bgzip_vcf
 
 def insilico_coverage(wildcards):
     if tumorid:
