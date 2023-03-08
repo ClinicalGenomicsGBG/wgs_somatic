@@ -19,7 +19,7 @@ if tumorid:
                 canvasvcf = expand("{stype}/canvas/{sname}_CNV_somatic.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
                 insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
             output:
-                "qc_report/{tumorname}_qc_stats.xlsx"
+                temp("qc_report/{tumorname}_qc_stats.xlsx")
             run:
                 my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
                 insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
@@ -34,7 +34,7 @@ if tumorid:
                 tumorvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
                 insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[tumorname]["stype"], insiliconame=sampleconfig["insilico"], sname=tumorid),
             output:
-                "qc_report/{tumorname}_qc_stats.xlsx"
+                temp("qc_report/{tumorname}_qc_stats.xlsx")
             run:
                 my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
                 insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
@@ -50,7 +50,7 @@ else:
             normalvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[normalname]["stype"], sname=normalid),
             insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
         output:
-            "qc_report/{normalname}_qc_stats.xlsx"
+            temp("qc_report/{normalname}_qc_stats.xlsx")
         run:
             my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
             insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works

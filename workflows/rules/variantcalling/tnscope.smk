@@ -5,7 +5,9 @@ if normalid:
     rule tnscope:
         input:
             tumorbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             normalbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            normalbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
             tumortable = expand("{stype}/recal/{sname}_RECAL_DATA.TABLE", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             normaltable = expand("{stype}/recal/{sname}_RECAL_DATA.TABLE", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         params:
@@ -19,18 +21,23 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            tnscope = "{stype}/tnscope/{sname}_TNscope_tn.vcf",
-            tnscope_bam = "{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"
+            tnscope_vcf = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf"),
+            tnscope_idx = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf.idx"),
+            tnscope_bam = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"),
+            tnscope_bai = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam.bai")
+        shadow:
+            pipeconfig["rules"].get("tnscope", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             "echo $HOSTNAME;"
             "{params.sentieon} driver -t {params.threads} -r {params.reference} "
                 "-i {input.tumorbam} -q {input.tumortable} -i {input.normalbam} -q {input.normaltable} "
                 "--algo TNscope --tumor_sample {params.tumorname} --normal_sample {params.normalname} --bam_output {output.tnscope_bam} "
-                "{params.callsettings} {output.tnscope}"
+                "{params.callsettings} {output.tnscope_vcf}"
 else:
     rule tnscope:
         input:
             tumorbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             tumortable = expand("{stype}/recal/{sname}_RECAL_DATA.TABLE", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         params:
             threads = clusterconf["tnscope"]["threads"],
@@ -43,19 +50,24 @@ else:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            tnscope = "{stype}/tnscope/{sname}_TNscope_tn.vcf",
-            tnscope_bam = "{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"
+            tnscope_vcf = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf"),
+            tnscope_idx = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf.idx"),
+            tnscope_bam = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"),
+            tnscope_bai = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam.bai")
+        shadow:
+            pipeconfig["rules"].get("tnscope", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             "echo $HOSTNAME;"
             "{params.sentieon} driver -t {params.threads} -r {params.reference} "
                 "-i {input.tumorbam} -q {input.tumortable} "
                 "--algo TNscope --tumor_sample {params.tumorname} --pon {params.pon} --bam_output {output.tnscope_bam} "
-                "{params.callsettings} {output.tnscope}"
+                "{params.callsettings} {output.tnscope_vcf}"
 
 if normalid:
     rule tnscope_modelfilter:
         input:
-            tnscopevcf = "{stype}/tnscope/{sname}_TNscope_tn.vcf"
+            tnscopevcf = "{stype}/tnscope/{sname}_TNscope_tn.vcf",
+            tnscopeidx = "{stype}/tnscope/{sname}_TNscope_tn.vcf.idx"
         params:
             threads = clusterconf["tnscope_modelfilter"]["threads"],
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
@@ -64,11 +76,14 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            "{stype}/tnscope/{sname}_TNscope_tn_ML.vcf"
+            vcf = temp("{stype}/tnscope/{sname}_TNscope_tn_ML.vcf"),
+            idx = temp("{stype}/tnscope/{sname}_TNscope_tn_ML.vcf.idx")
+        shadow:
+            pipeconfig["rules"].get("tnscope_modelfilter", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             "echo $HOSTNAME;"
             "{params.sentieon} driver -t {params.threads} -r {params.reference} "
-            "--algo TNModelApply -m {params.modelpath} -v {input.tnscopevcf} {output}"
+            "--algo TNModelApply -m {params.modelpath} -v {input.tnscopevcf} {output.vcf}"
 
 if normalid:
     rule tnscope_vcffilter:
@@ -79,8 +94,10 @@ if normalid:
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
-            somatic_n = "{stype}/tnscope/{sname}_somatic_w_normal.vcf",
-            somatic = "{stype}/tnscope/{sname}_somatic.vcf"
+            somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
+            somatic = temp("{stype}/tnscope/{sname}_somatic.vcf")
+        shadow:
+            pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
             vcfname = os.path.basename(f"{input.tnscopevcf_ml}")
             vcfname = vcfname.replace(".vcf", "")
@@ -108,8 +125,10 @@ else:
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
-            somatic_n = "{stype}/tnscope/{sname}_somatic_w_normal.vcf",
-            somatic = "{stype}/tnscope/{sname}_somatic.vcf"
+            somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
+            somatic = temp("{stype}/tnscope/{sname}_somatic.vcf")
+        shadow:
+            pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
             vcfname = os.path.basename(f"{input.tnscopevcf_ml}")
             vcfname = vcfname.replace(".vcf", "")
