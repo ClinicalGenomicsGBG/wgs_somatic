@@ -103,7 +103,7 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         tumorsample = t
         tumorfastqs = os.path.join(Rctx_run.run_path, "fastq")
         date, _, _, chip, *_ = runtumor.split('_')
-        tumorid = '_'.join([tumorname, date, chip])
+        tumorid = '_'.join([tumorsample, date, chip])
         if not n:
             outputdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "tumor_only", tumorsample) #use for testing
