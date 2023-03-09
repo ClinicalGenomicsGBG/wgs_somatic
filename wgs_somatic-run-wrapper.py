@@ -20,7 +20,7 @@ from context import RunContext, SampleContext
 from helpers import setup_logger
 from tools.slims import get_sample_slims_info, SlimsSample, find_more_fastqs, get_pair_dict
 from tools.email import start_email, end_email, error_email
-from launch_snakemake import analysis_main, petagene_compress_bam, yearly_stats, alissa_upload, copy_results
+from launch_snakemake import analysis_main, yearly_stats, alissa_upload, copy_results
 
 
 # Store info about samples to use for sending report emails
@@ -85,8 +85,6 @@ def generate_context_objects(Rctx, logger):
 
 def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
 
-    igvuser = config['igv']['GMS-BT']
-    #igvuser = 'alvar.almstedt' # use for testing
     # FIXME Use boolean values instead of 'yes' for hg38ref and handle the translation later on
     hg38ref = config['hg38ref']['GMS-BT']
 
@@ -95,21 +93,25 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         normalsample = n
         normalfastqs = os.path.join(Rctx_run.run_path, "fastq")
         if not t:
-            outputdir = os.path.join(config['workingdir'], "normal_only", normalsample)
+            date, _, _, chip, *_ = runnormal.split('_')
+            normalid= '_'.join([normalsample, date, chip])
+            outputdir = os.path.join(config['workingdir'], "normal_only", normalid)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "normal_only", normalsample) #use for testing
-            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'igvuser': f'{igvuser}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
+            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
     if t:
         runtumor = Rctx_run.run_name
         tumorsample = t
         tumorfastqs = os.path.join(Rctx_run.run_path, "fastq")
+        date, _, _, chip, *_ = runtumor.split('_')
+        tumorid = '_'.join([tumorsample, date, chip])
         if not n:
-            outputdir = os.path.join(config['workingdir'], "tumor_only", tumorsample)
+            outputdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "tumor_only", tumorsample) #use for testing
-            pipeline_args = {'output': f'{outputdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'igvuser': f'{igvuser}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
+            pipeline_args = {'output': f'{outputdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
         else:
-            outputdir = os.path.join(config['workingdir'], tumorsample)
+            outputdir = os.path.join(config['workingdir'], tumorid)
             #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", tumorsample) #use for testing
-            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'igvuser': f'{igvuser}', 'hg38ref': f'{hg38ref}'}
+            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}'}
 
     if os.path.exists(outputdir):
         if t:
@@ -136,8 +138,8 @@ def check_ok(outputdir):
         return False
 
 
-def analysis_end(outputdir, igvuser, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
-    '''Function to check if analysis has finished correctly and add to yearly stats, upload to alissa, copy results and start petagene compression'''
+def analysis_end(outputdir, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
+    '''Function to check if analysis has finished correctly and add to yearly stats, upload to alissa and copy results'''
 
     if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
         if tumorsample:
@@ -146,16 +148,13 @@ def analysis_end(outputdir, igvuser, tumorsample=None, normalsample=None, runtum
                 alissa_upload(outputdir, normalsample, runnormal, hg38ref)
                 yearly_stats(tumorsample, normalsample)
                 copy_results(outputdir, runnormal=runnormal, normalname=normalsample, runtumor=runtumor, tumorname=tumorsample)
-                #petagene_compress_bam(outputdir, igvuser, hg38ref, tumorname=tumorsample, normalname=normalsample)
             else:
                 yearly_stats(tumorsample, 'None')
                 copy_results(outputdir, runtumor=runtumor, tumorname=tumorsample)
-                #petagene_compress_bam(outputdir, igvuser, hg38ref, tumorname=tumorsample)
         else:
             yearly_stats('None', normalsample)
             copy_results(outputdir, runnormal=runnormal, normalname=normalsample)
             alissa_upload(outputdir, normalsample, runnormal, hg38ref)
-            #petagene_compress_bam(outputdir, igvuser, hg38ref, normalname=normalsample)
     else:
         pass
 
@@ -245,7 +244,7 @@ def wrapper(instrument):
 
                             outputdir = pipeline_args.get('output')
                             check_ok_outdirs.append(outputdir)
-                            end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, pipeline_args['igvuser'], t, n, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
+                            end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t, n, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
 
                             paired_samples.append(t)
                             paired_samples.append(n)
@@ -274,7 +273,7 @@ def wrapper(instrument):
 
                 outputdir = pipeline_args.get('output')
                 check_ok_outdirs.append(outputdir)
-                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, pipeline_args['igvuser'], tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
 
         # Start several samples at the same time
         for t in threads:
@@ -302,9 +301,9 @@ def wrapper(instrument):
             # send emails about which samples ok and which not ok
             error_email(Rctx_run.run_name, ok_samples, bad_samples)
             if ok_samples:
-                # yearly stats and petagene compress ok samples
+                # yearly stats ok samples
                 # even though thread starts for all samples, function checks if sample ok 
-                # so it will only do yearly stats and petagene compress for ok samples
+                # so it will only do yearly stats for ok samples
                 for t in end_threads:
                     t.start()
                 for u in end_threads:
@@ -314,7 +313,7 @@ def wrapper(instrument):
         logger.info('All jobs have finished successfully')
         end_email(Rctx_run.run_name, final_pairs)
 
-        # If all jobs have finished successfully - add to yearly stats and start petagene compression of bamfiles
+        # If all jobs have finished successfully - add to yearly stats
         for t in end_threads:
             t.start()
         for u in end_threads:

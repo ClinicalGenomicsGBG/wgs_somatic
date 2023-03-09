@@ -10,6 +10,7 @@ import traceback
 from shutil import copyfile, copy
 import subprocess
 import stat
+import requests
 #from snakemake import snakemake
 
 
@@ -68,35 +69,6 @@ def yearly_stats(tumorname, normalname):
     yearly_stats.close()
 
 
-def petagene_compress_bam(outputdir, igvuser, hg38ref, tumorname=False, normalname=False):
-    '''Petagene compress bam file to save space'''
-    if hg38ref == "yes":
-        mainconf = "hg38conf"
-    else:
-        mainconf = "hg19conf"
-    config = read_wrapperconf()
-    configdir = config["configdir"]
-    mainconf_name = config[mainconf]
-    mainconf_path = f"{configdir}/{mainconf_name}"
-    mainconf = helpers.read_config(mainconf_path)
-    igvdatadir = mainconf["rules"]["share_to_igv"]["igvdatadir"]
-    igvdir = f"{igvdatadir}/{igvuser}"
-
-    logger(f"Starting petagene compression on bamfiles for sample {outputdir}")
-    queue = config["petagene"]["queue"]
-    threads = config["petagene"]["threads"]
-    qsub_script = config["petagene"]["qsub_script"]
-    if tumorname:
-        standardout = f"{outputdir}/logs/{tumorname}_petagene_compression_standardout.txt"
-        standarderr = f"{outputdir}/logs/{tumorname}_petagene_compression_standarderr.txt"
-        qsub_args = ["qsub", "-N", f"WGSSomatic-{tumorname}_petagene_compress_bam", "-q", queue, "-o", standardout, "-e", standarderr, qsub_script, igvdir, tumorname]
-        subprocess.call(qsub_args, shell=False)
-    if normalname:
-        standardout = f"{outputdir}/logs/{normalname}_petagene_compression_standardout.txt"
-        standarderr = f"{outputdir}/logs/{normalname}_petagene_compression_standarderr.txt"
-        qsub_args = ["qsub", "-N", f"WGSSomatic-{normalname}_petagene_compress_bam", "-q", queue, "-o", standardout, "-e", standarderr, qsub_script, igvdir, normalname]
-        subprocess.call(qsub_args, shell=False)
-
 def alissa_upload(outputdir, normalname, runnormal, ref=False):
     '''Upload germline SNV_CNV vcf to Alissa'''
     ref = 'hg38' # reference genome, change so it can also be hg19. but probably shouldn't upload vcf for hg19 samples
@@ -116,6 +88,9 @@ def alissa_upload(outputdir, normalname, runnormal, ref=False):
 
 def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumorname=None):
     '''Rsync result files from workingdir to resultdir'''
+
+    config = read_wrapperconf()
+
     # Find correct resultdir on webstore from sample config in workingdir
     normalid, tumorid = get_normalid_tumorid(runnormal, normalname, runtumor, tumorname)
     if tumorid:
@@ -138,8 +113,15 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
             except:
                 logger(f"Error occurred while copying {sharefile}")
 
+    # Make webstore portal API call to make path searchable
+    webstore_api_url = config["webstore_api_url"]
+    json_payload = {'path': resultdir}
+    response = requests.post(webstore_api_url, json=json_payload)
+    if response.status_code != 200:
+        raise WebstoreError(f'Webstore api call returned a non 200 return: {response.text}')
 
-def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, igvuser=False, hg38ref=False, starttype=False, nocompress=False):
+
+def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -213,12 +195,6 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
                         f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fasterq")
                         if not f_tumorfastqs:
                             error_list.append(f"No fastqs or fasterqs found in tumordir")
-        # validate igv users if supplied
-        if igvuser:
-            mainconf = helpers.read_config(mainconf_path)
-            igvdatadir = mainconf["rules"]["share_to_igv"]["igvdatadir"]
-            if not os.path.isdir(f"{igvdatadir}/{igvuser}"):
-                error_list.append(f"{igvuser} does not appear to be a valid preconfigured IGV user")
        
         # prepare outputdirectory
         if not os.path.isdir(output):
@@ -274,29 +250,30 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         analysisdict["tumorname"] = tumorname
         analysisdict["tumorid"] = tumorid
         analysisdict["tumorfastqs"] = [tumorfastqs]
-        analysisdict["igvuser"] = igvuser
         analysisdict["workingdir"] = output
         #insilico
         analysisdict["insilico"] = config["insilicopanels"]
+
+        basename_output = os.path.basename(output)
 
         if hg38ref == "yes":
             analysisdict["reference"] = "hg38"
             if tumorname:
                 if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{tumorname}' #Use f'{config["testresultdir"]}/{tumorname}'for testing
+                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_output}' #Use f'{config["testresultdir"]}/{tumorname}'for testing
                 else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{tumorname}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_output}'
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{normalname}'
+                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_output}'
         else:
             analysisdict["reference"] = "hg19"
             if tumorname:
                 if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/{tumorname}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/{basename_output}'
                 else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/tumor_only/{tumorname}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/tumor_only/{basename_output}'
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/normal_only/{normalname}'
+                analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/normal_only/{basename_output}'
         if tumorname:
             with open(f"{runconfigs}/{tumorid}_config.json", 'w') as analysisconf:
                 json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
@@ -311,12 +288,6 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             source = binddirs[binddir]["source"]
             if not analysisdict["reference"] in source:
                 if not "petagene" in source:
-                #print("Wrong reference")
-                #print(f"analysisdict_reference: {analysisdict['reference']}")
-                #print(f"source: {source}")
-            #elif not "petagene" in source:    
-               # print("not petegene")
-                #print(f"source: {source}")
                     continue
             destination = binddirs[binddir]["destination"]
             logger(f"preparing binddir variable {binddir} source: {source} destination: {destination}")
@@ -369,14 +340,12 @@ if __name__ == '__main__':
     parser.add_argument('-rt', '--runtumor', nargs='?', help='the sequencing run the tumorsample was sequenced in',     required=False)
     parser.add_argument('-tn', '--tumorsample', nargs='?', help='tumor samplename', required=False)
     parser.add_argument('-tf', '--tumorfastqs', nargs='?', help='path to directory containing tumor fastqs', required=False)
-    parser.add_argument('-igv', '--igvuser', nargs='?', help='location to output results', required=False)
     parser.add_argument('-hg38', '--hg38ref', nargs='?', help='run analysis on hg38 reference (write yes if you want this option)', required=False)
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
-    parser.add_argument('-nc', '--nocompress', action="store_true", help='Disables petagene compression', required=False)
     parser.add_argument('-na', '--noalissa', action="store_true", help='Disables Alissa upload', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
     args = parser.parse_args()
-    analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.igvuser, args.hg38ref, args.starttype, args.nocompress)
+    analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype)
 
     if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
         if args.tumorsample:
@@ -387,19 +356,13 @@ if __name__ == '__main__':
                     copy_results(args.outputdir, args.runnormal, args.normalsample, args.runtumor, args.tumorsample)
                 if args.hg38ref and not args.noalissa:
                     alissa_upload(args.outputdir, args.normalsample, args.runnormal, args.hg38ref)
-                if not args.nocompress:
-                    petagene_compress_bam(args.outputdir, args.igvuser, args.hg38ref, args.tumorsample, args.normalsample)    
             else:
                 yearly_stats(args.tumorsample, 'None')
                 if args.copyresults:
                     copy_results(args.outputdir, runtumor=args.runtumor, tumorname=args.tumorsample)
-                if not args.nocompress:
-                    petagene_compress_bam(args.outputdir, args.igvuser, args.hg38ref, tumorname=args.tumorsample)
         else:
             yearly_stats('None', args.normalsample)
             if args.copyresults:
                 copy_results(args.outputdir, runnormal=args.runnormal, normalname=args.normalsample)
             if args.hg38ref and not args.noalissa:
                 alissa_upload(args.outputdir, args.normalsample, args.runnormal, args.hg38ref)
-            if not args.nocompress:
-                petagene_compress_bam(args.outputdir, args.igvuser, args.hg38ref, normalname=args.normalsample)

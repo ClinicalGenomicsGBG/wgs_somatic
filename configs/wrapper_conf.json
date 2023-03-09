@@ -9,12 +9,7 @@
     "resultdir_hg38": "/webstore/clinical/routine/wgs_somatic/current",
     "resultdir_hg19": "/seqstore/webfolders/wgs/neuroblastom",
     "testresultdir" : "/home/xshang/ws_testoutput/resultdir",
-    "petagene":
-    {
-        "threads": 40,
-        "queue": "wgs.q@hoth.medair.lcl",
-        "qsub_script": "petagene_compress.sh"
-    },
+    "webstore_api_url": "http://webstore.sa.gu.se/api/paths",
     "alissa":
     {
 	    "threads": 1,

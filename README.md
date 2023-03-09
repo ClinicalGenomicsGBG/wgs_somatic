@@ -39,7 +39,7 @@ Singularity images are located here: /apps/bio/singularities/wgs\_somatic/
 
 3. Activate conda environment
 
-`$ source activate wgs_somatic`
+`$ source activate wgs_somatic_minimal`
 
 4. Run launch\_snakemake.py
 
@@ -53,7 +53,6 @@ $ ./launch_snakemake.py \
     --normalfastqs <path to directory containing normal fastqs> \
     --tumorsample <Name of tumor sample> \
     --tumorfastqs <path to directory containing tumor fastqs> \
-    --igvuser <name of igv user> \
     --hg38ref yes
 ```
 
@@ -71,8 +70,6 @@ Runnormal and runtumor is only used to create a unique samplename based on the s
 
 Optional arguments to launch_snakemake.py:
 
-```--nocompress``` Disables petagene compression of bamfiles after snakemake has finished.
-
 ```--noalissa``` Disables automatic upload of germline SNV_CNV vcf to Alissa. 
 
 ```--copyresults``` Use this argument if you want to automatically copy result files to result directory on seqstore webfolders.
@@ -81,7 +78,7 @@ Optional arguments to launch_snakemake.py:
 
 Need to be on medair because python environment is hard-coded in launch_snakemake.py, also some tools in the snakemake workflow is hardcoded to install-locations on medair, and finally some dependencies such as references and databases are on medair.
 
- > \#!/apps/bio/software/anaconda2/envs/wgs_somatic/bin/python
+ > \#!/apps/bio/software/anaconda2/envs/wgs_somatic_minimal/bin/python
 
 
  Or you can just use an already set-up repository! Such as here:

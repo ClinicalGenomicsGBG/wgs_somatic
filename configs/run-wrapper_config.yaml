@@ -11,11 +11,6 @@ novaseq_A01736:
 
 previous_runs_file_path: 'novaseq_runlist.txt'
 
-igv:
-  GMS-BT: 'barncancer_hg38'
-  GMS-AL: 'barncancer_hg38'
-  G21-004: 'susanne.fransson'
-
 hg38ref:
   GMS-BT: 'yes'
   GMS-AL: 'yes'
