@@ -2,56 +2,48 @@
 # coding: utf-8
 
 from workflows.scripts.create_qc_excel import create_excel_main
-import os
 
-if tumorid:
+from pathlib import Path
+
+def get_excel_qc_input(wcs):
+    stype = "normal" if normalid else "tumor"
+    sname = normalid or tumorid
+    inputs = dict(
+        ycov = f"{'normal' if normalid else 'tumor'}/reports/{normalid or tumorid}_Ycov.tsv",
+        insilico_complete = expand(
+            f"{'normal' if normalid else 'tumor'}/insilico/{{insiliconame}}/{normalid or tumorid}.complete",
+            insiliconame=insilico_panels
+        ),
+    )
+    if tumorid:
+        inputs |= dict(
+            tumorcov = f"tumor/reports/{tumorid}_WGScov.tsv",
+            tumordedup = f"tumor/dedup/{tumorid}_DEDUP.txt",
+            tumorvcf = f"tumor/dnascope/{tumorid}_germline_SNVsOnly.recode.vcf",
+        )
     if normalid:
-        # excel_qc rule for paired analysis
-        rule excel_qc:
-            input:
-                tumorcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                ycov = expand("{stype}/reports/{sname}_Ycov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid),
-                normalcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid),
-                tumordedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                normaldedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=sampleconfig[normalname]["stype"], sname=normalid),
-                tumorvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                normalvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[normalname]["stype"], sname=normalid),
-                canvasvcf = expand("{stype}/canvas/{sname}_CNV_somatic.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
-            output:
-                temp("qc_report/{tumorname}_qc_stats.xlsx")
-            run:
-                my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
-                insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
-                create_excel_main(tumorcov = f"{input.tumorcov}", ycov = f"{input.ycov}" , normalcov = f"{input.normalcov}", tumordedup = f"{input.tumordedup}", normaldedup = f"{input.normaldedup}", tumorvcf = f"{input.tumorvcf}", normalvcf = f"{input.normalvcf}", canvasvcf = f"{input.canvasvcf}", output = f"{output}", insilicodir = f"{insilicodir}") 
-    else:
-        # excel_qc rule for tumor only
-        rule excel_qc:
-            input:
-                tumorcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                ycov = expand("{stype}/reports/{sname}_Ycov.tsv", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                tumordedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                tumorvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[tumorname]["stype"], insiliconame=sampleconfig["insilico"], sname=tumorid),
-            output:
-                temp("qc_report/{tumorname}_qc_stats.xlsx")
-            run:
-                my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
-                insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
-                create_excel_main(tumorcov = f"{input.tumorcov}", ycov = f"{input.ycov}", tumordedup = f"{input.tumordedup}", tumorvcf = f"{input.tumorvcf}", output = f"{output}", insilicodir = f"{insilicodir}")
+        inputs |= dict(
+            normalcov = f"normal/reports/{normalid}_WGScov.tsv",
+            normaldedup = f"normal/dedup/{normalid}_DEDUP.txt",
+            normalvcf = f"normal/dnascope/{normalid}_germline_SNVsOnly.recode.vcf",
+        )
+    if tumorid and normalid:
+        inputs |= dict(
+            canvasvcf = f"tumor/canvas/{tumorid}_CNV_somatic.vcf",
+        )
+    
+    return inputs
 
-else:
-    # excel_qc rule for normal only
-    rule excel_qc:
-        input:
-            normalcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid),
-            ycov = expand("{stype}/reports/{sname}_Ycov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid),
-            normaldedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=sampleconfig[normalname]["stype"], sname=normalid),
-            normalvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[normalname]["stype"], sname=normalid),
-            insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
-        output:
-            temp("qc_report/{normalname}_qc_stats.xlsx")
-        run:
-            my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
-            insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
-            create_excel_main(normalcov = f"{input.normalcov}", ycov = f"{input.ycov}", normaldedup = f"{input.normaldedup}", normalvcf =f"{input.normalvcf}", output = f"{output}", insilicodir = f"{insilicodir}")
+rule excel_qc:
+    input:
+        unpack(get_excel_qc_input)
+    output:
+        qc_stats = temp("qc_report/{tumorname}_qc_stats.xlsx") if tumorid else temp("qc_report/{normalname}_qc_stats.xlsx")
+    params:
+        insilicodir = lambda wildcards, input: str(Path(input.insilico_complete[0]).parent)
+    run:
+        create_excel_main(
+            **{k: v for k, v in input.items() if k != "insilico_complete"},
+            output = output.qc_stats,
+            insilicodir = params.insilicodir
+        ) 

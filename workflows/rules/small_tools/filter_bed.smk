@@ -1,6 +1,5 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
-import os
 
 rule filter_variants_in_bed:
     input:

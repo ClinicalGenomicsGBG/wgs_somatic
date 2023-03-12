@@ -20,9 +20,7 @@ tumorname = config["tumorname"]
 tumorid = config["tumorid"]
 
 reference = config["reference"]
-
 workingdir = config["workingdir"]
-
 insilico_panels = config["insilico"]
 
 ##################################################
@@ -33,7 +31,7 @@ if reference == "hg38":
     configfilepath = f"{ROOT_DIR}/configs/config_hg38.json"
 else:
     configfilepath = f"{ROOT_DIR}/configs/config_hg19.json"
-#----------------------------------------------
+
 
 
 pipeconfig = helpers.read_config(configfilepath)
@@ -41,25 +39,9 @@ clusterconf = helpers.read_clusterconf()
 
 shell.executable("/bin/bash")
 
-analysistime = time.strftime("%Y-%m-%d-%H-%M-%S")
-
-sampleconfig = {}
-sampleconfig[normalname] = {}
-sampleconfig[normalname]["stype"] = "normal"
-sampleconfig[tumorname] = {}
-sampleconfig[tumorname]["stype"] = "tumor"
-sampleconfig["normal"] = normalid
-sampleconfig["tumor"] = tumorid
-sampleconfig["normalname"] = normalname
-sampleconfig["tumorname"] = tumorname
-sampleconfig["insilico"] = insilico_panels #What should this be?
-
 ####################################################
 # Prepare Fastq Variables 
 # -------------------------------------------------
-
-fwdpatterns = ["_1.fastq.gz", "_R1_001.fastq.gz", "_1.fasterq", "_R1_001.fasterq"] 
-revpatterns = ["_2.fastq.gz", "_R2_001.fastq.gz", "_2.fasterq", "_R2_001.fasterq"]
 
 fastq_dict = {}
 fastq_dict["normal"] = {}
@@ -76,14 +58,13 @@ if normalfastqdirs:
             if normal_fwd_fastqs:
                 for normal_fwd_fastq in normal_fwd_fastqs:
                     fastqpair_pattern = os.path.basename(normal_fwd_fastq).replace(fwdpattern, "")
-                    fastq_dict["normal"]["fastqpair_patterns"][fastqpair_pattern] = {}
-                    fastq_dict["normal"]["fastqpair_patterns"][fastqpair_pattern]["fwd"] = normal_fwd_fastq
+                    fastq_dict["normal"]["fastqpair_patterns"][fastqpair_pattern] = {"fwd": normal_fwd_fastq}
         for revpattern in revpatterns:
             normal_rev_fastqs = glob.glob(f"{normalfastqdir}/{normalname}*{revpattern}")
             if normal_rev_fastqs:
                 for normal_rev_fastq in normal_rev_fastqs:
                     fastqpair_pattern = os.path.basename(normal_rev_fastq).replace(revpattern, "")
-                    fastq_dict["normal"]["fastqpair_patterns"][fastqpair_pattern]["rev"] = normal_rev_fastq
+                    fastq_dict["normal"]["fastqpair_patterns"][fastqpair_pattern] |= {"rev": normal_rev_fastq}
 
 # Prepare Tumor Fastq Variables
 if tumorfastqdirs:
@@ -93,99 +74,107 @@ if tumorfastqdirs:
             if tumor_fwd_fastqs:
                 for tumor_fwd_fastq in tumor_fwd_fastqs:
                     fastqpair_pattern = os.path.basename(tumor_fwd_fastq).replace(fwdpattern, "")
-                    fastq_dict["tumor"]["fastqpair_patterns"][fastqpair_pattern] = {}
-                    fastq_dict["tumor"]["fastqpair_patterns"][fastqpair_pattern]["fwd"] = tumor_fwd_fastq
+                    fastq_dict["tumor"]["fastqpair_patterns"][fastqpair_pattern] = {"fwd": tumor_fwd_fastq}
         for revpattern in revpatterns:
             tumor_rev_fastqs = glob.glob(f"{tumorfastqdir}/{tumorname}*{revpattern}")
             if tumor_rev_fastqs:
                 for tumor_rev_fastq in tumor_rev_fastqs:
                     fastqpair_pattern = os.path.basename(tumor_rev_fastq).replace(revpattern, "")
-                    fastq_dict["tumor"]["fastqpair_patterns"][fastqpair_pattern]["rev"] = tumor_rev_fastq 
+                    fastq_dict["tumor"]["fastqpair_patterns"][fastqpair_pattern] |= {"rev": tumor_rev_fastq} 
+# -------------------------------------------------
 
-#wildcard_constraints:
-#    sname="[^_]*_[^_]*_[^_]*"
+####################################################
+# Include Rules 
+# -------------------------------------------------
 
-###########################################################
-# Defining Non Cluster Rules
-if tumorid:
-    if normalid:
-        # Runs tn_workflow / paired if tumorid and normalid
-        localrules: all, tn_workflow, share_to_resultdir, excel_qc
-    else:
-        # Runs tumoronly_workflow if tumorid but not normalid
-        localrules: all, share_to_resultdir, excel_qc, tumoronly_workflow
-else: 
-    # Runs normalonly_workflow if normalid but not tumorid
-    localrules: all, share_to_resultdir, excel_qc, normalonly_workflow
-###########################################################
-
-########################################
-# Workflows
-if tumorid:
-    if normalid:
-        include:        "workflows/tn_workflow.smk"
-    else:
-        include:        "workflows/tumoronly_workflow.smk"
-else:
-    include:        "workflows/normalonly_workflow.smk"
-
-#########################################
+# Mapping
+include: "workflows/rules/mapping/mapping.smk"
+include: "workflows/rules/mapping/generate_tdf.smk"
 # VariantCalling
-if tumorid:
-    include:        "workflows/rules/variantcalling/tnscope.smk"
-    include:        "workflows/rules/variantcalling/pindel.smk"
-include:        "workflows/rules/variantcalling/dnascope.smk"
-include:        "workflows/rules/small_tools/ballele.smk"
-include:        "workflows/rules/variantcalling/canvas.smk"
-include:        "workflows/rules/small_tools/bgzip.smk"
-include:        "workflows/rules/small_tools/filter_bed.smk"
-
-#########################################
+include: "workflows/rules/variantcalling/manta.smk"
+include: "workflows/rules/variantcalling/tnscope.smk"
+include: "workflows/rules/variantcalling/pindel.smk"
+include: "workflows/rules/variantcalling/dnascope.smk"
+include: "workflows/rules/small_tools/ballele.smk"
+include: "workflows/rules/variantcalling/canvas.smk"
+include: "workflows/rules/small_tools/bgzip.smk"
+include: "workflows/rules/small_tools/filter_bed.smk"
 # QC
-include:        "workflows/rules/qc/aggregate_qc.smk"
-include:        "workflows/rules/qc/insilico_coverage.smk"
-
-#########################################
+include: "workflows/rules/qc/aggregate_qc.smk"
+include: "workflows/rules/qc/insilico_coverage.smk"
+include: "workflows/rules/qc/coverage.smk"
 # ResultSharing:
-include:        "workflows/rules/results_sharing/share_to_resultdir.smk"
+include: "workflows/rules/results_sharing/share_to_resultdir.smk"
 
+# Non-cluster rules
+localrules: all, share_to_resultdir, excel_qc
 
-if reference == "hg38":
-    ###########################################################
-    # HG38 rules
-    ###########################################################
-    # Mapping
-    include:    "workflows/rules/mapping/mapping_hg38.smk"
-    # Variantcalling
-    include:    "workflows/rules/variantcalling/manta_hg38.smk"
-    # Coverage
-    include:    "workflows/rules/qc/coverage_hg38.smk"
-    # Generate tdf
-    include:    "workflows/rules/mapping/generate_tdf_hg38.smk"
-else:
-    ###########################################################
-    # HG19 rules
-    ###########################################################
-    # Mapping
-    include:        "workflows/rules/mapping/mapping.smk"
-    # VariantCalling
-    include:        "workflows/rules/variantcalling/manta.smk"
-    # Coverage
-    include:        "workflows/rules/qc/coverage.smk"
-    # Generate tdf
-    include:    "workflows/rules/mapping/generate_tdf.smk"
-
-
+# Priority for ambiguous rules
 ruleorder: merge_snvs_cnvs > dnascope_vcffilter
-ruleorder: canvas_germline > bgzip_vcf
+ruleorder: canvas > bgzip_vcf
 
-if tumorid and normalid:
-    ruleorder: canvas_somatic > bgzip_vcf
+wildcard_constraints:
+    vartype=r"(germline)|(somatic)"
 
-def insilico_coverage(wildcards):
+
+####################################################
+# Result definitions
+# -------------------------------------------------
+def get_result_input(wildcards):
+    inputs = [
+        # Mapping (Tumor > Normal)
+        f"{'tumor' if tumorid else 'normal'}/reports/{tumorid or normalid}_baf.igv",
+        # Canvas Germline (Normal > Tumor)
+        f"{'normal' if normalid else 'tumor'}/canvas/{normalid or tumorid}_CNV_germline.vcf.xlsx",
+        *multiext(f"{'normal' if normalid else 'tumor'}/canvas/{normalid or tumorid}_CNV_germline", ".vcf.gz", ".vcf.gz.csi"),
+        f"{'normal' if normalid else 'tumor'}/canvas/{normalid or tumorid}_germline_CNV_observed.seg",
+        f"{'normal' if normalid else 'tumor'}/canvas/{normalid or tumorid}_germline_CNV_called.seg",
+        # Insilico (Tumor > Normal)
+        f"qc_report/{tumorname or normalname}_qc_stats.xlsx",
+    ]
+
+    if normalid:
+        inputs += [
+            # Mapping (Normal)
+            *multiext(f"normal/realign/{normalid}_REALIGNED", ".bam", ".bam.bai"),
+            f"normal/reports/{normalid}_REALIGNED.bam.tdf",
+            # DNAscope Germline (Normal)
+            *multiext(f"normal/dnascope/{normalid}_germline_refseq3kfilt", ".vcf.gz", ".vcf.gz.csi"),
+            *multiext(f"normal/dnascope/{normalid}_{reference}_SNV_CNV_germline", ".vcf.gz", ".vcf.gz.csi"),
+            # Manta Germline (Normal)
+            *multiext(f"normal/manta/{normalid}_germline_MantaBNDs", ".vcf.gz", ".vcf.gz.csi"),
+            *multiext(f"normal/manta/{normalid}_germline_MantaNOBNDs", ".vcf.gz", ".vcf.gz.csi"),
+        ]
+
     if tumorid:
-        return expand("{sname}_insilicostuffplaceholder", sname=normalid)
+        inputs += [
+            # Mapping (Tumor)
+            *multiext(f"tumor/realign/{tumorid}_REALIGNED", ".bam", ".bam.bai"),
+            f"tumor/reports/{tumorid}_REALIGNED.bam.tdf",
+            # TNscope Somatic (Tumor)
+            *multiext(f"tumor/tnscope/{tumorid}_somatic_refseq3kfilt", ".vcf.gz", ".vcf.gz.csi"),
+            # Manta Somatic (Tumor)
+            f"tumor/manta/{tumorid}_somatic_mantaSV.vcf.xlsx",
+            f"tumor/manta/{tumorid}_somatic_mantaSV_Summary.xlsx",
+            *multiext(f"tumor/manta/{tumorid}_somatic_MantaBNDs", ".vcf.gz", ".vcf.gz.csi"),
+            *multiext(f"tumor/manta/{tumorid}_somatic_MantaNOBNDs", ".vcf.gz", ".vcf.gz.csi"),
+        ]
+
+    if tumorid and reference == "hg38":
+        # Pindel Somatic (Tumor, hg38 only)
+        inputs += [f"tumor/pindel/{tumorid}_pindel.xlsx"]
+
+    if tumorid and normalid:
+        inputs += [
+            # Canvas (Tumor + Normal)
+            *multiext(f"tumor/canvas/{tumorid}_CNV_somatic", ".vcf.gz", ".vcf.gz.csi"),
+            f"tumor/canvas/{tumorid}_somatic_CNV_observed.seg",
+            f"tumor/canvas/{tumorid}_somatic_CNV_called.seg",
+        ]
+
+    return inputs
 
 rule all:
-    input: 
+    input:
+        get_result_input,
         "reporting/workflow_finished.txt"

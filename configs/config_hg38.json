@@ -5,7 +5,7 @@
     {
         "sentieon":
         {
-            "sing": "/apps/bio/singularities/wgs_somatic/sentieon_peta_201911_hg38_new220503.simg",
+            "simg": "/apps/bio/singularities/wgs_somatic/sentieon_peta_201911_hg38_new220503.simg",
             "tool_path": "/sentieon-genomics-201911/bin/sentieon",
             "reference": "/databases/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
             "mills": "/databases/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
@@ -15,7 +15,7 @@
         },
         "canvas":
         {
-            "sing": "/apps/bio/singularities/wgs_somatic/canvas_hg38.simg",
+            "simg": "/apps/bio/singularities/wgs_somatic/canvas_hg38.simg",
             "dll": "/Canvas-1.40.0.1613+master_x64/Canvas.dll",
             "tool_path": "/canvas/run_canvas.py",
             "reference": "/canvasfiles/canvasfiles/",
@@ -24,7 +24,7 @@
         }, 
         "pindel":
         {
-            "sing": "/apps/bio/singularities/gms_hematology/pindel-0.2.5b8.simg"
+            "simg": "/apps/bio/singularities/gms_hematology/pindel-0.2.5b8.simg"
         }
     },
     "shadow": "copy-minimal",
@@ -48,8 +48,8 @@
         },
         "insilico":
         {
-        "samtools": "/apps/bio/software/samtools/1.9/bin/samtools",
-        "python": "/apps/bio/software/anaconda2/envs/sentieon_py/bin/python"
+            "samtools": "/apps/bio/software/samtools/1.9/bin/samtools",
+            "python": "/apps/bio/software/anaconda2/envs/sentieon_py/bin/python"
         },
         "tnscope":
         {
@@ -125,7 +125,8 @@
         "pindel":
         {
             "bed": "/apps/bio/dependencies/wgs_somatic/hg38/new_twist_shortlist_pindel_hg38_padded50.bed",
-            "python": "/apps/bio/software/anaconda2/envs/wgs_somatic/bin/python"
+            "python": "/apps/bio/software/anaconda2/envs/wgs_somatic/bin/python",
+            "bcftools": "/apps/bio/software/anaconda2/envs/wgs_somatic/bin/bcftools"
         },
         "bgzip":
         {

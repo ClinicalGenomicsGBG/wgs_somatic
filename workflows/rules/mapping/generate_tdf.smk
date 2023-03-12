@@ -7,10 +7,14 @@ rule generate_tdf:
         bai = "{stype}/realign/{sname}_REALIGNED.bam.bai"
     params:
         igvtools_jar_path = pipeconfig["rules"]["generate_tdf"]["igvtools_jar_path"],
-        igvtools_memory_limit = pipeconfig["rules"]["generate_tdf"]["igvtools_memory_limit"]
+        igvtools_memory_limit = pipeconfig["rules"]["generate_tdf"]["igvtools_memory_limit"],
+        reference_genome = reference
     shadow:
         pipeconfig["rules"].get("generate_tdf", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
         temp("{stype}/reports/{sname}_REALIGNED.bam.tdf")
-    run:
-        shell("nohup java -Xmx{params.igvtools_memory_limit} -jar {params.igvtools_jar_path} count {input.bam} {output} hg19")
+    shell:
+        "nohup java "
+            "-Xmx{params.igvtools_memory_limit} "
+            "-jar {params.igvtools_jar_path} "
+            "count {input.bam} {output} {params.reference_genome}"
