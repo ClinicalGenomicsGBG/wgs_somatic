@@ -110,13 +110,13 @@ if tumorfastqdirs:
 if tumorid:
     if normalid:
         # Runs tn_workflow / paired if tumorid and normalid
-        localrules: all, upload_to_iva, tn_workflow, share_to_resultdir, excel_qc
+        localrules: all, tn_workflow, share_to_resultdir, excel_qc
     else:
         # Runs tumoronly_workflow if tumorid but not normalid
-        localrules: all, upload_to_iva, share_to_resultdir, excel_qc, tumoronly_workflow
+        localrules: all, share_to_resultdir, excel_qc, tumoronly_workflow
 else: 
     # Runs normalonly_workflow if normalid but not tumorid
-    localrules: all, upload_to_iva, share_to_resultdir, excel_qc, normalonly_workflow
+    localrules: all, share_to_resultdir, excel_qc, normalonly_workflow
 ###########################################################
 
 ########################################
@@ -138,6 +138,7 @@ include:        "workflows/rules/variantcalling/dnascope.smk"
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"
 include:        "workflows/rules/small_tools/bgzip.smk"
+include:        "workflows/rules/small_tools/filter_bed.smk"
 
 #########################################
 # QC
@@ -147,7 +148,6 @@ include:        "workflows/rules/qc/insilico_coverage.smk"
 #########################################
 # ResultSharing:
 include:        "workflows/rules/results_sharing/share_to_resultdir.smk"
-include:        "workflows/rules/results_sharing/upload_to_iva.smk"
 
 
 if reference == "hg38":
