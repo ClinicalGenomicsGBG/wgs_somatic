@@ -33,37 +33,37 @@ def get_insilico(wcs):
     # NOTE: sampleid and workingdir is essentially global because defined in snakefile
     insilico_files = []
     for insilico_name in insilico_names:
-        insilico_files.extend([f"{workingdir}/normal/insilico/{insilico_name}/{normalid}_{insilico_name}_10x.xlsx",
-                               f"{workingdir}/normal/insilico/{insilico_name}/{normalid}_{insilico_name}_20x.xlsx",
-                               f"{workingdir}/normal/insilico/{insilico_name}/{normalid}_{insilico_name}_genes_below10x.xlsx",
-                               f"{workingdir}/normal/insilico/{insilico_name}/{normalid}_{insilico_name}.csv",
-                               f"{workingdir}/normal/insilico/{insilico_name}/{normalid}_{insilico_name}_cov.tsv"])
+        insilico_files.extend([f"normal/insilico/{insilico_name}/{normalid}_{insilico_name}_10x.xlsx",
+                               f"normal/insilico/{insilico_name}/{normalid}_{insilico_name}_20x.xlsx",
+                               f"normal/insilico/{insilico_name}/{normalid}_{insilico_name}_genes_below10x.xlsx",
+                               f"normal/insilico/{insilico_name}/{normalid}_{insilico_name}.csv",
+                               f"normal/insilico/{insilico_name}/{normalid}_{insilico_name}_cov.tsv"])
     return insilico_files
 
 
 rule tn_workflow:
     input:
-        expand("{workingdir}/{stype}/tnscope/{sname}_somatic.vcf", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{workingdir}/{stype}/dnascope/{sname}_germline.vcf", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
-        expand("{workingdir}/{stype}/dnascope/{sname}_germline.vcf", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{workingdir}/{stype}/reports/{sname}_baf.igv", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{workingdir}/{stype}/reports/{sname}_WGScov.tsv", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{workingdir}/{stype}/reports/{sname}_WGScov.tsv", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
-        expand("{workingdir}/{stype}/reports/{sname}_Ycov.tsv", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
-        expand("{workingdir}/{stype}/canvas/{sname}_CNV_germline.vcf", workingdir=workingdir, sname=normalid, stype=sampleconfig[normalname]["stype"]),
-        expand("{workingdir}/{stype}/canvas/{sname}_CNV_somatic.vcf", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{workingdir}/{stype}/canvas/{sname}_{vartype}_CNV_observed.seg", workingdir=workingdir, vartype="somatic", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{workingdir}/{stype}/canvas/{sname}_{vartype}_CNV_called.seg", workingdir=workingdir, vartype="somatic", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{workingdir}/{stype}/canvas/{sname}_{vartype}_CNV_observed.seg", workingdir=workingdir, vartype="germline", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-        expand("{workingdir}/{stype}/canvas/{sname}_{vartype}_CNV_called.seg", workingdir=workingdir, vartype="germline", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-        expand("{workingdir}/{stype}/reports/{sname}_REALIGNED.bam.tdf", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{workingdir}/{stype}/reports/{sname}_REALIGNED.bam.tdf", workingdir=workingdir,  sname=normalid, stype=sampleconfig[normalname]["stype"]),
-        expand("{workingdir}/{stype}/pindel/{sname}_pindel.xlsx", workingdir=workingdir, sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        "{workingdir}/reporting/shared_result_files.txt",
+        expand("{stype}/tnscope/{sname}_somatic.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/dnascope/{sname}_germline.vcf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+        expand("{stype}/dnascope/{sname}_germline.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/reports/{sname}_baf.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/reports/{sname}_WGScov.tsv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/reports/{sname}_WGScov.tsv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+        expand("{stype}/reports/{sname}_Ycov.tsv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+        expand("{stype}/canvas/{sname}_CNV_germline.vcf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+        expand("{stype}/canvas/{sname}_CNV_somatic.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/canvas/{sname}_{vartype}_CNV_observed.seg", vartype="somatic", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/canvas/{sname}_{vartype}_CNV_called.seg", vartype="somatic", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/canvas/{sname}_{vartype}_CNV_observed.seg", vartype="germline", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+        expand("{stype}/canvas/{sname}_{vartype}_CNV_called.seg", vartype="germline", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+        expand("{stype}/reports/{sname}_REALIGNED.bam.tdf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/reports/{sname}_REALIGNED.bam.tdf",  sname=normalid, stype=sampleconfig[normalname]["stype"]),
+        expand("{stype}/pindel/{sname}_pindel.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        "reporting/shared_result_files.txt",
         insilico_files = get_insilico
     output:
-        insilico_json = "{workingdir}/reporting/insilico.json",
-        wf_finished = "{workingdir}/reporting/workflow_finished.txt"
+        insilico_json = "reporting/insilico.json",
+        wf_finished = "reporting/workflow_finished.txt"
     run:
         output_mapping = dict(input)
         print(f"output mapping: {output_mapping}")

@@ -9,17 +9,17 @@ if tumorid:
         # excel_qc rule for paired analysis
         rule excel_qc:
             input:
-                tumorcov = expand("{workingdir}/{stype}/reports/{sname}_WGScov.tsv", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                ycov = expand("{workingdir}/{stype}/reports/{sname}_Ycov.tsv", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], sname=normalid),
-                normalcov = expand("{workingdir}/{stype}/reports/{sname}_WGScov.tsv", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], sname=normalid),
-                tumordedup = expand("{workingdir}/{stype}/dedup/{sname}_DEDUP.txt", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                normaldedup = expand("{workingdir}/{stype}/dedup/{sname}_DEDUP.txt", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], sname=normalid),
-                tumorvcf = expand("{workingdir}/{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                normalvcf = expand("{workingdir}/{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], sname=normalid),
-                canvasvcf = expand("{workingdir}/{stype}/canvas/{sname}_CNV_somatic.vcf", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                insilicofile = expand("{workingdir}/{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
+                tumorcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
+                ycov = expand("{stype}/reports/{sname}_Ycov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid),
+                normalcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid),
+                tumordedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
+                normaldedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=sampleconfig[normalname]["stype"], sname=normalid),
+                tumorvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
+                normalvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[normalname]["stype"], sname=normalid),
+                canvasvcf = expand("{stype}/canvas/{sname}_CNV_somatic.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
+                insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
             output:
-                "{workingdir}/qc_report/{tumorname}_qc_stats.xlsx"
+                temp("qc_report/{tumorname}_qc_stats.xlsx")
             run:
                 my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
                 insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
@@ -28,13 +28,13 @@ if tumorid:
         # excel_qc rule for tumor only
         rule excel_qc:
             input:
-                tumorcov = expand("{workingdir}/{stype}/reports/{sname}_WGScov.tsv", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                ycov = expand("{workingdir}/{stype}/reports/{sname}_Ycov.tsv", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                tumordedup = expand("{workingdir}/{stype}/dedup/{sname}_DEDUP.txt", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                tumorvcf = expand("{workingdir}/{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                insilicofile = expand("{workingdir}/{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", workingdir=workingdir, stype=sampleconfig[tumorname]["stype"], insiliconame=sampleconfig["insilico"], sname=tumorid),
+                tumorcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
+                ycov = expand("{stype}/reports/{sname}_Ycov.tsv", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
+                tumordedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
+                tumorvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
+                insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[tumorname]["stype"], insiliconame=sampleconfig["insilico"], sname=tumorid),
             output:
-                "{workingdir}/qc_report/{tumorname}_qc_stats.xlsx"
+                temp("qc_report/{tumorname}_qc_stats.xlsx")
             run:
                 my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
                 insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
@@ -44,13 +44,13 @@ else:
     # excel_qc rule for normal only
     rule excel_qc:
         input:
-            normalcov = expand("{workingdir}/{stype}/reports/{sname}_WGScov.tsv", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], sname=normalid),
-            ycov = expand("{workingdir}/{stype}/reports/{sname}_Ycov.tsv", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], sname=normalid),
-            normaldedup = expand("{workingdir}/{stype}/dedup/{sname}_DEDUP.txt", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], sname=normalid),
-            normalvcf = expand("{workingdir}/{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], sname=normalid),
-            insilicofile = expand("{workingdir}/{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", workingdir=workingdir, stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
+            normalcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid),
+            ycov = expand("{stype}/reports/{sname}_Ycov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid),
+            normaldedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=sampleconfig[normalname]["stype"], sname=normalid),
+            normalvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[normalname]["stype"], sname=normalid),
+            insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
         output:
-            "{workingdir}/qc_report/{normalname}_qc_stats.xlsx"
+            temp("qc_report/{normalname}_qc_stats.xlsx")
         run:
             my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
             insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works

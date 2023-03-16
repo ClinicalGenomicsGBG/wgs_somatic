@@ -8,6 +8,7 @@ import yaml
 import helpers
 import os
 import json
+from definitions import ROOT_DIR
 
 __author__ = "Rickard 'Ricksy' Rickardsson"
 
@@ -31,15 +32,11 @@ tnscopesetting_list = []
 for setting in tnscopesetting:
     tnscopesetting_list.append(setting)
 
-
-
-workingdir = config["workingdir"]
-
 ##################################################
 # Chose Config based on Reference
 # ---------------------------------------------
 reference = "hg38"
-configfilepath = "configs/config_hg38.json"
+configfilepath = f"{ROOT_DIR}/configs/config_hg38.json"
 
 #----------------------------------------------
 
@@ -145,4 +142,4 @@ else:
 
 rule all:
     input:
-        expand("{workingdir}/reporting/workflow_finished.txt", workingdir=workingdir)
+        "reporting/workflow_finished.txt"

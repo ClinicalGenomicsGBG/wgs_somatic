@@ -73,3 +73,17 @@ cutadapt:
 insilico_coverage:
     threads: 2
     excl: excl=1
+
+bgzip_vcf:
+    threads: 1
+    excl: excl=1
+    name: "WGSsomatic_{rule}_{wildcards.file}"
+    output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+    error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
+
+index_vcf:
+    threads: 1
+    excl: excl=1
+    name: "WGSsomatic_{rule}_{wildcards.file}"
+    output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+    error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
