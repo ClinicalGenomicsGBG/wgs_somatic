@@ -1,6 +1,7 @@
 import yaml
 import json
 import logging
+from definitions import ROOT_DIR
 
 def read_config(configpath):
     with open(configpath, 'r') as configfile:
@@ -8,7 +9,7 @@ def read_config(configpath):
         return config_data
 
 def read_clusterconf():
-    with open("configs/cluster.yaml") as inputfile:
+    with open(f"{ROOT_DIR}/configs/cluster.yaml") as inputfile:
         inputfile_info = yaml.load(inputfile, Loader=yaml.FullLoader)
         return inputfile_info
 

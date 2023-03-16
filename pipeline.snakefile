@@ -7,6 +7,7 @@ from pathlib import Path
 import yaml
 import helpers
 import os
+from definitions import ROOT_DIR
 
 __author__ = "Rickard 'Ricksy' Rickardsson"
 
@@ -29,9 +30,9 @@ insilico_panels = config["insilico"]
 # ---------------------------------------------
 
 if reference == "hg38":
-    configfilepath = "configs/config_hg38.json"
+    configfilepath = f"{ROOT_DIR}/configs/config_hg38.json"
 else:
-    configfilepath = "configs/config_hg19.json"
+    configfilepath = f"{ROOT_DIR}/configs/config_hg19.json"
 #----------------------------------------------
 
 
@@ -136,6 +137,7 @@ if tumorid:
 include:        "workflows/rules/variantcalling/dnascope.smk"
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"
+include:        "workflows/rules/small_tools/bgzip.smk"
 
 #########################################
 # QC
@@ -174,10 +176,16 @@ else:
     include:    "workflows/rules/mapping/generate_tdf.smk"
 
 
+ruleorder: merge_snvs_cnvs > dnascope_vcffilter
+ruleorder: canvas_germline > bgzip_vcf
+
+if tumorid and normalid:
+    ruleorder: canvas_somatic > bgzip_vcf
+
 def insilico_coverage(wildcards):
     if tumorid:
-        return expand("{workingdir}/{sname}_insilicostuffplaceholder", workingdir=workingdir, sname=normalid)
+        return expand("{sname}_insilicostuffplaceholder", sname=normalid)
 
 rule all:
     input: 
-        expand("{workingdir}/reporting/workflow_finished.txt", workingdir=workingdir)
+        "reporting/workflow_finished.txt"

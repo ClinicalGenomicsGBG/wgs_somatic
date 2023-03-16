@@ -6,12 +6,14 @@ from shutil import copyfile
 
 rule filter_variants_in_bed:
     input:
-        "{workingdir}/{stype}/{caller}/{sname}_{vcftype}.vcf"    
+        "{stype}/{caller}/{sname}_{vcftype}.vcf"    
     params:
         rtg = pipeconfig["rules"]["filter_variants_in_bed"]["rtg"],
         bedfile = pipeconfig["rules"]["filter_variants_in_bed"]["bedfile"],
     output:
-        "{workingdir}/{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf"
+        temp("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf")
+    shadow:
+        pipeconfig["rules"].get("filter_variants_in_bed", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
         if not os.path.isfile(f"{output}.gz"):
             shell("{params.rtg} vcffilter --include-bed={params.bedfile} --output={output} --input={input}")
@@ -21,7 +23,7 @@ rule filter_variants_in_bed:
 
 rule upload_to_iva:
     input:
-        "{workingdir}/{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf"     
+        "{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf"     
     params:
         clcserver = pipeconfig["rules"]["upload_to_iva"]["clcserver"],
         clcport = pipeconfig["rules"]["upload_to_iva"]["clcport"],
@@ -34,7 +36,9 @@ rule upload_to_iva:
         clcivadir = pipeconfig["rules"]["upload_to_iva"]["clcivadir"],
         clcivadir_servpath = pipeconfig["rules"]["upload_to_iva"]["clcivadir_servpath"]
     output:
-        "{workingdir}/reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}.txt"
+        "reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}.txt"
+    shadow:
+        pipeconfig["rules"].get("upload_to_iva", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
         # copy to clc accessible directory
         vcfbase = os.path.basename(f"{input}")
@@ -59,7 +63,7 @@ rule upload_to_iva:
 
 rule upload_to_iva_test:
     input:
-        "{workingdir}/{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf"
+        "{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf"
     params:
         clcserver = pipeconfig["rules"]["upload_to_iva"]["clcserver"],
         clcport = pipeconfig["rules"]["upload_to_iva"]["clcport"],
@@ -72,7 +76,9 @@ rule upload_to_iva_test:
         clcivadir = pipeconfig["rules"]["upload_to_iva"]["clcivadir"],
         clcivadir_servpath = pipeconfig["rules"]["upload_to_iva"]["clcivadir_servpath"]
     output:
-        "{workingdir}/reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}_test.txt"
+        "reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}_test.txt"
+    shadow:
+        pipeconfig["rules"].get("upload_to_iva_test", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
         # copy to clc accessible directory
         vcfbase = os.path.basename(f"{input}")
