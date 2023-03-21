@@ -11,7 +11,8 @@ from shutil import copyfile, copy
 import subprocess
 import stat
 import requests
-#from snakemake import snakemake
+import random
+import string
 from definitions import ROOT_DIR
 
 def read_wrapperconf():
@@ -307,6 +308,11 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         ###################################################################
         scriptdir = os.path.dirname(os.path.realpath(__file__)) # find current dir
 
+        # Generate random hash for shadow directory
+        letters = string.ascii_lowercase
+        letters = ''.join(random.choice(letters) for i in range(10))
+        shadow_dir = os.path.join('/tmp', letters)
+
         snakemake_path = config["snakemake_env"]
         os.environ["PATH"] += os.pathsep + snakemake_path
         my_env = os.environ.copy() 
@@ -317,9 +323,9 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         # >>>>>>>>>>>> Create Dag of pipeline
         subprocess.run(snakemake_args, shell=True, env=my_env) # CREATE DAG
         if tumorname:
-            snakemake_args = f"snakemake -s pipeline.snakefile --configfile {runconfigs}/{tumorid}_config.json --use-singularity --singularity-args '-e --bind {binddir_string} --bind /medstore --bind /seqstore --bind /apps' --cluster-config configs/cluster.yaml --cluster \"qsub -S /bin/bash -pe mpi {{cluster.threads}} -q {{cluster.queue}} -N {{cluster.name}} -o {samplelogs}/{{cluster.output}} -e {samplelogs}/{{cluster.error}} -l {{cluster.excl}}\" --jobs 999 --latency-wait 60 --directory {output} --shadow-prefix /tmp &>> {samplelog}"
+            snakemake_args = f"snakemake -s pipeline.snakefile --configfile {runconfigs}/{tumorid}_config.json --use-singularity --singularity-args '-e --bind {binddir_string} --bind /medstore --bind /seqstore --bind /apps' --cluster-config configs/cluster.yaml --cluster \"qsub -S /bin/bash -pe mpi {{cluster.threads}} -q {{cluster.queue}} -N {{cluster.name}} -o {samplelogs}/{{cluster.output}} -e {samplelogs}/{{cluster.error}} -l {{cluster.excl}}\" --jobs 999 --latency-wait 60 --directory {output} --shadow-prefix {shadow_dir} &>> {samplelog}"
         else:
-            snakemake_args = f"snakemake -s pipeline.snakefile --configfile {runconfigs}/{normalid}_config.json --use-singularity --singularity-args '-e --bind {binddir_string} --bind /medstore --bind /seqstore --bind /apps' --cluster-config configs/cluster.yaml --cluster \"qsub -S /bin/bash -pe mpi {{cluster.threads}} -q {{cluster.queue}} -N {{cluster.name}} -o {samplelogs}/{{cluster.output}} -e {samplelogs}/{{cluster.error}} -l {{cluster.excl}}\" --jobs 999 --latency-wait 60 --directory {output} --shadow-prefix /tmp &>> {samplelog}"
+            snakemake_args = f"snakemake -s pipeline.snakefile --configfile {runconfigs}/{normalid}_config.json --use-singularity --singularity-args '-e --bind {binddir_string} --bind /medstore --bind /seqstore --bind /apps' --cluster-config configs/cluster.yaml --cluster \"qsub -S /bin/bash -pe mpi {{cluster.threads}} -q {{cluster.queue}} -N {{cluster.name}} -o {samplelogs}/{{cluster.output}} -e {samplelogs}/{{cluster.error}} -l {{cluster.excl}}\" --jobs 999 --latency-wait 60 --directory {output} --shadow-prefix {shadow_dir} &>> {samplelog}"
         # >>>>>>>>>>>> Start pipeline
         subprocess.run(snakemake_args, shell=True, env=my_env) # Shellscript pipeline
 
