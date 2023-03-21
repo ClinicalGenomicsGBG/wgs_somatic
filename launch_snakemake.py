@@ -100,18 +100,18 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
         with open(f"{outputdir}/configs/{normalid}_config.json", "r") as analysisdict:
             analysisdict = json.load(analysisdict)
     resultdir = analysisdict["resultdir"]
+    workdir = analysisdict["workingdir"]
     os.makedirs(resultdir, exist_ok=True)
 
     # Find resultfiles to copy to resultdir on webstore
-    with open(f'{outputdir}/reporting/shared_result_files.txt') as resultfiles:
-        files = resultfiles.read().splitlines()
-    for f in files:
-        for sharefile in f.split():
+    for f in os.listdir(workdir):
+        f = os.path.join(workdir, f)
+        if os.path.isfile(f):
             try:
-                copy(sharefile, resultdir)
-                logger(f"{sharefile} copied successfully")
+                copy(f, resultdir)
+                logger(f"{f} copied successfully")
             except:
-                logger(f"Error occurred while copying {sharefile}")
+                logger(f"Error occurred while copying {f}")
 
     # Make webstore portal API call to make path searchable
     webstore_api_url = config["webstore_api_url"]
