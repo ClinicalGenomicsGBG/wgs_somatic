@@ -103,16 +103,25 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
     resultdir = analysisdict["resultdir"]
     workdir = analysisdict["workingdir"]
     os.makedirs(resultdir, exist_ok=True)
+    igv_dir = os.path.join(resultdir, 'igv_files')
+    os.makedirs(igv_dir, exist_ok=True)
 
     # Find resultfiles to copy to resultdir on webstore
     for f in os.listdir(workdir):
         f = os.path.join(workdir, f)
         if os.path.isfile(f):
-            try:
-                copy(f, resultdir)
-                logger(f"{f} copied successfully")
-            except:
-                logger(f"Error occurred while copying {f}")
+            if '.xlsx' in f or 'refseq3kfilt' in f or 'CNV_SNV_germline' in f:
+                try:
+                    copy(f, resultdir)
+                    logger(f"{f} copied successfully")
+                except:
+                    logger(f"Error occurred while copying {f}")
+            else:
+                try:
+                    copy(f, igv_dir)
+                    logger(f"{f} copied successfully")
+                except:
+                    logger(f"Error occurred while copying {f}")
 
     # Make webstore portal API call to make path searchable
     webstore_api_url = config["webstore_api_url"]
