@@ -13,7 +13,7 @@
     "alissa":
     {
 	    "threads": 1,
-	    "queue": "wgs.q",
+	    "queue": "routine.q",
 	    "qsub_script": "alissa_upload.sh"
     },
     "singularitybinddirs":
