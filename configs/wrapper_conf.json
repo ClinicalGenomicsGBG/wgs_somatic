@@ -20,7 +20,7 @@
     {
         "petagene":
         {
-            "source": "/seqstore/software/petagene/corpus",
+            "source": "/apps/bio/software/petasuite/corpus",
             "destination": "/opt/petagene/corpus"
         },
         "databases_hg38":
