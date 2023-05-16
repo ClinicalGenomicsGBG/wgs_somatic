@@ -31,6 +31,8 @@ Singularity images are located here: /apps/bio/singularities/wgs\_somatic/
 
 ### How to run manually:
 
+Go to  `/apps/bio/repos/wgs_somatic` (or clone the repository and install submodules). 
+
 1. Start a screen
 
 2. Load anaconda2
@@ -56,7 +58,7 @@ $ ./launch_snakemake.py \
     --hg38ref yes
 ```
 
-For hg38ref, write 'yes' if you want this option. If you want to use hg19, simply don't use hg38ref argument.
+For hg38ref, write 'yes' if you want this option. If you want to use hg19, simply don't use hg38ref argument. Hg19 is not used anymore so you always have to use hg38. 
 
 
 If you want to run pipeline for normal only (run only germline steps of pipeline), simply don't use arguments runtumor, tumorsample and tumorfastqs.
@@ -72,17 +74,9 @@ Optional arguments to launch_snakemake.py:
 
 ```--noalissa``` Disables automatic upload of germline SNV_CNV vcf to Alissa. 
 
-```--copyresults``` Use this argument if you want to automatically copy result files to result directory on seqstore webfolders.
+```--copyresults``` Use this argument if you want to automatically copy result files to result directory on webstore.
 
 
-
-Need to be on medair because python environment is hard-coded in launch_snakemake.py, also some tools in the snakemake workflow is hardcoded to install-locations on medair, and finally some dependencies such as references and databases are on medair.
-
- > \#!/apps/bio/software/anaconda2/envs/wgs_somatic_minimal/bin/python
-
-
- Or you can just use an already set-up repository! Such as here:
- `/apps/bio/repos/wgs_somatic`
 
 
  ### Goal:
@@ -107,7 +101,7 @@ The pipeline is started automatically when new runs with GMS-BT/AL samples appea
 
 Cron runs every 30 minutes (in crontab of cronuser)
 
-Wrapper script ```wgs_somatic-run-wrapper.py``` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file ```/apps/bio/repos/wgs_somatic/novaseq_runlist.txt``` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory ```/medstore/results/wgs/wgs_somatic``` and the final result files are then copied to seqstore webfolders. You can find a more detailed description of the automation on GMS-BT confluence page.
+Wrapper script ```wgs_somatic-run-wrapper.py``` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file ```/apps/bio/repos/wgs_somatic/novaseq_runlist.txt``` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory ```/medstore/results/wgs/wgs_somatic``` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
 
 
  ### Status (2020-10-19):

@@ -13,14 +13,14 @@
     "alissa":
     {
 	    "threads": 1,
-	    "queue": "wgs.q",
+	    "queue": "routine.q",
 	    "qsub_script": "alissa_upload.sh"
     },
     "singularitybinddirs":
     {
         "petagene":
         {
-            "source": "/seqstore/software/petagene/corpus",
+            "source": "/apps/bio/software/petasuite/corpus",
             "destination": "/opt/petagene/corpus"
         },
         "databases_hg38":
