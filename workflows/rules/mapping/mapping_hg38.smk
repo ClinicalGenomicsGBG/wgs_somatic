@@ -74,7 +74,7 @@ rule dedup:
             "{output.score}; "
         "{params.sentieon} driver "
             "-t {params.threads} "
-            "-i {input.bam} "
+            "{params.bamfiles} "
             "--algo Dedup "
             "--rmdup "
             "--score_info {output.score} "
