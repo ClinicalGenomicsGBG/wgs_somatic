@@ -81,7 +81,7 @@ rule pindel2vcf:
         reference = pipeconfig["referencegenome"],
         refname = "GRCh38",
         refdate = 000000,
-        e = 3, #e = 10,
+        e = 1, #3, #e = 10,
         mc = 10,
         minsize = 5
     singularity:
