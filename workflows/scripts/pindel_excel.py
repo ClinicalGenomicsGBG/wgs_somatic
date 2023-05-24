@@ -75,7 +75,7 @@ def main():
     # If only tumor sample in vcf
     if len(samples) == 1:
         sample = samples[0]
-        tableheading = ['Chr', 'Gene', 'Start', 'Stop', 'SV length', 'Ref', 'Alt', sample+'\nDP', sample+'\nAF']
+        tableheading = ['Chr', 'Gene', 'Start', 'Stop', 'SV length', 'Ref', 'Alt', sample+'\nDP', sample+'\nAF', 'Supporting reads']
         worksheet.set_column('H:I', 10)
         worksheet.write_row('A'+str(row), tableheading, tableHeadFormat)
         for indel in vcf_input.fetch():
@@ -84,13 +84,15 @@ def main():
                 alt=indel.alts[0]
             s_dp = indel.samples[sample].get("DP")
             s_af = indel.samples[sample].get("AF")
-            worksheet.write_row(row,0,[indel.contig, position_gene(indel.pos, indel.stop, args.bedfile),indel.pos, indel.stop, svlen, indel.ref, alt, s_dp, s_af])
+            s_reads = indel.samples[sample].get("AD")[1]
+            #s_reads = s_reads.split(",")[1]
+            worksheet.write_row(row,0,[indel.contig, position_gene(indel.pos, indel.stop, args.bedfile),indel.pos, indel.stop, svlen, indel.ref, alt, s_dp, s_af, s_reads])
             row +=1
     # If tumor and normal sample in vcf
     if len(samples) == 2:
         sample1 = samples[0]
         sample2 = samples[1]
-        tableheading = ['Chr', 'Gene', 'Start', 'Stop', 'SV length', 'Ref', 'Alt', sample1+'\nDP', sample1+'\nAF', sample2+'\nDP', sample2+'\nAF']
+        tableheading = ['Chr', 'Gene', 'Start', 'Stop', 'SV length', 'Ref', 'Alt', sample1+'\nDP', sample1+'\nAF', sample2+'\nDP', sample2+'\nAF', sample1+'\nSupporting reads', sample2+'\nSupporting reads']
         worksheet.set_column('H:K', 10)
         worksheet.write_row('A'+str(row), tableheading, tableHeadFormat)
         for indel in vcf_input.fetch():
@@ -101,7 +103,11 @@ def main():
             s1_af = indel.samples[sample1].get("AF")
             s2_dp = indel.samples[sample2].get("DP")
             s2_af = indel.samples[sample2].get("AF")
-            worksheet.write_row(row,0,[indel.contig, position_gene(indel.pos, indel.stop, args.bedfile),indel.pos, indel.stop, svlen, indel.ref, alt, s1_dp, s1_af, s2_dp, s2_af])
+            s1_reads = indel.samples[sample1].get("AD")[1]
+            #s1_reads = s1_reads.split(",")[1]
+            s2_reads = indel.samples[sample2].get("AD")[1]
+            #s2_reads = s2_reads.split(",")[1]
+            worksheet.write_row(row,0,[indel.contig, position_gene(indel.pos, indel.stop, args.bedfile),indel.pos, indel.stop, svlen, indel.ref, alt, s1_dp, s1_af, s2_dp, s2_af, s1_reads, s2_reads])
             row += 1
 
 
