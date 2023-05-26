@@ -85,7 +85,6 @@ def main():
             s_dp = indel.samples[sample].get("DP")
             s_af = indel.samples[sample].get("AF")
             s_reads = indel.samples[sample].get("AD")[1]
-            #s_reads = s_reads.split(",")[1]
             worksheet.write_row(row,0,[indel.contig, position_gene(indel.pos, indel.stop, args.bedfile),indel.pos, indel.stop, svlen, indel.ref, alt, s_dp, s_af, s_reads])
             row +=1
     # If tumor and normal sample in vcf
@@ -104,11 +103,12 @@ def main():
             s2_dp = indel.samples[sample2].get("DP")
             s2_af = indel.samples[sample2].get("AF")
             s1_reads = indel.samples[sample1].get("AD")[1]
-            #s1_reads = s1_reads.split(",")[1]
             s2_reads = indel.samples[sample2].get("AD")[1]
-            #s2_reads = s2_reads.split(",")[1]
-            worksheet.write_row(row,0,[indel.contig, position_gene(indel.pos, indel.stop, args.bedfile),indel.pos, indel.stop, svlen, indel.ref, alt, s1_dp, s1_af, s2_dp, s2_af, s1_reads, s2_reads])
-            row += 1
+
+            # Only write variant to excel if it exists in tumor sample and in less than 3 reads in normal sample
+            if s1_reads !=0 and s2_reads <=3:
+                worksheet.write_row(row,0,[indel.contig, position_gene(indel.pos, indel.stop, args.bedfile),indel.pos, indel.stop, svlen, indel.ref, alt, s1_dp, s1_af, s2_dp, s2_af, s1_reads, s2_reads])
+                row += 1
 
 
     workbook.close()
