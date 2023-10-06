@@ -21,4 +21,4 @@ hcp:
   qsub_script: 'hcp_download_fq.sh'
   queue: 'routine.q'
   threads: 1
-  credentials: '/medstore/credentials/iris_credentials.json'
+  credentials: '/medstore/credentials/gmc-west_legacy_credentials.json'

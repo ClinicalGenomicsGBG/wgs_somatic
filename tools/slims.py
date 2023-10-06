@@ -207,13 +207,27 @@ def get_pair_dict(Sctx, Rctx, logger):
     pairs2 = slims_connection.fetch('Content', conjunction()
                               .add(equals('cntn_fk_contentType', 6))
                               .add(equals('cntn_id','DNA'+Sctx.slims_info['tumorNormalID'])))
+    
+    # We want to make sure that we complement the tumorNormalType correctly, i.e. a tumor goes with normal and vice versa
+    pair_type_d = {'tumor':'normal', 'normal':'tumor'}
+    pair_type = pair_type_d.get(Sctx.slims_info['tumorNormalType'],None)
+    if not pair_type:
+        logger.warning(f'The sample {Sctx.slims_info["content_id"]} does not have any assigned tumorNormalType')
+
     for pair in pairs:
         pair_slims_sample = translate_slims_info(pair)
-        pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
-        # Check if there are additional fastqs in other runs and symlink fastqs
-        find_more_fastqs(pair.cntn_id.value, Rctx, logger)
+        # Check if the sample we have found is either our newly sequenced sample (including the same sample previously sequenced) OR a complementing tumorNormalType to our newly sequenced sample
+        if pair_slims_sample['content_id'] == Sctx.slims_info['content_id'] or\
+                pair_slims_sample['tumorNormalType'] == pair_type:
+            pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
+            # Check if there are additional fastqs in other runs and symlink fastqs
+            find_more_fastqs(pair.cntn_id.value, Rctx, logger)
     for p in pairs2:
         pair_slims_sample = translate_slims_info(p)
+        if not pair_slims_sample['content_id'] in pair_dict:
+            logger.info(f'Using sample {pair_slims_sample["content_id"]} as a pair to {Sctx.slims_info["content_id"]} (tumorNormalID {Sctx.slims_info["tumorNormalID"]}), but it does not have a matching tumorNormalID')
+        if not pair_slims_sample['tumorNormalType']:
+            logger.warning(f'The sample {pair_slims_sample["content_id"]} does not have any assigned tumorNormalType, will not be used in pairing')
         pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
         #FIND MORE FQS
         find_more_fastqs(p.cntn_id.value, Rctx, logger)
