@@ -125,7 +125,7 @@ def get_sample_slims_info(Sctx, run_tag):
         return
     return translate_slims_info(SSample.dna)
 
-def download_hcp_fqs(fqSSample, run_path, logger):
+def download_hcp_fqs(fqSSample, run_path, logger, fq_path):
     '''Find and download fqs from HCP to fastqdir on seqstore for run'''
     with open(CONFIG_PATH, 'r') as conf:
         config = yaml.safe_load(conf)
@@ -138,13 +138,16 @@ def download_hcp_fqs(fqSSample, run_path, logger):
     threads = config["hcp"]["threads"]
     qsub_script = config["hcp"]["qsub_script"]
     credentials = config["hcp"]["credentials"]
+    hcp_downloads = config["hcp_download_dir"]
+    hcp_runtag = fq_path.split('/')[4]
 
     for key in remote_keys:
         local_path = f'{run_path}/fastq/{os.path.basename(key)}'
-        if not os.path.exists(local_path):
+        hcp_path = f'{hcp_downloads}/{hcp_runtag}/fastq/{os.path.basename(key)}'
+        if not os.path.exists(local_path) or not os.path.exists(hcp_path):
             standardout = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stdout")
             standarderr = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stderr")
-            qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, local_path]
+            qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, hcp_path]
             logger.info(f'Downloading {os.path.basename(key)} from HCP')
             subprocess.call(qsub_args)
 
@@ -162,7 +165,7 @@ def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
                 os.symlink(fq_path, fq_link)
         else:
             logger.info(f'{fq_path} does not exist. Need to download from hcp')
-            download_hcp_fqs(fqSSample, run_path, logger)
+            download_hcp_fqs(fqSSample, run_path, logger, fq_path)
 
 def find_more_fastqs(sample_name, Rctx, logger):
     """
