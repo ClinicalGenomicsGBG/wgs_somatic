@@ -3,6 +3,7 @@ import re
 import json
 import yaml
 import subprocess
+import glob
 
 from slims.slims import Slims
 from slims.criteria import is_one_of, equals, conjunction, not_equals
@@ -143,29 +144,48 @@ def download_hcp_fqs(fqSSample, run_path, logger, fq_path):
 
     for key in remote_keys:
         local_path = f'{run_path}/fastq/{os.path.basename(key)}'
-        hcp_path = f'{hcp_downloads}/{hcp_runtag}/fastq/{os.path.basename(key)}'
+        hcp_path = f'{hcp_downloads}/{hcp_runtag}/{os.path.basename(key)}'
         if not os.path.exists(local_path) or not os.path.exists(hcp_path):
             standardout = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stdout")
             standarderr = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stderr")
-            qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, hcp_path]
-            logger.info(f'Downloading {os.path.basename(key)} from HCP')
-            subprocess.call(qsub_args)
-
+            try:
+                os.makedirs(f'{hcp_downloads}/{hcp_runtag}')
+                qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, hcp_path] 
+                logger.info(f'Downloading {os.path.basename(key)} from HCP')
+                subprocess.call(qsub_args)
+                cwd = os.getcwd()
+                hcp_dir_args = ("cd", f'{hcp_downloads}/{hcp_runtag}')
+                subrocess.call(hcp_dir_args)
+                peta_args = ["petasuite --md5match -d ","*fasterq"]
+                subprocess.call(peta_args)
+                subprocess.call("cd", f'{cwd}')
+            except FileExistsError:
+                pass
 
 
 def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
     '''Link fastqs to fastq-folder in demultiplexdir of current run.'''
+    with open(CONFIG_PATH, 'r') as conf:
+        config = yaml.safe_load(conf)
+    hcp_downloads = config["hcp_download_dir"]
     # TODO: additional fastqs need to still be in demultiplexdir. not considering downloading from hcp right now. need to consider this later...
     for fq_path in list_of_fq_paths:
         fq_link = os.path.join(run_path, "fastq", os.path.basename(fq_path))
+        hcp_path =  f'{hcp_downloads}/{fq_path.split("/")[4]}'
         if os.path.exists(fq_path): # If fq still on seqstore
         # Only links if link doesn't already exist
             if not os.path.islink(fq_link):
-            # Now symlinks all additional paths to fastqs for tumor and normal in other runs. 
+            # Now symlinks all additional paths to fastqs for tumor and normal in other runs.
                 os.symlink(fq_path, fq_link)
-        else:
-            logger.info(f'{fq_path} does not exist. Need to download from hcp')
-            download_hcp_fqs(fqSSample, run_path, logger, fq_path)
+        #If fq not in seqstore
+        elif not os.path.exists(fq_path):
+            # Check /medstore/tmp/hcp_downloads 
+            for f in os.listdir(hcp_path):
+                if f.startswith(fq_path.split("/")[-1].split("_")[0]) and f.endswith('.gz'):
+                    logger.info(f'{hcp_path} with {fq_path.split("/")[-1].split("_")[0]} exists.')
+                if not  f.startswith(fq_path.split("/")[-1].split("_")[0]) and f.endswith('.gz'):
+                    logger.info(f'{fq_path} does not exist. Need to download from hcp')
+                    download_hcp_fqs(fqSSample, run_path, logger, fq_path)
 
 def find_more_fastqs(sample_name, Rctx, logger):
     """
