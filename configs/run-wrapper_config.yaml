@@ -9,7 +9,7 @@ novaseq_A01736:
   demultiplex_path: "/seqstore/novaseq_A01736/Demultiplexdir/"
   seq_name_regex: '^[0-9]{6}_A01736_[0-9]{4}_.{10}$'
 
-previous_runs_file_path: 'novaseq_runlist_test.txt'
+previous_runs_file_path: 'novaseq_runlist.txt'
 
 hg38ref:
   GMS-BT: 'yes'
