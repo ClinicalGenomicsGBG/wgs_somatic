@@ -105,23 +105,33 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
     os.makedirs(resultdir, exist_ok=True)
     igv_dir = os.path.join(resultdir, 'igv_files')
     os.makedirs(igv_dir, exist_ok=True)
+    
 
     # Find resultfiles to copy to resultdir on webstore
+    copy_files = []
+    files_match = ['.xlsx', 'CNV_SNV_germline.vcf.gz', 'somatic.vcf.gz', 'refseq3kfilt.vcf.gz']
     for f in os.listdir(workdir):
         f = os.path.join(workdir, f)
+        if os.path.isdir(f):
+            if 'configs' in f: 
+                copy(os.path.join(workdir, 'configs', 'config_hg38.json'), resultdir)
+                # copy config file to resultdir
+                logger(f"Run configuration file copied successfully")
         if os.path.isfile(f):
-            if '.xlsx' in f or 'refseq3kfilt' in f or 'CNV_SNV_germline' in f:
-                try:
-                    copy(f, resultdir)
-                    logger(f"{f} copied successfully")
-                except:
-                    logger(f"Error occurred while copying {f}")
-            else:
-                try:
-                    copy(f, igv_dir)
-                    logger(f"{f} copied successfully")
-                except:
-                    logger(f"Error occurred while copying {f}")
+            for files in files_match:
+                copy_files = copy_files + glob.glob(os.path.join(workdir, f'*{files}*'))
+                if f in copy_files:
+                    try:
+                        copy(f, resultdir)
+                        logger(f"{f} copied successfully")
+                    except:
+                        logger(f"Error occurred while copying {f}")
+                else:
+                    try:
+                        copy(f, igv_dir)
+                        logger(f"{f} copied successfully")
+                    except:
+                        logger(f"Error occurred while copying {f}")
 
     # Make webstore portal API call to make path searchable
     webstore_api_url = config["webstore_api_url"]
@@ -158,7 +168,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             if tumorfastqs.endswith("/"):
                 tumorfastqs = tumorfastqs[:-1]
 
-        
+
         #################################################################
         # Validate Inputs
         ################################################################
@@ -270,11 +280,11 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             analysisdict["reference"] = "hg38"
             if tumorname:
                 if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_output}' #Use f'{config["testresultdir"]}/{tumorname}'for testing
+                    analysisdict["resultdir"] =  f'{config["resultdir"]}/{tumorname}' #f'{config["resultdir_hg38"]}/{basename_output}' #Use f'{config["testresultdir"]}/{tumorname}'for testing
                 else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_output}'
+                    analysisdict["resultdir"] = f'{config["resultdir"]}/tumor_only/{basename_output}'
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_output}'
+                analysisdict["resultdir"] = f'{config["resultdir"]}/normal_only/{basename_output}'
         else:
             analysisdict["reference"] = "hg19"
             if tumorname:
