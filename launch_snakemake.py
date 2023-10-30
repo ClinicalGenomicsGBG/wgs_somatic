@@ -280,11 +280,11 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             analysisdict["reference"] = "hg38"
             if tumorname:
                 if normalname:
-                    analysisdict["resultdir"] =  f'{config["resultdir"]}/{tumorname}' #f'{config["resultdir_hg38"]}/{basename_output}' #Use f'{config["testresultdir"]}/{tumorname}'for testing
+                    analysisdict["resultdir"] =  f'{config["resultdir_hg38"]}/{basename_output}' #Use f'{config["testresultdir"]}/{tumorname}'for testing
                 else:
-                    analysisdict["resultdir"] = f'{config["resultdir"]}/tumor_only/{basename_output}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_output}'
             else:
-                analysisdict["resultdir"] = f'{config["resultdir"]}/normal_only/{basename_output}'
+                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_output}'
         else:
             analysisdict["reference"] = "hg19"
             if tumorname:
