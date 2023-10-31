@@ -17,6 +17,8 @@ hg38ref:
 
 workingdir: '/medstore/results/wgs/wgs_somatic'
 
+hcp_download_dir: '/medstore/projects/P23-075/wgs_somatic/hcp_downloads'
+
 hcp:
   qsub_script: 'hcp_download_fq.sh'
   queue: 'routine.q'
