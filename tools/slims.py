@@ -141,14 +141,10 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
     peta_script = os.path.join(ROOT_DIR, config["hcp"]["peta_script"])
     credentials = config["hcp"]["credentials"]
     hcp_downloads = config["hcp_download_dir"]
-#    hcp_runtag = fqSSample.fastq.cntn_cstm_runTag.value
     hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}'
-    logger.info(f"remote keys are: {remote_keys}")
-    queue = "development.q"
     for key in remote_keys:
         local_path = f'{run_path}/fastq/{os.path.basename(key)}'
         hcp_path = f'{hcp_download_runpath}/{os.path.basename(key)}'
-        logger.info(f"this key is {key}")
         if not os.path.exists(local_path) or not os.path.exists(hcp_path):
             standardout = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stdout")
             standarderr = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stderr")
@@ -159,19 +155,12 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
                     os.makedirs(f'{hcp_download_runpath}')
                 qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, hcp_path] 
                 logger.info(f'Downloading {os.path.basename(key)} from HCP')
-#                subprocess.call(qsub_args)
                 cwd = os.getcwd()
                 os.chdir(f'{hcp_download_runpath}')
-                logger.info(f"current dir is: {os.getcwd()}")
-#                hcp_dir_args = ("cd", f'{hcp_downloads}/{hcp_runtag}')
-#                subrocess.call(hcp_dir_args)
                 peta_args = ["qsub", "-N", f"decompressing_file_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout_peta, "-e", standarderr_peta, peta_script] 
-#                peta_args = ["petasuite --md5match -d ","*fasterq"]
                 logger.info(f"Running petasuite with args: {peta_args}")
-#                subprocess.call(peta_args)
                 logger.info("Done with petasuite")
                 os.chdir(cwd)
-#                subprocess.call("cd", f'{cwd}')
             except FileExistsError:
                 pass
 
@@ -181,25 +170,20 @@ def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
     with open(CONFIG_PATH, 'r') as conf:
         config = yaml.safe_load(conf)
     hcp_downloads = config["hcp_download_dir"]
-    logger.info(f'fq_paths: {list_of_fq_paths}')
     # TODO: additional fastqs need to still be in demultiplexdir. not considering downloading from hcp right now. need to consider this later...
     for fq_path in list_of_fq_paths:
         fq_link = os.path.join(run_path, "fastq", os.path.basename(fq_path))
 #        hcp_runtag = fq_path.split("/")[-3] # This could cause problems if we change the file structure
         hcp_runtag = fqSSample.fastq.cntn_cstm_runTag.value
         hcp_path =  f'{hcp_downloads}/{hcp_runtag}'
-        logger.info(f'fq_path: {fq_path}')
-        logger.info(f'hcp_path: {hcp_path}')
         if os.path.exists(fq_path): # If fq still on seqstore
         # Only links if link doesn't already exist
             if not os.path.islink(fq_link):
             # Now symlinks all additional paths to fastqs for tumor and normal in other runs.
                 os.symlink(fq_path, fq_link)
-                logger.info('tried to symlink')
         #If fq not in seqstore
         elif not os.path.exists(fq_path):
             # Check /medstore/tmp/hcp_downloads 
-            logger.info('fq_path does not exist')
             # If one DNA object has multiple fastq objects linked we want them to be in the same folder
             previously_downloaded_samples_same_DNA = sorted(glob.glob(os.path.join(hcp_downloads,"*",os.path.basename(fq_path).split('_')[0]+"*.gz")))
             if previously_downloaded_samples_same_DNA:
@@ -210,8 +194,6 @@ def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
             if os.path.isdir(hcp_path):
                 if os.path.basename(fq_path) in os.listdir(hcp_path):
                     logger.info(f'The file {os.path.basename(fq_path)} exists in {hcp_path}')
-#                    if f.startswith(fq_path.split("/")[-1].split("_")[0]) and (f.endswith('fastq.gz') or f.endswith('fq.gz')):
-#                        logger.info(f'{hcp_path} with {fq_path.split("/")[-1].split("_")[0]} exists.')
                 else:
                     logger.info(f'{fq_path} does not exist. Need to download from hcp')
                     download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag)
@@ -226,8 +208,6 @@ def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
                 if not os.path.islink(fq_link):
                     logger.info(f"Linking {downloaded_fq_path} to {fq_link}")
                     os.symlink(downloaded_fq_path, fq_link)
-        else:
-            logger.info('Last option')
 
 def find_more_fastqs(sample_name, Rctx, logger):
     """
