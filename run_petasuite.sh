@@ -2,8 +2,8 @@
 #$ -cwd
 #$ -S /bin/bash
 #$ -l excl=1
-#$ -pe mpi 20
 
+threads=$1
 
 module load petasuite
-petasuite --md5match -d *.fasterq -t 20
+petasuite --md5match -d *.fasterq -t $threads

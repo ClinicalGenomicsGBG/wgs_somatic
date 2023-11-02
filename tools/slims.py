@@ -153,12 +153,18 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
             try:
                 if not os.path.exists(hcp_download_runpath):
                     os.makedirs(f'{hcp_download_runpath}')
+                
                 qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, hcp_path] 
                 logger.info(f'Downloading {os.path.basename(key)} from HCP')
+                subprocess.call(qsub_args)
                 cwd = os.getcwd()
                 os.chdir(f'{hcp_download_runpath}')
-                peta_args = ["qsub", "-N", f"decompressing_file_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout_peta, "-e", standarderr_peta, peta_script] 
+
+                peta_args = ["qsub", "-N", f"decompressing_file_{os.path.basename(key)}", "-q", queue, "-sync", "y", 
+                        "-pe", "mpi", f"{threads}", "-o", standardout_peta, "-e", standarderr_peta, "-v",f"THREADS={threads}",
+                        peta_script, threads] 
                 logger.info(f"Running petasuite with args: {peta_args}")
+                subprocess.call(peta_args)
                 logger.info("Done with petasuite")
                 os.chdir(cwd)
             except FileExistsError:

@@ -23,6 +23,6 @@ hcp_download_dir: '/medstore/projects/P23-075/wgs_somatic/hcp_downloads'
 hcp:
   qsub_script: 'hcp_download_fq.sh'
   queue: 'routine.q'
-  threads: 1
+  threads: 20
   credentials: '/medstore/credentials/gmc-west_legacy_credentials.json'
   peta_script: 'run_petasuite.sh' 
