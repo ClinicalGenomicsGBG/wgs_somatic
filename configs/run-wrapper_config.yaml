@@ -25,3 +25,4 @@ hcp:
   queue: 'routine.q'
   threads: 1
   credentials: '/medstore/credentials/gmc-west_legacy_credentials.json'
+  peta_script: 'run_petasuite.sh' 

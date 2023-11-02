@@ -91,20 +91,14 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
 
     if n:
         normalsample = n
-        try:
-            normalfastqs = os.path.join(Rctx_run.run_path, "fastq")
-            runnormal = Rctx_run.run_name
-            if not os.path.exists(os.path.join(Rctx_run.run_path,"fastq", n+"*.gz")):
-                runnormal = glob.glob(os.path.join(hcp_downloads,"*",normalsample+"*.gz"))[1].split('/')[-2]
-                normalfastqs = os.path.dirname(glob.glob(os.path.join(hcp_downloads,"*",normalsample+"*.gz"))[1])
-        except:
-            if not t:
-                date, _, _, chip, *_ = runnormal.split('_')
-                normalid= '_'.join([normalsample, date, chip])
-                outputdir = os.path.join(config['workingdir'], "normal_only", normalid)
-                #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "normal_only", normalsample) #use for testing
-                pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
-       #Check that path of hcp downloads contains gz files for the normal sample
+        normalfastqs = os.path.join(Rctx_run.run_path, "fastq")
+        runnormal = Rctx_run.run_name
+        if not t:
+            date, _, _, chip, *_ = runnormal.split('_')
+            normalid= '_'.join([normalsample, date, chip])
+            outputdir = os.path.join(config['workingdir'], "normal_only", normalid)
+            #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "normal_only", normalsample) #use for testing
+            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
     if t:
         runtumor = Rctx_run.run_name
         tumorsample = t
@@ -294,6 +288,7 @@ def wrapper(instrument):
                 check_ok_outdirs.append(outputdir)
                 end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
 
+        
         # Start several samples at the same time
         for t in threads:
             t.start()
