@@ -162,7 +162,7 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
 
                 peta_args = ["qsub", "-N", f"decompressing_file_{os.path.basename(key)}", "-q", queue, "-sync", "y", 
                         "-pe", "mpi", f"{threads}", "-o", standardout_peta, "-e", standarderr_peta, "-v",f"THREADS={threads}",
-                        peta_script, threads] 
+                        peta_script, str(threads)] 
                 logger.info(f"Running petasuite with args: {peta_args}")
                 subprocess.call(peta_args)
                 logger.info("Done with petasuite")
