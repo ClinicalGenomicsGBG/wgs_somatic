@@ -6,8 +6,8 @@ import sys
 import argparse
 import os
 import re
-import glob
 import yaml
+import glob
 from datetime import datetime
 import json
 from itertools import chain
@@ -87,16 +87,17 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
 
     # FIXME Use boolean values instead of 'yes' for hg38ref and handle the translation later on
     hg38ref = config['hg38ref']['GMS-BT']
+    hcp_downloads = config['hcp_download_dir']
 
     if n:
-        runnormal = Rctx_run.run_name
         normalsample = n
         normalfastqs = os.path.join(Rctx_run.run_path, "fastq")
+        runnormal = Rctx_run.run_name
         if not t:
             date, _, _, chip, *_ = runnormal.split('_')
             normalid= '_'.join([normalsample, date, chip])
             outputdir = os.path.join(config['workingdir'], "normal_only", normalid)
-            #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "normal_only", normalsample) #use for testing
+            #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "normal_only", normalsample) #use for testing
             pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
     if t:
         runtumor = Rctx_run.run_name
@@ -106,11 +107,11 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         tumorid = '_'.join([tumorsample, date, chip])
         if not n:
             outputdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
-            #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", "tumor_only", tumorsample) #use for testing
+            #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "tumor_only", tumorsample) #use for testing
             pipeline_args = {'output': f'{outputdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
         else:
             outputdir = os.path.join(config['workingdir'], tumorid)
-            #outputdir = os.path.join("/home/xshang/ws_testoutput/outdir/", tumorsample) #use for testing
+            #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", tumorsample) #use for testing
             pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}'}
 
     if os.path.exists(outputdir):
@@ -168,6 +169,15 @@ def wrapper(instrument):
 
     with open(CONFIG_PATH, 'r') as conf:
         config = yaml.safe_load(conf)
+
+    # prepare hcp download directory
+    hcptmp = config["hcp_download_dir"]
+    if not os.path.isdir(hcptmp):
+        try:
+            os.makedirs(hcptmp)
+        except Exception as e:
+            error_list.append(f"outputdirectory: {hcptmp} does not exist and could not be created")
+
 
     # Grab all available local run paths
     local_run_paths = look_for_runs(config, instrument)
@@ -233,8 +243,11 @@ def wrapper(instrument):
                         # The or statements are here to prepare to when we change to pair ID
                         # Pair ID for tumor will be normal name (minus DNA) and the opposite for normal
                         if n_ID == t_ID or t_ID == n.split("DNA")[1] or n_ID == t.split("DNA")[1]: 
-                            pipeline_args = get_pipeline_args(config, logger, Rctx_run, t, n)
-                            
+                            if os.path.exists(os.path.join(Rctx_run.run_path,"fastq", n+"*.gz")):
+                                 pipeline_args = get_pipeline_args(config, logger, Rctx_run, t, n)
+                            else:
+                                pipeline_args = get_pipeline_args(config, logger, Rctx_run, t, n)
+
                             # Use this list of final pairs for email
                             final_pairs.append(f'{t} (T) {n} (N), {department} {prio_sample}')
 
@@ -275,6 +288,7 @@ def wrapper(instrument):
                 check_ok_outdirs.append(outputdir)
                 end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
 
+        
         # Start several samples at the same time
         for t in threads:
             t.start()
@@ -302,14 +316,14 @@ def wrapper(instrument):
             error_email(Rctx_run.run_name, ok_samples, bad_samples)
             if ok_samples:
                 # yearly stats ok samples
-                # even though thread starts for all samples, function checks if sample ok 
+                # even though thread starts for all samples, function checks if sample ok
                 # so it will only do yearly stats for ok samples
                 for t in end_threads:
                     t.start()
                 for u in end_threads:
                     u.join()
             sys.exit()
-        
+
         logger.info('All jobs have finished successfully')
         end_email(Rctx_run.run_name, final_pairs)
 

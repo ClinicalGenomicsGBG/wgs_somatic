@@ -3,6 +3,7 @@ import re
 import json
 import yaml
 import subprocess
+import glob
 
 from slims.slims import Slims
 from slims.criteria import is_one_of, equals, conjunction, not_equals
@@ -125,7 +126,7 @@ def get_sample_slims_info(Sctx, run_tag):
         return
     return translate_slims_info(SSample.dna)
 
-def download_hcp_fqs(fqSSample, run_path, logger):
+def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
     '''Find and download fqs from HCP to fastqdir on seqstore for run'''
     with open(CONFIG_PATH, 'r') as conf:
         config = yaml.safe_load(conf)
@@ -137,32 +138,82 @@ def download_hcp_fqs(fqSSample, run_path, logger):
     queue = config["hcp"]["queue"]
     threads = config["hcp"]["threads"]
     qsub_script = config["hcp"]["qsub_script"]
+    peta_script = os.path.join(ROOT_DIR, config["hcp"]["peta_script"])
     credentials = config["hcp"]["credentials"]
-
+    hcp_downloads = config["hcp_download_dir"]
+    hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}'
     for key in remote_keys:
         local_path = f'{run_path}/fastq/{os.path.basename(key)}'
-        if not os.path.exists(local_path):
+        hcp_path = f'{hcp_download_runpath}/{os.path.basename(key)}'
+        if not os.path.exists(local_path) or not os.path.exists(hcp_path):
             standardout = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stdout")
             standarderr = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stderr")
-            qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, local_path]
-            logger.info(f'Downloading {os.path.basename(key)} from HCP')
-            subprocess.call(qsub_args)
+            standardout_peta = os.path.join(ROOT_LOGGING_PATH, f"decompress_{os.path.basename(key)}.stdout")
+            standarderr_peta = os.path.join(ROOT_LOGGING_PATH, f"decompress_{os.path.basename(key)}.stderr")
+            try:
+                if not os.path.exists(hcp_download_runpath):
+                    os.makedirs(f'{hcp_download_runpath}')
+                
+                qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, hcp_path] 
+                logger.info(f'Downloading {os.path.basename(key)} from HCP')
+                subprocess.call(qsub_args)
+                cwd = os.getcwd()
+                os.chdir(f'{hcp_download_runpath}')
 
+                peta_args = ["qsub", "-N", f"decompressing_file_{os.path.basename(key)}", "-q", queue, "-sync", "y", 
+                        "-pe", "mpi", f"{threads}", "-o", standardout_peta, "-e", standarderr_peta, "-v",f"THREADS={threads}",
+                        peta_script, str(threads)] 
+                logger.info(f"Running petasuite with args: {peta_args}")
+                subprocess.call(peta_args)
+                logger.info("Done with petasuite")
+                os.chdir(cwd)
+            except FileExistsError:
+                pass
 
 
 def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
     '''Link fastqs to fastq-folder in demultiplexdir of current run.'''
+    with open(CONFIG_PATH, 'r') as conf:
+        config = yaml.safe_load(conf)
+    hcp_downloads = config["hcp_download_dir"]
     # TODO: additional fastqs need to still be in demultiplexdir. not considering downloading from hcp right now. need to consider this later...
     for fq_path in list_of_fq_paths:
         fq_link = os.path.join(run_path, "fastq", os.path.basename(fq_path))
+#        hcp_runtag = fq_path.split("/")[-3] # This could cause problems if we change the file structure
+        hcp_runtag = fqSSample.fastq.cntn_cstm_runTag.value
+        hcp_path =  f'{hcp_downloads}/{hcp_runtag}'
         if os.path.exists(fq_path): # If fq still on seqstore
         # Only links if link doesn't already exist
             if not os.path.islink(fq_link):
-            # Now symlinks all additional paths to fastqs for tumor and normal in other runs. 
+            # Now symlinks all additional paths to fastqs for tumor and normal in other runs.
                 os.symlink(fq_path, fq_link)
-        else:
-            logger.info(f'{fq_path} does not exist. Need to download from hcp')
-            download_hcp_fqs(fqSSample, run_path, logger)
+        #If fq not in seqstore
+        elif not os.path.exists(fq_path):
+            # Check /medstore/tmp/hcp_downloads 
+            # If one DNA object has multiple fastq objects linked we want them to be in the same folder
+            previously_downloaded_samples_same_DNA = sorted(glob.glob(os.path.join(hcp_downloads,"*",os.path.basename(fq_path).split('_')[0]+"*.gz")))
+            if previously_downloaded_samples_same_DNA:
+                hcp_runtag = os.path.basename(os.path.dirname(previously_downloaded_samples_same_DNA[0]))
+                hcp_path = f'{hcp_downloads}/{hcp_runtag}'
+                logger.info(f"Found previously downloaded file {os.path.basename(fq_path).split('_')[0]} in {hcp_path}")
+                logger.info(f"Setting download directory to {hcp_path}")
+            if os.path.isdir(hcp_path):
+                if os.path.basename(fq_path) in os.listdir(hcp_path):
+                    logger.info(f'The file {os.path.basename(fq_path)} exists in {hcp_path}')
+                else:
+                    logger.info(f'{fq_path} does not exist. Need to download from hcp')
+                    download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag)
+            else:
+                download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag)
+            
+            # Link the downloaded sample to the current rundir
+            downloaded_fq_path = os.path.join(hcp_path, os.path.basename(fq_path))
+            logger.info(f"The downloaded file is located {downloaded_fq_path}")
+            fq_link = os.path.join(run_path, "fastq", os.path.basename(fq_path))
+            if os.path.exists(downloaded_fq_path):
+                if not os.path.islink(fq_link):
+                    logger.info(f"Linking {downloaded_fq_path} to {fq_link}")
+                    os.symlink(downloaded_fq_path, fq_link)
 
 def find_more_fastqs(sample_name, Rctx, logger):
     """
@@ -207,13 +258,27 @@ def get_pair_dict(Sctx, Rctx, logger):
     pairs2 = slims_connection.fetch('Content', conjunction()
                               .add(equals('cntn_fk_contentType', 6))
                               .add(equals('cntn_id','DNA'+Sctx.slims_info['tumorNormalID'])))
+    
+    # We want to make sure that we complement the tumorNormalType correctly, i.e. a tumor goes with normal and vice versa
+    pair_type_d = {'tumor':'normal', 'normal':'tumor'}
+    pair_type = pair_type_d.get(Sctx.slims_info['tumorNormalType'],None)
+    if not pair_type:
+        logger.warning(f'The sample {Sctx.slims_info["content_id"]} does not have any assigned tumorNormalType')
+
     for pair in pairs:
         pair_slims_sample = translate_slims_info(pair)
-        pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
-        # Check if there are additional fastqs in other runs and symlink fastqs
-        find_more_fastqs(pair.cntn_id.value, Rctx, logger)
+        # Check if the sample we have found is either our newly sequenced sample (including the same sample previously sequenced) OR a complementing tumorNormalType to our newly sequenced sample
+        if pair_slims_sample['content_id'] == Sctx.slims_info['content_id'] or\
+                pair_slims_sample['tumorNormalType'] == pair_type:
+            pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
+            # Check if there are additional fastqs in other runs and symlink fastqs
+            find_more_fastqs(pair.cntn_id.value, Rctx, logger)
     for p in pairs2:
         pair_slims_sample = translate_slims_info(p)
+        if not pair_slims_sample['content_id'] in pair_dict:
+            logger.info(f'Using sample {pair_slims_sample["content_id"]} as a pair to {Sctx.slims_info["content_id"]} (tumorNormalID {Sctx.slims_info["tumorNormalID"]}), but it does not have a matching tumorNormalID')
+        if not pair_slims_sample['tumorNormalType']:
+            logger.warning(f'The sample {pair_slims_sample["content_id"]} does not have any assigned tumorNormalType, will not be used in pairing')
         pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
         #FIND MORE FQS
         find_more_fastqs(p.cntn_id.value, Rctx, logger)
