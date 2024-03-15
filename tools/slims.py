@@ -136,20 +136,20 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
     remote_keys = json_info['remote_keys']
 
     queue = config["hcp"]["queue"]
-    threads = config["hcp"]["threads"]
     qsub_script = config["hcp"]["qsub_script"]
-    peta_script = os.path.join(ROOT_DIR, config["hcp"]["peta_script"])
     credentials = config["hcp"]["credentials"]
     hcp_downloads = config["hcp_download_dir"]
-    hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}'
+    
+    hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
+    
     for key in remote_keys:
-        local_path = f'{run_path}/fastq/{os.path.basename(key)}'
-        hcp_path = f'{hcp_download_runpath}/{os.path.basename(key)}'
+        local_path = f'{run_path}/fastq/{os.path.basename(key)}' # This is were the file
+        hcp_path = f'{hcp_download_runpath}/{os.path.basename(key)}' # This is the complete path of the downloaded file
         if not os.path.exists(local_path) or not os.path.exists(hcp_path):
+            
             standardout = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stdout")
             standarderr = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stderr")
-            standardout_peta = os.path.join(ROOT_LOGGING_PATH, f"decompress_{os.path.basename(key)}.stdout")
-            standarderr_peta = os.path.join(ROOT_LOGGING_PATH, f"decompress_{os.path.basename(key)}.stderr")
+
             try:
                 if not os.path.exists(hcp_download_runpath):
                     os.makedirs(f'{hcp_download_runpath}')
@@ -157,19 +157,56 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
                 qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, hcp_path] 
                 logger.info(f'Downloading {os.path.basename(key)} from HCP')
                 subprocess.call(qsub_args)
-                cwd = os.getcwd()
-                os.chdir(f'{hcp_download_runpath}')
-
-                peta_args = ["qsub", "-N", f"decompressing_file_{os.path.basename(key)}", "-q", queue, "-sync", "y", 
-                        "-pe", "mpi", f"{threads}", "-o", standardout_peta, "-e", standarderr_peta, "-v",f"THREADS={threads}",
-                        peta_script, str(threads)] 
-                logger.info(f"Running petasuite with args: {peta_args}")
-                subprocess.call(peta_args)
-                logger.info("Done with petasuite")
-                os.chdir(cwd)
+                
+                decompress_downloaded_fastq(hcp_path, logger)
+                
             except FileExistsError:
                 pass
 
+def decompress_downloaded_fastq(complete_file_path, logger):
+    with open(CONFIG_PATH, 'r') as conf:
+        config = yaml.safe_load(conf)
+    
+    filename = os.path.basename(complete_file_path) # This is the filename of the downloaded file
+    standardout_decompress = os.path.join(ROOT_LOGGING_PATH, f"decompress_{filename}.stdout")
+    standarderr_decompress = os.path.join(ROOT_LOGGING_PATH, f"decompress_{filename}.stderr")
+    
+    queue = config["hcp"]["queue"]
+    threads = config["hcp"]["threads"]
+    compression_type = filename.split('.')[-1] # This is the compression type of the downloaded file, could be either 'spring' or 'fasterq'
+    
+    if compression_type == 'spring':
+        # Decompress the file using spring
+        
+        decompress_script = os.path.join(ROOT_DIR, config["hcp"]["spring_script"])
+        complete_decompressed_file_path = complete_file_path.replace('.spring', '.fastq.gz')
+        
+        qsub_args = ["qsub", "-N", f"decompressing_{filename}", "-q", queue, "-sync", "y", "-pe", "mpi", f"{threads}",
+                     "-o", standardout_decompress, "-e", standarderr_decompress, "-v", f"THREADS={threads}",
+                     decompress_script, complete_file_path, complete_decompressed_file_path, str(threads)]
+        
+        logger.info(f"Decompressing {filename} using spring with args: {qsub_args}")
+        subprocess.call(qsub_args)
+        logger.info(f"Done decompressing {filename}")
+    
+    elif compression_type == 'fasterq':
+        # Decompress the file using petasuite
+        
+        decompress_script = os.path.join(ROOT_DIR, config["hcp"]["peta_script"])
+        dir_of_downloaded_file = os.path.dirname(complete_file_path)
+        cwd = os.getcwd() # Save current working directory
+        os.chdir(f'{dir_of_downloaded_file}') # Change to the directory of the downloaded file
+        
+        peta_args = ["qsub", "-N", f"decompressing_file_{filename}", "-q", queue, "-sync", "y", 
+                     "-pe", "mpi", f"{threads}", "-o", standardout_decompress, "-e", standarderr_decompress, "-v",f"THREADS={threads}",
+                     decompress_script, str(threads)] 
+        
+        logger.info(f"Running petasuite with args: {peta_args}")
+        subprocess.call(peta_args)
+        logger.info(f"Done with petasuite for file {filename}")
+        os.chdir(cwd) # Change back to the original working directory
+    
+    
 
 def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
     '''Link fastqs to fastq-folder in demultiplexdir of current run.'''
