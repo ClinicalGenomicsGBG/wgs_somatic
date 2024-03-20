@@ -110,6 +110,9 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
     # Find resultfiles to copy to resultdir on webstore
     copy_files = []
     files_match = ['.xlsx', 'CNV_SNV_germline.vcf.gz', 'somatic.vcf.gz', 'refseq3kfilt.vcf.gz']
+    for files in files_match:
+        copy_files = copy_files + glob.glob(os.path.join(workdir, f'*{files}*'))
+    copy_files = set(copy_files)
     for f in os.listdir(workdir):
         f = os.path.join(workdir, f)
         if os.path.isdir(f):
@@ -118,20 +121,18 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
                 # copy config file to resultdir
                 logger(f"Run configuration file copied successfully")
         if os.path.isfile(f):
-            for files in files_match:
-                copy_files = copy_files + glob.glob(os.path.join(workdir, f'*{files}*'))
-                if f in copy_files:
-                    try:
-                        copy(f, resultdir)
-                        logger(f"{f} copied successfully")
-                    except:
-                        logger(f"Error occurred while copying {f}")
-                else:
-                    try:
-                        copy(f, igv_dir)
-                        logger(f"{f} copied successfully")
-                    except:
-                        logger(f"Error occurred while copying {f}")
+            if f in copy_files:
+                try:
+                    copy(f, resultdir)
+                    logger(f"{f} copied successfully")
+                except:
+                    logger(f"Error occurred while copying {f}")
+            else:
+                try:
+                    copy(f, igv_dir)
+                    logger(f"{f} copied successfully")
+                except:
+                    logger(f"Error occurred while copying {f}")
 
     # Make webstore portal API call to make path searchable
     webstore_api_url = config["webstore_api_url"]
