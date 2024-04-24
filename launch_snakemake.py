@@ -25,6 +25,8 @@ def get_time():
     nowtime = time.strftime("%Y-%m-%d-%H-%M-%S")
     return nowtime
 
+def get_timestamp():
+    return time.strftime("%y%m%d-%H%M%S")
 
 def logger(message, logfile=False):
     config = read_wrapperconf()
@@ -371,6 +373,8 @@ if __name__ == '__main__':
     parser.add_argument('-na', '--noalissa', action="store_true", help='Disables Alissa upload', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
     args = parser.parse_args()
+    timestamp = get_timestamp()
+    args.outputdir = f'{args.outputdir}_{timestamp}'
     analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype)
 
     if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
