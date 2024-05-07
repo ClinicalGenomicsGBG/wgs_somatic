@@ -20,7 +20,7 @@ from context import RunContext, SampleContext
 from helpers import setup_logger
 from tools.slims import get_sample_slims_info, SlimsSample, find_more_fastqs, get_pair_dict
 from tools.email import start_email, end_email, error_email
-from launch_snakemake import analysis_main, yearly_stats, alissa_upload, copy_results
+from launch_snakemake import analysis_main, yearly_stats, alissa_upload, copy_results, get_timestamp
 
 
 # Store info about samples to use for sending report emails
@@ -88,7 +88,7 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
     # FIXME Use boolean values instead of 'yes' for hg38ref and handle the translation later on
     hg38ref = config['hg38ref']['GMS-BT']
     hcp_downloads = config['hcp_download_dir']
-
+    timestamp = get_timestamp()
     if n:
         normalsample = n
         normalfastqs = os.path.join(Rctx_run.run_path, "fastq")
@@ -97,6 +97,7 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
             date, _, _, chip, *_ = runnormal.split('_')
             normalid= '_'.join([normalsample, date, chip])
             outputdir = os.path.join(config['workingdir'], "normal_only", normalid)
+            outputdir = f'{outputdir}_{timestamp}'
             #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "normal_only", normalsample) #use for testing
             pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
     if t:
@@ -107,10 +108,12 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         tumorid = '_'.join([tumorsample, date, chip])
         if not n:
             outputdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
+            outputdir = f'{outputdir}_{timestamp}'
             #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "tumor_only", tumorsample) #use for testing
             pipeline_args = {'output': f'{outputdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
         else:
             outputdir = os.path.join(config['workingdir'], tumorid)
+            outputdir = f'{outputdir}_{timestamp}'
             #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", tumorsample) #use for testing
             pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}'}
 
