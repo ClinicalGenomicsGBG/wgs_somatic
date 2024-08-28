@@ -25,6 +25,11 @@
         "pindel":
         {
             "sing": "/apps/bio/singularities/gms_hematology/pindel-0.2.5b8.simg"
+        },
+        "samtools":
+        {
+            "sing": "/apps/bio/singularities/samtools-1.20.sif",
+            "reference": "/references/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
         }
     },
     "shadow": "copy-minimal",
