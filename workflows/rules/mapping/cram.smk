@@ -16,5 +16,5 @@ rule cram:
         cram = temp("{stype}/realign/{sname}_REALIGNED.cram"),
         crai = temp("{stype}/realign/{sname}_REALIGNED.cram.crai")
     shell:
-        "samtools view -C --threads 10 -T {params.referencegenome} -o {output.cram} {input.bam} ; "
+        "samtools view -C --threads {params.threads} -T {params.referencegenome} -o {output.cram} {input.bam} ; "
         "samtools index {output.cram}"
