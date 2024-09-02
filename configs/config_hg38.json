@@ -28,8 +28,7 @@
         },
         "samtools":
         {
-            "sing": "/apps/bio/singularities/samtools-1.20.sif",
-            "reference": "/references/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
+            "sing": "/apps/bio/singularities/samtools-1.20.img"
         }
     },
     "shadow": "copy-minimal",
