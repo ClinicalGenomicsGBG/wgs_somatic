@@ -130,11 +130,13 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
                 except:
                     logger(f"Error occurred while copying {f}")
             else:
-                try:
-                    copy(f, igv_dir)
-                    logger(f"{f} copied successfully")
-                except:
-                    logger(f"Error occurred while copying {f}")
+                # We only copy the cram files now
+                if not f.endswith('.bam') and not f.endswith('.bai'):
+                    try:
+                        copy(f, igv_dir)
+                        logger(f"{f} copied successfully")
+                    except:
+                        logger(f"Error occurred while copying {f}")
 
     # Make webstore portal API call to make path searchable
     webstore_api_url = config["webstore_api_url"]
