@@ -25,6 +25,10 @@
         "pindel":
         {
             "sing": "/apps/bio/singularities/gms_hematology/pindel-0.2.5b8.simg"
+        },
+        "samtools":
+        {
+            "sing": "/apps/bio/singularities/samtools-1.20.img"
         }
     },
     "shadow": "copy-minimal",
