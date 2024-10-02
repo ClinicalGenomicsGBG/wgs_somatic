@@ -12,6 +12,9 @@ mapping:
     error: "WGSsomatic_{rule}_{wildcards.fastqpattern}.stderr"
     threads: 40
 
+cram:
+    threads: 40
+
 rtgtools_eval:
     threads: 10
 
