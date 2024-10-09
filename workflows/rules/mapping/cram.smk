@@ -8,7 +8,7 @@ rule cram:
     singularity:
         pipeconfig["singularities"]["samtools"]["sing"]
     params:
-        threads = clusterconf["mapping"]["threads"],
+        threads = clusterconf["cram"]["threads"],
         referencegenome = pipeconfig["referencegenome"]
     shadow:
         pipeconfig["rules"].get("cram", {}).get("shadow", pipeconfig.get("shadow", False))

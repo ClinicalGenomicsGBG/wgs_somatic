@@ -312,6 +312,8 @@ def get_pair_dict(Sctx, Rctx, logger):
             find_more_fastqs(pair.cntn_id.value, Rctx, logger)
     for p in pairs2:
         pair_slims_sample = translate_slims_info(p)
+        if not pair_slims_sample['tumorNormalType'] == pair_type:
+            continue
         if not pair_slims_sample['content_id'] in pair_dict:
             logger.info(f'Using sample {pair_slims_sample["content_id"]} as a pair to {Sctx.slims_info["content_id"]} (tumorNormalID {Sctx.slims_info["tumorNormalID"]}), but it does not have a matching tumorNormalID')
         if not pair_slims_sample['tumorNormalType']:
