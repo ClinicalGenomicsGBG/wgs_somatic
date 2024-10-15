@@ -45,13 +45,13 @@ def logger(message, logfile=False):
 def get_normalid_tumorid(runnormal=None, normalname=None, runtumor=None, tumorname=None):
     '''Get tumorid and normalid based on runnormal/tumor and normal/tumorname '''
     if runnormal:
-        date, _, _, chip, *_ = runnormal.split('_')
+        date, _, _, chip, *_ = runnormal.split('+')[0].split('_')
     if normalname:
         normalid= '_'.join([normalname, date, chip])
     else:
         normalid = None
     if runtumor:
-        date, _, _, chip, *_ = runtumor.split('_')
+        date, _, _, chip, *_ = runtumor.split('+')[0].split('_')
     if tumorname:
         tumorid = '_'.join([tumorname, date, chip])
     else:

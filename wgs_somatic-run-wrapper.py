@@ -94,7 +94,7 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         normalfastqs = os.path.join(Rctx_run.run_path, "fastq")
         runnormal = Rctx_run.run_name
         if not t:
-            date, _, _, chip, *_ = runnormal.split('_')
+            date, _, _, chip, *_ = runnormal.split('+')[0].split('_')
             normalid= '_'.join([normalsample, date, chip])
             outputdir = os.path.join(config['workingdir'], "normal_only", normalid)
             outputdir = f'{outputdir}_{timestamp}'
@@ -104,7 +104,7 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         runtumor = Rctx_run.run_name
         tumorsample = t
         tumorfastqs = os.path.join(Rctx_run.run_path, "fastq")
-        date, _, _, chip, *_ = runtumor.split('_')
+        date, _, _, chip, *_ = runtumor.split('+')[0].split('_')
         tumorid = '_'.join([tumorsample, date, chip])
         if not n:
             outputdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
