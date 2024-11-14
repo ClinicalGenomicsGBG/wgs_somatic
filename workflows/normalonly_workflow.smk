@@ -50,6 +50,7 @@ rule normalonly_workflow:
         expand("{stype}/canvas/{sname}_{vartype}_CNV_observed.seg", vartype="germline", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/canvas/{sname}_{vartype}_CNV_called.seg", vartype="germline", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/reports/{sname}_REALIGNED.bam.tdf",  sname=normalid, stype=sampleconfig[normalname]["stype"]),
+        expand("{stype}/realign/{sname}_REALIGNED.{fmt}", fmt=["cram", "cram.crai"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/dnascope/{sname}_germline_refseq3kfilt.vcf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/reports/{sname}_baf.igv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         "reporting/shared_result_files.txt",

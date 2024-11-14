@@ -25,6 +25,8 @@ def get_time():
     nowtime = time.strftime("%Y-%m-%d-%H-%M-%S")
     return nowtime
 
+def get_timestamp():
+    return time.strftime("%y%m%d-%H%M%S")
 
 def logger(message, logfile=False):
     config = read_wrapperconf()
@@ -43,13 +45,13 @@ def logger(message, logfile=False):
 def get_normalid_tumorid(runnormal=None, normalname=None, runtumor=None, tumorname=None):
     '''Get tumorid and normalid based on runnormal/tumor and normal/tumorname '''
     if runnormal:
-        date, _, _, chip, *_ = runnormal.split('_')
+        date, _, _, chip, *_ = runnormal.split('+')[0].split('_')
     if normalname:
         normalid= '_'.join([normalname, date, chip])
     else:
         normalid = None
     if runtumor:
-        date, _, _, chip, *_ = runtumor.split('_')
+        date, _, _, chip, *_ = runtumor.split('+')[0].split('_')
     if tumorname:
         tumorid = '_'.join([tumorname, date, chip])
     else:
@@ -128,11 +130,13 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
                 except:
                     logger(f"Error occurred while copying {f}")
             else:
-                try:
-                    copy(f, igv_dir)
-                    logger(f"{f} copied successfully")
-                except:
-                    logger(f"Error occurred while copying {f}")
+                # We only copy the cram files now
+                if not f.endswith('.bam') and not f.endswith('.bai'):
+                    try:
+                        copy(f, igv_dir)
+                        logger(f"{f} copied successfully")
+                    except:
+                        logger(f"Error occurred while copying {f}")
 
     # Make webstore portal API call to make path searchable
     webstore_api_url = config["webstore_api_url"]
@@ -371,6 +375,8 @@ if __name__ == '__main__':
     parser.add_argument('-na', '--noalissa', action="store_true", help='Disables Alissa upload', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
     args = parser.parse_args()
+    timestamp = get_timestamp()
+    args.outputdir = f'{args.outputdir}_{timestamp}'
     analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype)
 
     if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):

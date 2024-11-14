@@ -156,6 +156,7 @@ if reference == "hg38":
     ###########################################################
     # Mapping
     include:    "workflows/rules/mapping/mapping_hg38.smk"
+    include:    "workflows/rules/mapping/cram.smk"
     # Variantcalling
     include:    "workflows/rules/variantcalling/manta_hg38.smk"
     # Coverage
