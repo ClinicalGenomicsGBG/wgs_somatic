@@ -376,9 +376,11 @@ if __name__ == '__main__':
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
     parser.add_argument('-na', '--noalissa', action="store_true", help='Disables Alissa upload', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
+    parser.add_argument('-nt', '--notimestamp', action="store_true", help='Do not add timestamp to outputdir', required=False)
     args = parser.parse_args()
-    timestamp = get_timestamp()
-    args.outputdir = f'{args.outputdir}_{timestamp}'
+    if not args.notimestamp:
+        timestamp = get_timestamp()
+        args.outputdir = f'{args.outputdir}_{timestamp}'
     analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype)
 
     if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
