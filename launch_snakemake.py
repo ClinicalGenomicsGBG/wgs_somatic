@@ -130,7 +130,7 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
                 except:
                     logger(f"Error occurred while copying {f}")
             else:
-                # We don't copy the cram files to webstore
+                # Copy all files that are not cram and that do not match the files_match pattern to webstore igv_dir
                 if not f.endswith('.cram') and not f.endswith('.crai'):
                     try:
                         copy(f, igv_dir)
