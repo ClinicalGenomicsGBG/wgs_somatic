@@ -130,11 +130,18 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
                 except:
                     logger(f"Error occurred while copying {f}")
             else:
-                # We only copy the cram files now
-                if not f.endswith('.bam') and not f.endswith('.bai'):
+                # Copy all files that are not cram and that do not match the files_match pattern to webstore igv_dir
+                if not f.endswith('.cram') and not f.endswith('.crai'):
                     try:
                         copy(f, igv_dir)
                         logger(f"{f} copied successfully")
+                        if f.endswith('.bam') or f.endswith('.bai'):
+                            try:
+                                # Remove the bam files from the workingdir
+                                logger(f"Removing {f} from workdir.")
+                                os.remove(f)
+                            except:
+                                logger(f"Error occurred while removing {f}")
                     except:
                         logger(f"Error occurred while copying {f}")
 
