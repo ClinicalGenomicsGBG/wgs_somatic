@@ -76,7 +76,7 @@ Optional arguments to launch_snakemake.py:
 
 ```--copyresults``` Use this argument if you want to automatically copy result files to result directory on webstore.
 
-`--notimestamp` Disables the addition of a timestamp to the output directory. Useful for continuing a previous run.
+`--development` Used for running the pipeline while developing new features. Runs the pipeline without creating a timestamp, without removing temporary files (`--notemp`) and rerunning uncompleted files (`--rerun-incomplete`).
 
 
 
