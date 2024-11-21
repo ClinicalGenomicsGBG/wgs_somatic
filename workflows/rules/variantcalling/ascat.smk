@@ -89,7 +89,7 @@ if tumorid and not normalid:
             QC_file = temp("{stype}/ascat/{sname}_QC.tsv"),
             sunrise_plot = temp("{stype}/ascat/{sname}.sunrise.png"),
             ASCATprofile_plot = temp("{stype}/ascat/{sname}.ASCATprofile.png"),
-            ASPFC_plot = temp("{stype}/ascat/{sname}.ASPFC.png"),
+            ASPCF_plot = temp("{stype}/ascat/{sname}.ASPCF.png"),
             rawprofile_plot = temp("{stype}/ascat/{sname}.rawprofile.png"),
             segments_raw = temp("{stype}/ascat/{sname}.segments_raw.txt"),
             segments = temp("{stype}/ascat/{sname}.segments.txt"),
