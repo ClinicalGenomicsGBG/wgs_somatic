@@ -4,7 +4,7 @@ rule allele_count:
     input:
         bam = "{stype}/realign/{sname}_REALIGNED.bam"
     singularity:
-        f"{ROOT_DIR}/singularities/ascat/ascat.sif"
+        pipeconfig['rules']['ascat']['singularity']
     params:
         allele_count_script = f"{ROOT_DIR}/workflows/scripts/ascat/allele_count.R",
         loci_prefix = f"{pipeconfig['rules']['ascat']['resources']}/G1000_loci_hg38_chr",
@@ -20,7 +20,7 @@ if tumorid and normalid:
             in_tumor = expand("{stype}/ascat/{sname}_alleleFrequencies_chr{chr_num}.txt", chr_num=[str(i) for i in range(1, 23)] + ["X"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             in_normal = expand("{stype}/ascat/{sname}_alleleFrequencies_chr{chr_num}.txt", chr_num=[str(i) for i in range(1, 23)] + ["X"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
         singularity:
-            f"{ROOT_DIR}/singularities/ascat/ascat.sif"
+            pipeconfig['rules']['ascat']['singularity']
         params:
             get_BAF_LogR_script = f"{ROOT_DIR}/workflows/scripts/ascat/get_BAF_LogR.R",
             tumorid = tumorid,
@@ -36,7 +36,7 @@ if tumorid and not normalid:
         input:
             in_tumor = expand("{stype}/ascat/{sname}_alleleFrequencies_chr{chr_num}.txt", chr_num=[str(i) for i in range(1, 23)] + ["X"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         singularity:
-            f"{ROOT_DIR}/singularities/ascat/ascat.sif"
+            pipeconfig['rules']['ascat']['singularity']
         params:
             get_BAF_LogR_script = f"{ROOT_DIR}/workflows/scripts/ascat/get_BAF_LogR.R",
             tumorid = tumorid,
@@ -56,7 +56,7 @@ if tumorid and normalid:
             BAF_normal_file = expand("{stype}/ascat/{sname}_BAF.txt", sname=normalid, stype=sampleconfig[normalname]["stype"]),
             LogR_normal_file = expand("{stype}/ascat/{sname}_LogR.txt", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         singularity:
-            f"{ROOT_DIR}/singularities/ascat/ascat.sif"
+            pipeconfig['rules']['ascat']['singularity']
         params:
             tumorid = tumorid,
             run_ascat_script = f"{ROOT_DIR}/workflows/scripts/ascat/run_ascat.R",
@@ -79,7 +79,7 @@ if tumorid and not normalid:
             BAF_tumor_file = expand("{stype}/ascat/{sname}_BAF.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             LogR_tumor_file = expand("{stype}/ascat/{sname}_LogR.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         singularity:
-            f"{ROOT_DIR}/singularities/ascat/ascat.sif"
+            pipeconfig['rules']['ascat']['singularity']
         params:
             tumorid = tumorid,
             run_ascat_script = f"{ROOT_DIR}/workflows/scripts/ascat/run_ascat.R",

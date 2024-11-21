@@ -100,7 +100,8 @@
         },
         "ascat":
         {
-            "resources": "/apps/bio/dependencies/wgs_somatic/hg38/ascat"         
+            "resources": "/apps/bio/dependencies/wgs_somatic/hg38/ascat",
+            "singularity": "/apps/bio/dependencies/wgs_somatic/hg38/ascat/ascat.sif"         
         },
         "share_to_resultdir":
         {
