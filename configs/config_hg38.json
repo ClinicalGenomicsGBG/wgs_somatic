@@ -98,6 +98,10 @@
         {
             "annotate_ref": "/apps/bio/dependencies/wgs_somatic/hg38/refseq/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
         },
+        "ascat":
+        {
+            "resources": "/apps/bio/dependencies/wgs_somatic/hg38/ascat"         
+        },
         "share_to_resultdir":
         {
         },

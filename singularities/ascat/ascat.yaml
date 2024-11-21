@@ -1,0 +1,7 @@
+name: ascat
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::ascat
+  - bioconda::cancerit-allelecount

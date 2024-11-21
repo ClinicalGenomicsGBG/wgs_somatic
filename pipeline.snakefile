@@ -138,6 +138,7 @@ include:        "workflows/rules/variantcalling/dnascope.smk"
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"
 include:        "workflows/rules/small_tools/bgzip.smk"
+include:        "workflows/rules/variantcalling/ascat.smk"
 
 #########################################
 # QC
