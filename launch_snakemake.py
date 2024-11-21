@@ -151,7 +151,7 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
         raise WebstoreError(f'Webstore api call returned a non 200 return: {response.text}')
 
 
-def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False):
+def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, development=False):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -309,8 +309,10 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         else:
             with open(f"{runconfigs}/{normalid}_config.json", 'w') as analysisconf:
                 json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
+
         ###################################################################
         # Prepare Singularity Binddirs
+        ###################################################################
         binddirs = config["singularitybinddirs"]
         binddir_string = ""
         for binddir in binddirs:
@@ -330,6 +332,13 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         binddir_string = f"{binddir_string}{output}"
         print(binddir_string)
 
+    except Exception as e:
+        tb = traceback.format_exc()
+        logger("Error in setting up the snakemake run:")
+        logger(f"{e} Traceback: {tb}")
+        sys.exit(1)
+
+    try:
         ###################################################################
         # Start SnakeMake pipeline
         ###################################################################
@@ -343,24 +352,65 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         snakemake_path = config["snakemake_env"]
         os.environ["PATH"] += os.pathsep + snakemake_path
         my_env = os.environ.copy()
-        if tumorname:
-            snakemake_args = f"snakemake -s pipeline.snakefile --configfile {runconfigs}/{tumorid}_config.json --dag | dot -Tsvg > {samplelogs}/dag_{current_date}.svg"
-        else:
-            snakemake_args = f"snakemake -s pipeline.snakefile --configfile {runconfigs}/{normalid}_config.json --dag | dot -Tsvg > {samplelogs}/dag_{current_date}.svg"
-        # >>>>>>>>>>>> Create Dag of pipeline
-        subprocess.run(snakemake_args, shell=True, env=my_env)  # CREATE DAG
-        if tumorname:
-            snakemake_args = f"snakemake -s pipeline.snakefile --configfile {runconfigs}/{tumorid}_config.json --use-singularity --singularity-args '-e --bind {binddir_string} --bind /medstore --bind /seqstore --bind /apps' --cluster-config configs/cluster.yaml --cluster \"qsub -S /bin/bash -pe mpi {{cluster.threads}} -q {{cluster.queue}} -N {{cluster.name}} -o {samplelogs}/{{cluster.output}} -e {samplelogs}/{{cluster.error}} -l {{cluster.excl}}\" --jobs 999 --latency-wait 60 --directory {output} --shadow-prefix {shadow_dir} &>> {samplelog}"
-        else:
-            snakemake_args = f"snakemake -s pipeline.snakefile --configfile {runconfigs}/{normalid}_config.json --use-singularity --singularity-args '-e --bind {binddir_string} --bind /medstore --bind /seqstore --bind /apps' --cluster-config configs/cluster.yaml --cluster \"qsub -S /bin/bash -pe mpi {{cluster.threads}} -q {{cluster.queue}} -N {{cluster.name}} -o {samplelogs}/{{cluster.output}} -e {samplelogs}/{{cluster.error}} -l {{cluster.excl}}\" --jobs 999 --latency-wait 60 --directory {output} --shadow-prefix {shadow_dir} &>> {samplelog}"
-        # >>>>>>>>>>>> Start pipeline
-        subprocess.run(snakemake_args, shell=True, env=my_env)  # Shellscript pipeline
 
+        # Set development arguments
+        dev_args = ["--notemp", "--rerun-incomplete"] if development else []
+
+        # Construct Snakemake command
+        if tumorname:
+            configfile = f"{runconfigs}/{tumorid}_config.json"
+        else:
+            configfile = f"{runconfigs}/{normalid}_config.json"
+
+        singularity_args = [
+            "-e",
+            "--bind", binddir_string,
+            "--bind", "/medstore",
+            "--bind", "/seqstore",
+            "--bind", "/apps",
+        ]
+
+        cluster_args = [
+            "qsub",
+            "-S", "/bin/bash",
+            "-pe", "mpi", "{cluster.threads}",
+            "-q", "{cluster.queue}",
+            "-N", "{cluster.name}",
+            "-o", f"{samplelogs}/{{cluster.output}}",
+            "-e", f"{samplelogs}/{{cluster.error}}",
+            "-l", "{cluster.excl}"
+        ]
+
+        snakemake_args_DAG = [
+            "snakemake", "-s", "pipeline.snakefile",
+            "--configfile", configfile,
+            "--dag", "|", "dot", "-Tsvg", ">", f"{samplelogs}/dag_{current_date}.svg"
+        ]
+
+        # Create DAG of pipeline
+        subprocess.run(snakemake_args_DAG, env=my_env, shell=True)
+
+        snakemake_args = [
+            "snakemake", "-s", "pipeline.snakefile",
+            "--configfile", configfile,
+            "--use-singularity", "--singularity-args", " ".join(singularity_args),
+            "--cluster-config", "configs/cluster.yaml",
+            "--cluster", " ".join(cluster_args),
+            "--jobs", "999",
+            "--latency-wait", "60",
+            "--directory", output,
+            "--shadow-prefix", shadow_dir
+        ] + dev_args
+
+        # Execute Snakemake command
+        subprocess.run(snakemake_args, env=my_env, check=True)
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error running Snakemake: {e}")
     except Exception as e:
         tb = traceback.format_exc()
-        logger("Error in script:")
-        logger(f"{e} Traceback: {tb}")
-        sys.exit(1)
+        print(f"An error occurred: {e}\n{tb}")
+
 
 
 if __name__ == '__main__':
@@ -376,12 +426,12 @@ if __name__ == '__main__':
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
     parser.add_argument('-na', '--noalissa', action="store_true", help='Disables Alissa upload', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
-    parser.add_argument('-nt', '--notimestamp', action="store_true", help='Do not add timestamp to outputdir', required=False)
+    parser.add_argument('-dev', '--development', action="store_true", help='Run the pipeline in development mode (no temp, no timestamp, rerun incomplete)', required=False)
     args = parser.parse_args()
-    if not args.notimestamp:
+    if not args.development:
         timestamp = get_timestamp()
         args.outputdir = f'{args.outputdir}_{timestamp}'
-    analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype)
+    analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
 
     if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
         if args.tumorsample:
