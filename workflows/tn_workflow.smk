@@ -47,6 +47,7 @@ rule tn_workflow:
         expand("{stype}/dnascope/{sname}_germline.vcf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/dnascope/{sname}_germline.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         expand("{stype}/reports/{sname}_baf.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/reports/{sname}_baf.igv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/reports/{sname}_WGScov.tsv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         expand("{stype}/reports/{sname}_WGScov.tsv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/reports/{sname}_Ycov.tsv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
