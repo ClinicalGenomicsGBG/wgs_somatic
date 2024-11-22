@@ -26,6 +26,7 @@ if tumorid and normalid:
             tumorid = tumorid,
             allele_prefix = f"{pipeconfig['rules']['ascat']['resources']}/G1000_alleles_hg38_chr",
         output:
+            raw_BAF_file = temp("{stype}/ascat/{sname}_BAF_rawBAF.txt"),
             BAF_file = temp("{stype}/ascat/{sname}_BAF.txt"),
             LogR_file = temp("{stype}/ascat/{sname}_LogR.txt"),
         shell:
@@ -43,6 +44,7 @@ if tumorid and not normalid:
             allele_prefix = f"{pipeconfig['rules']['ascat']['resources']}/G1000_alleles_hg38_chr",
             tumoronly = "TRUE"
         output:
+            raw_BAF_file = temp("{stype}/ascat/{sname}_BAF_rawBAF.txt"),
             BAF_file = temp("{stype}/ascat/{sname}_BAF.txt"),
             LogR_file = temp("{stype}/ascat/{sname}_LogR.txt"),
         shell:
@@ -70,6 +72,10 @@ if tumorid and normalid:
             rawprofile_plot = temp("{stype}/ascat/{sname}.rawprofile.png"),
             segments_raw = temp("{stype}/ascat/{sname}.segments_raw.txt"),
             segments = temp("{stype}/ascat/{sname}.segments.txt"),
+            after_corr_germline = temp("{stype}/ascat/After_correction_{sname}.germline.png"),
+            after_corr_tumour = temp("{stype}/ascat/After_correction_{sname}.tumour.png"),
+            before_corr_germline = temp("{stype}/ascat/Before_correction_{sname}.germline.png"),
+            before_corr_tumour = temp("{stype}/ascat/Before_correction_{sname}.tumour.png"),
         shell:
             "Rscript {params.run_ascat_script} {params.tumorid} {input.LogR_tumor_file} {input.BAF_tumor_file} {input.LogR_normal_file} {input.BAF_normal_file} {params.GCcontentfile} {params.replictimingfile} {output.QC_file}"
 
@@ -93,5 +99,9 @@ if tumorid and not normalid:
             rawprofile_plot = temp("{stype}/ascat/{sname}.rawprofile.png"),
             segments_raw = temp("{stype}/ascat/{sname}.segments_raw.txt"),
             segments = temp("{stype}/ascat/{sname}.segments.txt"),
+            after_corr_germline = temp("{stype}/ascat/After_correction_{sname}.germline.png"),
+            after_corr_tumour = temp("{stype}/ascat/After_correction_{sname}.tumour.png"),
+            before_corr_germline = temp("{stype}/ascat/Before_correction_{sname}.germline.png"),
+            before_corr_tumour = temp("{stype}/ascat/Before_correction_{sname}.tumour.png"),
         shell:
             "Rscript {params.run_ascat_script} {params.tumorid} {input.LogR_tumor_file} {input.BAF_tumor_file} {input.LogR_tumor_file} {input.BAF_tumor_file} {params.GCcontentfile} {params.replictimingfile} {output.QC_file}"
