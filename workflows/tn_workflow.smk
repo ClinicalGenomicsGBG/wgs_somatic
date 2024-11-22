@@ -60,6 +60,7 @@ rule tn_workflow:
         expand("{stype}/ascat/{sname}.ASCATprofile.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         expand("{stype}/ascat/{sname}.ASPCF.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         expand("{stype}/ascat/{sname}.rawprofile.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+        expand("{stype}/ascat/{sname}.segments_raw.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         expand("{stype}/reports/{sname}_REALIGNED.bam.tdf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         expand("{stype}/reports/{sname}_REALIGNED.bam.tdf",  sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/realign/{sname}_REALIGNED.{fmt}", fmt=["cram", "cram.crai"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
