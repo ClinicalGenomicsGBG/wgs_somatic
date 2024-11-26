@@ -110,13 +110,13 @@ if tumorfastqdirs:
 if tumorid:
     if normalid:
         # Runs tn_workflow / paired if tumorid and normalid
-        localrules: all, upload_to_iva, tn_workflow, share_to_resultdir, excel_qc
+        localrules: all, upload_to_iva, tn_workflow, share_to_resultdir, excel_qc, tmb_calculation
     else:
         # Runs tumoronly_workflow if tumorid but not normalid
-        localrules: all, upload_to_iva, share_to_resultdir, excel_qc, tumoronly_workflow
+        localrules: all, upload_to_iva, tumoronly_workflow, share_to_resultdir, excel_qc, tmb_calculation
 else: 
     # Runs normalonly_workflow if normalid but not tumorid
-    localrules: all, upload_to_iva, share_to_resultdir, excel_qc, normalonly_workflow
+    localrules: all, upload_to_iva, normalonly_workflow, share_to_resultdir, excel_qc
 ###########################################################
 
 ########################################
@@ -134,6 +134,7 @@ else:
 if tumorid:
     include:        "workflows/rules/variantcalling/tnscope.smk"
     include:        "workflows/rules/variantcalling/pindel.smk"
+    include:        "workflows/rules/small_tools/tmb_calculation.smk"
 include:        "workflows/rules/variantcalling/dnascope.smk"
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"
