@@ -381,14 +381,14 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             "-l", "{cluster.excl}"
         ]
 
+        # Create DAG of pipeline
         snakemake_args_DAG = [
             "snakemake", "-s", "pipeline.snakefile",
             "--configfile", configfile,
             "--dag", "|", "dot", "-Tsvg", ">", f"{samplelogs}/dag_{current_date}.svg"
         ]
-
-        # Create DAG of pipeline
-        subprocess.run(snakemake_args_DAG, env=my_env, shell=True)
+        snakemake_args_DAG_str = " ".join(snakemake_args_DAG)
+        subprocess.run(snakemake_args_DAG_str, shell=True, env=my_env)
 
         snakemake_args = [
             "snakemake", "-s", "pipeline.snakefile",
