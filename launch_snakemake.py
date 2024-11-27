@@ -415,10 +415,10 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         subprocess.run(snakemake_args, env=my_env, check=True)
 
     except subprocess.CalledProcessError as e:
-        print(f"Error running Snakemake: {e}")
+        logger(f"Error running Snakemake: {e}")
     except Exception as e:
         tb = traceback.format_exc()
-        print(f"An error occurred: {e}\n{tb}")
+        logger(f"An error occurred: {e}\n{tb}")
 
 
 
