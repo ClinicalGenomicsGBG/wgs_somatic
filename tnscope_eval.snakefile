@@ -42,7 +42,7 @@ configfilepath = f"{ROOT_DIR}/configs/config_hg38.json"
 
 
 pipeconfig = helpers.read_config(configfilepath)
-clusterconf = helpers.read_clusterconf()
+clusterconf = helpers.read_config(f"{ROOT_DIR}/configs/cluster.yaml")
 
 shell.executable("/bin/bash")
 

@@ -257,7 +257,9 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         
         # copying configfiles to analysisdir
         clusterconf = config["clusterconf"]
+        filterconf = config["filterconf"]
         copyfile(f"{configdir}/{clusterconf}", f"{runconfigs}/{clusterconf}")
+        copyfile(f"{configdir}/{filterconf}", f"{runconfigs}/{filterconf}")
         copyfile(f"{configdir}/{mainconf_name}", f"{runconfigs}/{mainconf_name}")
         if tumorname:
             samplelog = f"{samplelogs}/{tumorid}.log"

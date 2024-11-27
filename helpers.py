@@ -1,21 +1,15 @@
 import yaml
 import json
 import logging
-from definitions import ROOT_DIR
 
 def read_config(configpath):
     with open(configpath, 'r') as configfile:
-        config_data = json.load(configfile)
-        return config_data
-
-def read_clusterconf():
-    with open(f"{ROOT_DIR}/configs/cluster.yaml") as inputfile:
-        inputfile_info = yaml.load(inputfile, Loader=yaml.FullLoader)
-        return inputfile_info
-
-def read_passconfig():
-    with open("/root/password_config.json", 'r') as configfile:
-        config_data = json.load(configfile)
+        if configpath.endswith('.json'):
+            config_data = json.load(configfile)
+        elif configpath.endswith('.yaml') or configpath.endswith('.yml'):
+            config_data = yaml.load(configfile, Loader=yaml.FullLoader)
+        else:
+            raise ValueError("Unsupported file format. Please provide a .json or .yaml file.")
         return config_data
 
 def setup_logger(name, log_path=None):
