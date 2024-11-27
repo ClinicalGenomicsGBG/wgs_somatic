@@ -91,8 +91,8 @@ def get_canvas_tumorinfo(canvasvcf):
 def read_tmb(tmbfile):
     try:
         with open(tmbfile, 'r') as tmb:
-            tmb_val = int(tmb.read().rstrip())
-            return tmb_val
+            tmb_val = tmb.read().strip()
+            return float(tmb_val)
     except FileNotFoundError:
         return "No TMB file found"
     except ValueError:
@@ -240,17 +240,17 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         if normalcov:
             # Tumour + Normal
             calculated_sex = calc_sex(normalcov, ycov)
-            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb=tmb_val)
+            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_val=tmb_val)
             add_insilico_stats(insilicodir, output)
         else:
             # Tumour only
             calculated_sex = calc_sex(tumorcov, ycov)
-            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', sex=calculated_sex, tmb=tmb_val)
+            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', sex=calculated_sex, tmb_val=tmb_val)
             add_insilico_stats(insilicodir, output) # Maybe this can be commented out if not needed for tumour only
     else:
         # Normal only
         calculated_sex = calc_sex(normalcov, ycov)
-        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', sex=calculated_sex, tmb='')
+        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', sex=calculated_sex, tmb_val='')
         add_insilico_stats(insilicodir, output)
 
 if __name__ == '__main__':
