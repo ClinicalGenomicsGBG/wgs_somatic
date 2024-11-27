@@ -1,7 +1,7 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 import os
-from helpers import read_passconfig
+from helpers import read_config
 from shutil import copyfile
 
 rule filter_variants_in_bed:
@@ -42,7 +42,7 @@ rule upload_to_iva:
     run:
         # copy to clc accessible directory
         vcfbase = os.path.basename(f"{input}")
-        passconfig = read_passconfig()
+        passconfig = read_config("/root/password_config.json")
         clcpass = passconfig["clcpass"]
         ivapass = passconfig[ivauser]["ivapass"]
         ivaemail = passconfig[ivauser]["ivauser"]
@@ -82,7 +82,7 @@ rule upload_to_iva_test:
     run:
         # copy to clc accessible directory
         vcfbase = os.path.basename(f"{input}")
-        passconfig = read_passconfig()
+        passconfig = read_config("/root/password_config.json")
         clcpass = passconfig["clcpass"]
         ivapass = passconfig[ivauser]["ivapass"]
         ivaemail = passconfig[ivauser]["ivauser"]
