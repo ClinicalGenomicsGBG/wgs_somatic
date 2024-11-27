@@ -2,13 +2,13 @@ Bootstrap: docker
 From: mambaorg/micromamba
 
 %files
-    ascat.yaml /ascat.yaml
+    ascat_v3.2.0.yaml /ascat_v3.2.0.yaml
 
 %environment
     export PATH="${MAMBA_ROOT_PREFIX}/bin:$PATH"
 
 %post -c /bin/bash
-    micromamba install -n base --file ascat.yaml && \
+    micromamba install -n base --file ascat_v3.2.0.yaml && \
     micromamba clean --all --yes
 
 %runscript
