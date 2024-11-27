@@ -238,7 +238,8 @@ out_BAF = args[4]
 out_LogR = args[5]
 alleles.prefix = args[6]
 stype = args[7]
-tumoronly <- ifelse(length(args) >= 8, args[8], "FALSE")
+genomeVersion = args[8]
+tumoronly <- ifelse(length(args) >= 9, args[9], "FALSE")
 
 # Convert tumoronly to logical
 tumoronly <- ifelse(tumoronly == "TRUE", TRUE, FALSE)
@@ -255,7 +256,6 @@ if (stype != "normal") {
 }
 
 gender = "XX"
-genomeVersion = "hg38"
 chrom_names = c(1:22, "X")
 minCounts = 10
 BED_file = NA

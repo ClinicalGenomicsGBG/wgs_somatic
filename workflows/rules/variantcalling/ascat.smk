@@ -1,5 +1,3 @@
-# FILE: check_bam_existence.smk
-
 rule allele_count:
     input:
         bam = "{stype}/realign/{sname}_REALIGNED.bam"
@@ -25,12 +23,13 @@ if tumorid and normalid:
             get_BAF_LogR_script = f"{ROOT_DIR}/workflows/scripts/ascat/get_BAF_LogR.R",
             tumorid = tumorid,
             allele_prefix = f"{pipeconfig['rules']['ascat']['resources']}/G1000_alleles_hg38_chr",
+            genome_id = f"{pipeconfig['rules']['ascat']['genome_id']}",
         output:
             raw_BAF_file = temp("{stype}/ascat/{sname}_BAF_rawBAF.txt"),
             BAF_file = temp("{stype}/ascat/{sname}_BAF.txt"),
             LogR_file = temp("{stype}/ascat/{sname}_LogR.txt"),
         shell:
-            "Rscript {params.get_BAF_LogR_script} {params.tumorid} {input.in_tumor[0]} {input.in_normal[0]} {output.BAF_file} {output.LogR_file} {params.allele_prefix} {wildcards.stype}"
+            "Rscript {params.get_BAF_LogR_script} {params.tumorid} {input.in_tumor[0]} {input.in_normal[0]} {output.BAF_file} {output.LogR_file} {params.allele_prefix} {wildcards.stype} {params.genome_id}"
 
 if tumorid and not normalid:
     rule get_BAF_LogR:
@@ -42,13 +41,14 @@ if tumorid and not normalid:
             get_BAF_LogR_script = f"{ROOT_DIR}/workflows/scripts/ascat/get_BAF_LogR.R",
             tumorid = tumorid,
             allele_prefix = f"{pipeconfig['rules']['ascat']['resources']}/G1000_alleles_hg38_chr",
-            tumoronly = "TRUE"
+            tumoronly = "TRUE",
+            genome_id = f"{pipeconfig['rules']['ascat']['genome_id']}",
         output:
             raw_BAF_file = temp("{stype}/ascat/{sname}_BAF_rawBAF.txt"),
             BAF_file = temp("{stype}/ascat/{sname}_BAF.txt"),
             LogR_file = temp("{stype}/ascat/{sname}_LogR.txt"),
         shell:
-            "Rscript {params.get_BAF_LogR_script} {params.tumorid} {input.in_tumor[0]} {input.in_tumor[0]} {output.BAF_file} {output.LogR_file} {params.allele_prefix} {wildcards.stype} {params.tumoronly}"
+            "Rscript {params.get_BAF_LogR_script} {params.tumorid} {input.in_tumor[0]} {input.in_tumor[0]} {output.BAF_file} {output.LogR_file} {params.allele_prefix} {wildcards.stype} {params.genome_id} {params.tumoronly}"
 
 if tumorid and normalid:
     rule run_ascat:
@@ -63,7 +63,8 @@ if tumorid and normalid:
             tumorid = tumorid,
             run_ascat_script = f"{ROOT_DIR}/workflows/scripts/ascat/run_ascat.R",
             GCcontentfile = f"{pipeconfig['rules']['ascat']['resources']}/GC_G1000_hg38.txt",
-            replictimingfile = f"{pipeconfig['rules']['ascat']['resources']}/RT_G1000_hg38.txt"
+            replictimingfile = f"{pipeconfig['rules']['ascat']['resources']}/RT_G1000_hg38.txt",
+            genome_id = f"{pipeconfig['rules']['ascat']['genome_id']}",
         output:
             stats_file = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
             sunrise_plot = temp("{stype}/ascat/{sname}.sunrise.png"),
@@ -77,7 +78,7 @@ if tumorid and normalid:
             before_corr_germline = temp("{stype}/ascat/Before_correction_{sname}.germline.png"),
             before_corr_tumour = temp("{stype}/ascat/Before_correction_{sname}.tumour.png"),
         shell:
-            "Rscript {params.run_ascat_script} {params.tumorid} {input.LogR_tumor_file} {input.BAF_tumor_file} {input.LogR_normal_file} {input.BAF_normal_file} {params.GCcontentfile} {params.replictimingfile} {output.stats_file}"
+            "Rscript {params.run_ascat_script} {params.tumorid} {input.LogR_tumor_file} {input.BAF_tumor_file} {input.LogR_normal_file} {input.BAF_normal_file} {params.GCcontentfile} {params.replictimingfile} {output.stats_file} {params.genome_id}"
 
 if tumorid and not normalid:
     rule run_ascat:
@@ -90,7 +91,8 @@ if tumorid and not normalid:
             tumorid = tumorid,
             run_ascat_script = f"{ROOT_DIR}/workflows/scripts/ascat/run_ascat.R",
             GCcontentfile = f"{pipeconfig['rules']['ascat']['resources']}/GC_G1000_hg38.txt",
-            replictimingfile = f"{pipeconfig['rules']['ascat']['resources']}/RT_G1000_hg38.txt"
+            replictimingfile = f"{pipeconfig['rules']['ascat']['resources']}/RT_G1000_hg38.txt",
+            genome_id = f"{pipeconfig['rules']['ascat']['genome_id']}",
         output:
             stats_file = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
             sunrise_plot = temp("{stype}/ascat/{sname}.sunrise.png"),
@@ -104,4 +106,4 @@ if tumorid and not normalid:
             before_corr_germline = temp("{stype}/ascat/Before_correction_{sname}.germline.png"),
             before_corr_tumour = temp("{stype}/ascat/Before_correction_{sname}.tumour.png"),
         shell:
-            "Rscript {params.run_ascat_script} {params.tumorid} {input.LogR_tumor_file} {input.BAF_tumor_file} {input.LogR_tumor_file} {input.BAF_tumor_file} {params.GCcontentfile} {params.replictimingfile} {output.stats_file}"
+            "Rscript {params.run_ascat_script} {params.tumorid} {input.LogR_tumor_file} {input.BAF_tumor_file} {input.LogR_tumor_file} {input.BAF_tumor_file} {params.GCcontentfile} {params.replictimingfile} {output.stats_file} {params.genome_id}"

@@ -101,7 +101,8 @@
         "ascat":
         {
             "resources": "/apps/bio/dependencies/wgs_somatic/hg38/ascat",
-            "singularity": "/apps/bio/dependencies/wgs_somatic/hg38/ascat/ascat.sif"         
+            "singularity": "/apps/bio/dependencies/wgs_somatic/hg38/ascat/ascat.sif",
+            "genome_id": "hg38"         
         },
         "share_to_resultdir":
         {

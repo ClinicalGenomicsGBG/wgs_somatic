@@ -13,9 +13,9 @@ normalBAF = args[5]
 GCcontentfile = args[6]
 replictimingfile = args[7]
 output = dirname(args[8])
+genomeVersion = args[9]
 
 gender = "XX"
-genomeVersion = "hg38"
 
 ascat.synchroniseFiles(samplename = tumorid, tumourLogR_file = tumorLogR, 
     tumourBAF_file = tumorBAF, normalLogR_file = normalLogR, 
