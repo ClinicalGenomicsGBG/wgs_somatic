@@ -16,10 +16,17 @@ if normalid:
                 f"&& FORMAT/AD[0:1]>{params.min_mutant_allele_reads} "
                 f"&& FORMAT/AFDP[0,1]>{params.min_coverage}' {input.somatic_n} | "
                 f"{params.bcftools} stats | grep 'number of records:' | awk '{{{{print $NF}}}}' | "
-                f"awk -v genome_size={params.genome_size} '{{{{ printf \"%.2f\", ($1 / genome_size * 1e6) }}}}' > {output.tmb}"
+                f"awk -v genome_size={params.genome_size} '{{{{ printf \"TMB\\t%.2f\\n\", ($1 / genome_size * 1e6) }}}}' > {output.tmb}"
+            )
+            add_parameters = (
+                f"echo -e 'min_mutant_allele_fraction\\t{params.min_mutant_allele_fraction}\\n"
+                f"min_mutant_allele_reads\\t{params.min_mutant_allele_reads}\\n"
+                f"min_coverage\\t{params.min_coverage}\\n"
+                f"effective_genome_size\\t{params.genome_size}' >> {output.tmb}"
             )
             print(shell_command)
             shell(shell_command)
+            shell(add_parameters)
 
 else:
     rule tmb_calculation:
@@ -39,7 +46,14 @@ else:
                 f"&& FORMAT/AD[0:1]>{params.min_mutant_allele_reads} "
                 f"&& FORMAT/AFDP[0]>{params.min_coverage}' {input.somatic} | "  # Note, here we only use the first sample
                 f"{params.bcftools} stats | grep 'number of records:' | awk '{{{{print $NF}}}}' | "
-                f"awk -v genome_size={params.genome_size} '{{{{ printf \"%.2f\", ($1 / genome_size * 1e6) }}}}' > {output.tmb}"
+                f"awk -v genome_size={params.genome_size} '{{{{ printf \"TMB\\t%.2f\\n\", ($1 / genome_size * 1e6) }}}}' > {output.tmb}"
+            )
+            add_parameters = (
+                f"echo -e 'min_mutant_allele_fraction\\t{params.min_mutant_allele_fraction}\\n"
+                f"min_mutant_allele_reads\\t{params.min_mutant_allele_reads}\\n"
+                f"min_coverage\\t{params.min_coverage}\\n"
+                f"effective_genome_size\\t{params.genome_size}' >> {output.tmb}"
             )
             print(shell_command)
             shell(shell_command)
+            shell(add_parameters)

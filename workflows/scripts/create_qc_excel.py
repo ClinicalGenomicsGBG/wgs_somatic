@@ -88,17 +88,28 @@ def get_canvas_tumorinfo(canvasvcf):
                     canvasdict[canvasfield] = canvasfield_value
     return canvasdict
 
-def read_tmb(tmbfile):
+def read_tmb_file(filepath):
+    tmb_dict = {}
     try:
-        with open(tmbfile, 'r') as tmb:
-            tmb_val = tmb.read().strip()
-            return float(tmb_val)
+        with open(filepath, 'r') as file:
+            for line in file:
+                key, value = line.strip().split('\t')
+                try:
+                    # Try to convert the value to a float or int if possible
+                    if '.' in value:
+                        tmb_dict[key] = float(value)
+                    else:
+                        tmb_dict[key] = int(value)
+                except ValueError:
+                    # If conversion fails, store the value as a string
+                    tmb_dict[key] = value
     except FileNotFoundError:
-        return "No TMB file found"
-    except ValueError:
-        return "Invalid TMB value"
+        print(f"No file found at {filepath}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return tmb_dict
 
-def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdict, sex, tmb_val):
+def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdict, sex, tmb_dict):
     current_date = time.strftime("%Y-%m-%d")
     excelfile = xlsxwriter.Workbook(output)
     worksheet = excelfile.add_worksheet("qc_stats")
@@ -203,9 +214,16 @@ def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdic
             worksheet.write(row, 1, canvasdict[key])
             row += 1
 
+    row += 2
+    worksheet.write(row, 0, "TMB-CALCULATION", cellformat["section"])
+    worksheet.write(row, 1, tumorname, cellformat["tumorname"])
     row += 1
-    worksheet.write(row, 0, "TMB:", cellformat["section"])
-    worksheet.write(row, 1, tmb_val)
+    if tmb_dict:
+        for key in tmb_dict:
+            worksheet.write(row, 0, key, cellformat["header"])
+            worksheet.write(row, 1, tmb_dict[key])
+            row += 1
+
 
     excelfile.close()
 
@@ -218,7 +236,7 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         tumorname = tumorcovfile.replace("_WGScov.tsv", "")
         statsdict = extract_stats(tumorcov, "coverage",  "tumor", statsdict)
         statsdict = extract_stats(tumordedup, "dedup",  "tumor", statsdict)
-        tmb_val = read_tmb(tmb)
+        tmb_dict = read_tmb_file(tmb)
     if normalcov:
         normalcovfile = os.path.basename(normalcov)
         normalname = normalcovfile.replace("_WGScov.tsv", "")
@@ -240,17 +258,17 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         if normalcov:
             # Tumour + Normal
             calculated_sex = calc_sex(normalcov, ycov)
-            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_val=tmb_val)
+            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict)
             add_insilico_stats(insilicodir, output)
         else:
             # Tumour only
             calculated_sex = calc_sex(tumorcov, ycov)
-            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', sex=calculated_sex, tmb_val=tmb_val)
+            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', sex=calculated_sex, tmb_dict=tmb_dict)
             add_insilico_stats(insilicodir, output) # Maybe this can be commented out if not needed for tumour only
     else:
         # Normal only
         calculated_sex = calc_sex(normalcov, ycov)
-        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', sex=calculated_sex, tmb_val='')
+        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', sex=calculated_sex, tmb_dict='')
         add_insilico_stats(insilicodir, output)
 
 if __name__ == '__main__':
