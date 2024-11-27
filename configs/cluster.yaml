@@ -91,11 +91,11 @@ index_vcf:
     output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
     error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
 
-allele_count:
+ascat_allele_count:
     threads: 1
 
-get_BAF_LogR:
+ascat_get_BAF_LogR:
     threads: 1
 
-run_ascat:
+ascat_run_main:
     threads: 1

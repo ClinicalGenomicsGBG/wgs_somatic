@@ -1,4 +1,4 @@
-rule allele_count:
+rule ascat_allele_count:
     input:
         bam = "{stype}/realign/{sname}_REALIGNED.bam"
     singularity:
@@ -13,7 +13,7 @@ rule allele_count:
         "Rscript {params.allele_count_script} {input.bam} {wildcards.sname} {wildcards.chr_num} {output.allele_freq} {params.loci_prefix} {params.allelecounter_exe}"
 
 if tumorid and normalid:
-    rule get_BAF_LogR:
+    rule ascat_get_BAF_LogR:
         input:
             in_tumor = expand("{stype}/ascat/{sname}_alleleFrequencies_chr{chr_num}.txt", chr_num=[str(i) for i in range(1, 23)] + ["X"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             in_normal = expand("{stype}/ascat/{sname}_alleleFrequencies_chr{chr_num}.txt", chr_num=[str(i) for i in range(1, 23)] + ["X"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
@@ -32,7 +32,7 @@ if tumorid and normalid:
             "Rscript {params.get_BAF_LogR_script} {params.tumorid} {input.in_tumor[0]} {input.in_normal[0]} {output.BAF_file} {output.LogR_file} {params.allele_prefix} {wildcards.stype} {params.genome_id}"
 
 if tumorid and not normalid:
-    rule get_BAF_LogR:
+    rule ascat_get_BAF_LogR:
         input:
             in_tumor = expand("{stype}/ascat/{sname}_alleleFrequencies_chr{chr_num}.txt", chr_num=[str(i) for i in range(1, 23)] + ["X"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         singularity:
@@ -51,7 +51,7 @@ if tumorid and not normalid:
             "Rscript {params.get_BAF_LogR_script} {params.tumorid} {input.in_tumor[0]} {input.in_tumor[0]} {output.BAF_file} {output.LogR_file} {params.allele_prefix} {wildcards.stype} {params.genome_id} {params.tumoronly}"
 
 if tumorid and normalid:
-    rule run_ascat:
+    rule ascat_run_main:
         input:
             BAF_tumor_file = expand("{stype}/ascat/{sname}_BAF.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             LogR_tumor_file = expand("{stype}/ascat/{sname}_LogR.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
@@ -81,7 +81,7 @@ if tumorid and normalid:
             "Rscript {params.run_ascat_script} {params.tumorid} {input.LogR_tumor_file} {input.BAF_tumor_file} {input.LogR_normal_file} {input.BAF_normal_file} {params.GCcontentfile} {params.replictimingfile} {output.stats_file} {params.genome_id}"
 
 if tumorid and not normalid:
-    rule run_ascat:
+    rule ascat_run_main:
         input:
             BAF_tumor_file = expand("{stype}/ascat/{sname}_BAF.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             LogR_tumor_file = expand("{stype}/ascat/{sname}_LogR.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
