@@ -38,7 +38,7 @@ else:
 
 pipeconfig = helpers.read_config(configfilepath)
 clusterconf = helpers.read_config(f"{ROOT_DIR}/configs/cluster.yaml")
-filterconfig = helpers.read_config(f"{ROOT_DIR}/configs/filterts.")
+filterconfig = helpers.read_config(f"{ROOT_DIR}/configs/filters.yaml")
 
 shell.executable("/bin/bash")
 
