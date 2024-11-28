@@ -134,12 +134,19 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
                 except Exception:
                     logger(f"Error occurred while copying {f}")
             else:
-                # We only copy the cram files now
-                if not f.endswith('.bam') and not f.endswith('.bai'):
+                # Copy all files that are not cram and that do not match the files_match pattern to webstore igv_dir
+                if not f.endswith('.cram') and not f.endswith('.crai'):
                     try:
                         copy(f, igv_dir)
                         logger(f"{f} copied successfully")
-                    except Exception:
+                        if f.endswith('.bam') or f.endswith('.bai'):
+                            try:
+                                # Remove the bam files from the workingdir
+                                logger(f"Removing {f} from workdir.")
+                                os.remove(f)
+                            except:
+                                logger(f"Error occurred while removing {f}")
+                    except:
                         logger(f"Error occurred while copying {f}")
 
     # Make webstore portal API call to make path searchable
@@ -254,7 +261,9 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
 
         # copying configfiles to analysisdir
         clusterconf = config["clusterconf"]
+        filterconf = config["filterconf"]
         copyfile(f"{configdir}/{clusterconf}", f"{runconfigs}/{clusterconf}")
+        copyfile(f"{configdir}/{filterconf}", f"{runconfigs}/{filterconf}")
         copyfile(f"{configdir}/{mainconf_name}", f"{runconfigs}/{mainconf_name}")
         if tumorname:
             samplelog = f"{samplelogs}/{tumorid}.log"

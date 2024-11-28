@@ -89,6 +89,26 @@ def get_canvas_tumorinfo(canvasvcf):
                     canvasdict[canvasfield] = canvasfield_value
     return canvasdict
 
+def read_tmb_file(filepath):
+    tmb_dict = {}
+    try:
+        with open(filepath, 'r') as file:
+            for line in file:
+                key, value = line.strip().split('\t')
+                try:
+                    # Try to convert the value to a float or int if possible
+                    if '.' in value:
+                        tmb_dict[key] = float(value)
+                    else:
+                        tmb_dict[key] = int(value)
+                except ValueError:
+                    # If conversion fails, store the value as a string
+                    tmb_dict[key] = value
+    except FileNotFoundError:
+        print(f"No file found at {filepath}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return tmb_dict
 
 def get_ascat_tumorinfo(ascatstats):
     ascatdict = {}
@@ -100,8 +120,7 @@ def get_ascat_tumorinfo(ascatstats):
                 ascatdict[row['metric']] = float(row['value'])
     return ascatdict
 
-
-def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdict, ascatdict, sex):
+def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdict, tmb_dict, ascatdict, sex):
     current_date = time.strftime("%Y-%m-%d")
     excelfile = xlsxwriter.Workbook(output)
     worksheet = excelfile.add_worksheet("qc_stats")
@@ -217,10 +236,21 @@ def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdic
             row += 1
         row += 1
 
+    row += 2
+    worksheet.write(row, 0, "TMB-CALCULATION", cellformat["section"])
+    worksheet.write(row, 1, tumorname, cellformat["tumorname"])
+    row += 1
+    if tmb_dict:
+        for key in tmb_dict:
+            worksheet.write(row, 0, key, cellformat["header"])
+            worksheet.write(row, 1, tmb_dict[key])
+            row += 1
+
+
     excelfile.close()
 
 
-def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', ascatstats='', output='', insilicodir=''):
+def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', ascatstats='', output='', insilicodir=''):
     print(f"insilicodir: {insilicodir}")
     statsdict = {}
     if tumorcov:
@@ -228,6 +258,7 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         tumorname = tumorcovfile.replace("_WGScov.tsv", "")
         statsdict = extract_stats(tumorcov, "coverage",  "tumor", statsdict)
         statsdict = extract_stats(tumordedup, "dedup",  "tumor", statsdict)
+        tmb_dict = read_tmb_file(tmb)
         ascatdict = get_ascat_tumorinfo(ascatstats)
     if normalcov:
         normalcovfile = os.path.basename(normalcov)
@@ -250,17 +281,17 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         if normalcov:
             # Tumour + Normal
             calculated_sex = calc_sex(normalcov, ycov)
-            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, ascatdict, sex=calculated_sex)
+            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, tmb_dict=tmb_dict, ascatdict=ascatdict, sex=calculated_sex)
             add_insilico_stats(insilicodir, output)
         else:
             # Tumour only
             calculated_sex = calc_sex(tumorcov, ycov)
-            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', ascatdict=ascatdict, sex=calculated_sex)
+            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', tmb_dict=tmb_dict, ascatdict=ascatdict, sex=calculated_sex)
             add_insilico_stats(insilicodir, output) # Maybe this can be commented out if not needed for tumour only
     else:
         # Normal only
         calculated_sex = calc_sex(normalcov, ycov)
-        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', ascatdict='', sex=calculated_sex)
+        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', tmb_dict='', ascatdict='', sex=calculated_sex)
         add_insilico_stats(insilicodir, output)
 
 
@@ -276,6 +307,7 @@ if __name__ == '__main__':
     parser.add_argument('-cv', '--canvasvcf', nargs='?', help='Somatic Canvas VCF', required=False)
     parser.add_argument('-as', '--ascatstats', nargs='?', help='Somatic Ascat stats', required=False)
     parser.add_argument('-is', '--insilicodir', nargs='?', help='Full path to insilico directory (which contains excel files)', required=False)
+    parser.add_argument('--tmb', nargs='?', help='TMB file', required=False)
     parser.add_argument('-o', '--output', nargs='?', help='fullpath to file to be created (xlsx will be appended if not written)', required=True)
     args = parser.parse_args()
     create_excel_main(args.tumorcov, args.ycov, args.normalcov, args.tumordedup, args.normaldedup, args.tumorvcf, args.normalvcf, args.canvasvcf, args.ascatstats, args.output, args.insilicodir)
