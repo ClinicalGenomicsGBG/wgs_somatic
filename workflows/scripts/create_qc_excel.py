@@ -226,6 +226,7 @@ def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdic
             row += 1
         row += 1
 
+    row += 1
     if ascatdict!='':
         worksheet.write(row, 0, "ASCAT-STATS", cellformat["section"])
         worksheet.write(row, 1, tumorname, cellformat["tumorname"])
@@ -236,7 +237,7 @@ def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdic
             row += 1
         row += 1
 
-    row += 2
+    row += 1
     worksheet.write(row, 0, "TMB-CALCULATION", cellformat["section"])
     worksheet.write(row, 1, tumorname, cellformat["tumorname"])
     row += 1
