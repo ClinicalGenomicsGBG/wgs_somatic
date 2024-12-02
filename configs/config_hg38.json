@@ -3,6 +3,16 @@
     "referencefai": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai",
     "singularities":
     {
+        "sentieon":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v202308.03_hg38.sif",
+            "tool_path": "/sentieon-genomics-202308.03/bin/sentieon",
+            "reference": "/databases/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
+            "mills": "/databases/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
+            "dbsnp": "/databases/GRCh38.dbSNP156.vcf.gz",
+            "dnascope_m": "/databases/SentieonDNAscopeModel1.0.model",
+            "tnscope_m": "/databases/Sentieon_GiAB_201711.model"
+        },
         "canvas":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/canvas_hg38_v1.40.0.1613.sif",
