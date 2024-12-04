@@ -386,7 +386,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
 
         # Create DAG of pipeline
         snakemake_args_DAG = [
-            "snakemake", "-s", "pipeline.snakefile",
+            "snakemake", "-s", "Snakefile",
             "--configfile", configfile,
             "--dag", "|", "dot", "-Tsvg", ">", f"{samplelogs}/dag_{current_date}.svg"
         ]
@@ -394,7 +394,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         subprocess.run(snakemake_args_DAG_str, shell=True, env=my_env)
 
         snakemake_args = [
-            "snakemake", "-s", "pipeline.snakefile",
+            "snakemake", "-s", "Snakefile",
             "--configfile", configfile,
             "--use-singularity", "--singularity-args", " ".join(singularity_args),
             "--cluster-config", "configs/cluster.yaml",
