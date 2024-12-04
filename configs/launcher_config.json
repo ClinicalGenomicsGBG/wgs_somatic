@@ -15,7 +15,7 @@
     {
 	    "threads": 1,
 	    "queue": "routine.q",
-	    "qsub_script": "alissa_upload.sh"
+	    "qsub_script": "tools/alissa_upload.sh"
     },
     "singularitybinddirs":
     {
