@@ -249,16 +249,16 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         samplelogs = f"{output}/logs"
         if not os.path.isdir(samplelogs):
             os.mkdir(samplelogs)
-        runconfigs = f"{output}/configs"
+        runconfigs = os.path.join(output, configdir)
         if not os.path.isdir(runconfigs):
             os.mkdir(runconfigs)
 
         # copying configfiles to analysisdir
         clusterconf = config["clusterconf"]
         filterconf = config["filterconf"]
-        copyfile(f"{configdir}/{clusterconf}", f"{runconfigs}/{clusterconf}")
-        copyfile(f"{configdir}/{filterconf}", f"{runconfigs}/{filterconf}")
-        copyfile(f"{configdir}/{mainconf_name}", f"{runconfigs}/{mainconf_name}")
+        copyfile(os.path.join(configdir, clusterconf), os.path.join(runconfigs, clusterconf))
+        copyfile(os.path.join(configdir, filterconf), os.path.join(runconfigs, filterconf))
+        copyfile(os.path.join(configdir, mainconf_name), os.path.join(runconfigs, mainconf_name))
         if tumorname:
             samplelog = f"{samplelogs}/{tumorid}.log"
         else:
