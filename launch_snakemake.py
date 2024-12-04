@@ -3,7 +3,7 @@ import json
 import argparse
 import os
 import glob
-import helpers  # not used
+from helpers import read_config
 import sys
 import time
 import traceback
@@ -13,13 +13,7 @@ import stat
 import requests
 import random
 import string
-from definitions import ROOT_DIR
-
-
-def read_wrapperconf():  # TODO: Add possibility to read other config files with -c
-    with open(f"{ROOT_DIR}/configs/wrapper_conf.json", 'r') as configfile:  # TODO: Move to definitions.py
-        config_data = json.load(configfile)
-        return config_data
+from definitions import LAUNCHER_CONFIG_PATH
 
 
 def get_time():
@@ -32,7 +26,7 @@ def get_timestamp():
 
 
 def logger(message, logfile=False):
-    config = read_wrapperconf()
+    config = read_config(LAUNCHER_CONFIG_PATH)
     logdir = config["logdir"]
     current_date = time.strftime("%Y-%m-%d")
     if not logfile:
@@ -64,7 +58,7 @@ def get_normalid_tumorid(runnormal=None, normalname=None, runtumor=None, tumorna
 
 def yearly_stats(tumorname, normalname):
     '''Update yearly stats file with sample that has finished running in pipeline correctly'''
-    # config_data = read_wrapperconf()
+    # config_data = read_config(LAUNCHER_CONFIG_PATH)
     # yearly_stats = open(config_data["yearly_stats"], "a")
     yearly_stats = "yearly_stats.txt"
     if not os.path.exists(yearly_stats):
@@ -83,7 +77,7 @@ def alissa_upload(outputdir, normalname, runnormal, ref=False):
     date, _, _, chip, *_ = runnormal.split('_')
     normalid = f"{normalname}_{date}_{chip}"
     vcfpath = f"{outputdir}/{normalid}_{ref}_SNV_CNV_germline.vcf.gz"
-    config = read_wrapperconf()
+    config = read_config(LAUNCHER_CONFIG_PATH)
     logger(f"Uploading vcf to Alissa for {normalname}")
     queue = config["alissa"]["queue"]
     threads = config["alissa"]["threads"]  # not used
@@ -97,7 +91,7 @@ def alissa_upload(outputdir, normalname, runnormal, ref=False):
 def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumorname=None):
     '''Rsync result files from workingdir to resultdir'''
 
-    config = read_wrapperconf()
+    config = read_config(LAUNCHER_CONFIG_PATH)
 
     # Find correct resultdir on webstore from sample config in workingdir
     normalid, tumorid = get_normalid_tumorid(runnormal, normalname, runtumor, tumorname)
@@ -163,7 +157,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         ################################################################
         # Write InputArgs to logfile
         ################################################################
-        config = read_wrapperconf()
+        config = read_config(LAUNCHER_CONFIG_PATH)
         commandlogs = config["commandlogs"]
         # if not os.path.exists(commandlogs):
         #    os.makedirs(commandlogs)
