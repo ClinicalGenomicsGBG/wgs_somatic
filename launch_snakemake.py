@@ -306,12 +306,14 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
                     analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/tumor_only/{basename_output}'
             else:
                 analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/normal_only/{basename_output}'
+        
         if tumorname:
-            with open(f"{runconfigs}/{tumorid}_config.json", 'w') as analysisconf:
-                json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
+            snakemake_config = f"{runconfigs}/{tumorid}_config.json"
         else:
-            with open(f"{runconfigs}/{normalid}_config.json", 'w') as analysisconf:
-                json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
+            snakemake_config = f"{runconfigs}/{normalid}_config.json"
+        
+        with open(snakemake_config, 'w') as analysisconf:
+            json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
 
         ###################################################################
         # Prepare Singularity Binddirs
@@ -360,10 +362,6 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         dev_args = ["--notemp", "--rerun-incomplete"] if development else []
 
         # Construct Snakemake command
-        if tumorname:
-            configfile = f"{runconfigs}/{tumorid}_config.json"
-        else:
-            configfile = f"{runconfigs}/{normalid}_config.json"
 
         singularity_args = [
             "-e",
@@ -387,7 +385,8 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         # Create DAG of pipeline
         snakemake_args_DAG = [
             "snakemake", "-s", "Snakefile",
-            "--configfile", configfile,
+            "--configfile", snakemake_config,
+            "--directory", output,
             "--dag", "|", "dot", "-Tsvg", ">", f"{samplelogs}/dag_{current_date}.svg"
         ]
         snakemake_args_DAG_str = " ".join(snakemake_args_DAG)
@@ -395,7 +394,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
 
         snakemake_args = [
             "snakemake", "-s", "Snakefile",
-            "--configfile", configfile,
+            "--configfile", snakemake_config,
             "--use-singularity", "--singularity-args", " ".join(singularity_args),
             "--cluster-config", "configs/cluster.yaml",
             "--cluster", " ".join(cluster_args),
