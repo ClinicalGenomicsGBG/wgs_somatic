@@ -1,7 +1,7 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 import os
-from helpers import read_config
+from tools.helpers import read_config
 from shutil import copyfile
 
 rule filter_variants_in_bed:

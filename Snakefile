@@ -5,7 +5,7 @@ import glob
 import time
 from pathlib import Path
 import yaml
-import tools.helpers
+from tools.helpers import read_config
 import os
 from definitions import ROOT_DIR
 
@@ -36,9 +36,9 @@ else:
 #----------------------------------------------
 
 
-pipeconfig = helpers.read_config(configfilepath)
-clusterconf = helpers.read_config(f"{ROOT_DIR}/configs/cluster.yaml")
-filterconfig = helpers.read_config(f"{ROOT_DIR}/configs/filters.yaml")
+pipeconfig = read_config(configfilepath)
+clusterconf = read_config(f"{ROOT_DIR}/configs/cluster.yaml")
+filterconfig = read_config(f"{ROOT_DIR}/configs/filters.yaml")
 
 shell.executable("/bin/bash")
 

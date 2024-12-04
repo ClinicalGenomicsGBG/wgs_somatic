@@ -3,7 +3,7 @@ import json
 import argparse
 import os
 import glob
-import helpers
+from tools.helpers import read_config
 import sys
 import time
 import traceback
@@ -36,7 +36,7 @@ def logger(message, logfile=False):
 
 config = read_wrapperconf()
 valconf = f"{ROOT_DIR}/validation_scripts/validation_config.json"
-valconf = helpers.read_config(valconf)
+valconf = read_config(valconf)
 current_date = time.strftime("%Y-%m-%d")
 
 for trange in valconf["fractions"]["hg38"]:
