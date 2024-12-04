@@ -1,4 +1,4 @@
-name: wgs_somatic_minimal
+name: wgs_somatic_env
 channels:
 - bioconda
 - conda-forge
@@ -10,3 +10,4 @@ dependencies:
 - pysam=0.20.0
 - pip:
     - slims-python-api==6.8.0
+prefix: /clinical/exec/wgs_somatic/env/wgs_somatic_env
