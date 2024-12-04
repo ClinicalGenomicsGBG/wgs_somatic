@@ -3,7 +3,7 @@ import json
 import argparse
 import os
 import glob
-from helpers import read_config
+from tools.helpers import read_config
 import sys
 import time
 import traceback

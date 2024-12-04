@@ -9,7 +9,7 @@ from slims.slims import Slims
 from slims.criteria import is_one_of, equals, conjunction, not_equals
 from slims.content import Status
 
-from definitions import CONFIG_PATH, ROOT_DIR, ROOT_LOGGING_PATH
+from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, ROOT_LOGGING_PATH
 
 class slims_credentials:
     url = os.environ.get('SLIMS_URL')
@@ -128,7 +128,7 @@ def get_sample_slims_info(Sctx, run_tag):
 
 def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
     '''Find and download fqs from HCP to fastqdir on seqstore for run'''
-    with open(CONFIG_PATH, 'r') as conf:
+    with open(WRAPPER_CONFIG_PATH, 'r') as conf:
         config = yaml.safe_load(conf)
 
     json_info = json.loads(fqSSample.fastq.cntn_cstm_demuxerBackupSampleResult.value)
@@ -164,7 +164,7 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
                 pass
 
 def decompress_downloaded_fastq(complete_file_path, logger):
-    with open(CONFIG_PATH, 'r') as conf:
+    with open(WRAPPER_CONFIG_PATH, 'r') as conf:
         config = yaml.safe_load(conf)
     
     filename = os.path.basename(complete_file_path) # This is the filename of the downloaded file
@@ -210,7 +210,7 @@ def decompress_downloaded_fastq(complete_file_path, logger):
 
 def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
     '''Link fastqs to fastq-folder in demultiplexdir of current run.'''
-    with open(CONFIG_PATH, 'r') as conf:
+    with open(WRAPPER_CONFIG_PATH, 'r') as conf:
         config = yaml.safe_load(conf)
     hcp_downloads = config["hcp_download_dir"]
     # TODO: additional fastqs need to still be in demultiplexdir. not considering downloading from hcp right now. need to consider this later...

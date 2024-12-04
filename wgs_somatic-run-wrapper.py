@@ -15,8 +15,8 @@ import subprocess
 import threading
 
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, ROOT_LOGGING_PATH#, INSILICO_CONFIG, INSILICO_PANELS_ROOT
-from context import RunContext, SampleContext
-from helpers import setup_logger, read_config
+from tools.context import RunContext, SampleContext
+from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, SlimsSample, find_more_fastqs, get_pair_dict
 from tools.email import start_email, end_email, error_email
 from launch_snakemake import analysis_main, yearly_stats, alissa_upload, copy_results, get_timestamp
