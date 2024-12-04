@@ -283,6 +283,12 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         analysisdict["tumorid"] = tumorid
         analysisdict["tumorfastqs"] = [tumorfastqs]
         analysisdict["workingdir"] = output
+
+        # configs
+        analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
+        analysisdict["clusterconfig"] = os.path.join(configdir, clusterconf)
+        analysisdict["pipeconfig"] = os.path.join(configdir, mainconf_name)
+
         # insilico
         analysisdict["insilico"] = config["insilicopanels"]
 
