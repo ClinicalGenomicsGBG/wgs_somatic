@@ -9,5 +9,6 @@ dependencies:
 - xlsxwriter=3.0.8
 - pysam=0.20.0
 - pip:
+    - biopython==1.77
     - slims-python-api==6.8.0
 prefix: /clinical/exec/wgs_somatic/env/wgs_somatic_env

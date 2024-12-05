@@ -1,5 +1,5 @@
 {
-    "snakemake_env": "/apps/bio/software/anaconda2/envs/wgs_somatic/bin/",
+    "snakemake_env": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/",
     "logdir": "logfiles",
     "commandlogs": "logfiles/commandlogs",
     "configdir": "configs",
