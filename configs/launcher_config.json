@@ -39,20 +39,10 @@
             "source": "/apps/bio/dependencies/wgs_somatic/hg38/canvas/",
             "destination": "/canvasfiles"
         },
-        "canvassequence_hg38":
-        {
-            "source": "/apps/bio/dependencies/wgs_somatic/hg38/canvas/Sequence",
-            "destination": "/Sequence"
-        },
         "canvasfiles_hg19":
         {
             "source": "/medstore/External_References/Canvas_CLC_HG19_Dataset/hs37d5/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta",
             "destination": "/medstore/External_References/Canvas_CLC_HG19_Dataset/hs37d5/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta"
-        },
-        "canvassequence_hg19":
-        {
-            "source": "/apps/bio/dependencies/wgs_somatic/hg19/canvas/Sequence",
-            "destination": "/Sequence"
         }
     },
     "insilicopanels":
