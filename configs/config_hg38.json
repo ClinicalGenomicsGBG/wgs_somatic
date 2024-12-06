@@ -15,7 +15,7 @@
         },
         "canvas":
         {
-            "sing": "/apps/bio/singularities/wgs_somatic/canvas_hg38.simg",
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/canvas_hg38_v1.40.0.1613.sif",
             "dll": "/Canvas-1.40.0.1613+master_x64/Canvas.dll",
             "tool_path": "/canvas/run_canvas.py",
             "reference": "/canvasfiles/canvasfiles/",
