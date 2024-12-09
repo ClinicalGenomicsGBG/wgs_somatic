@@ -96,7 +96,7 @@
         },
         "canvas":
         {
-            "annotate_ref": "clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
+            "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
         },
         "share_to_resultdir":
         {
@@ -110,7 +110,7 @@
         {
             "svdb": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/svdb",
             "mantaconf": "/clinical/exec/wgs_somatic/dependencies/software/manta-1.6.0.centos6_x86_64/bin/configManta.py",
-            "annotate_ref": "clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf",
+            "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf",
             "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools"
         },
         "upload_to_iva":
