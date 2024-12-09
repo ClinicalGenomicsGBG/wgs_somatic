@@ -15,6 +15,7 @@ dependencies:
 - vcftools=0.1.16
 - igvtools=2.3.75
 - svdb=2.8.2
+- pyvcf=0.6.8
 - pip:
     - biopython==1.77
     - slims-python-api==6.8.0
