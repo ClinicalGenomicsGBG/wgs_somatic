@@ -19,14 +19,19 @@
     },
     "singularitybinddirs":
     {
-        "petagene":
+        "sentieon":
         {
-            "source": "/apps/bio/software/petasuite/corpus",
-            "destination": "/opt/petagene/corpus"
+            "source": "/clinical/exec/wgs_somatic/dependencies/sentieon/",
+            "destination": "/databases"
         },
         "databases_hg38":
         {
-            "source": "/apps/bio/dependencies/wgs_somatic/hg38/sentieon/",
+            "source": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/",
+            "destination": "/databases"
+        },
+        "gatk_hg38":
+        {
+            "source": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/",
             "destination": "/databases"
         },
         "databases_hg19":

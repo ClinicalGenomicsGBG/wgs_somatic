@@ -329,7 +329,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         for binddir in binddirs:
             source = binddirs[binddir]["source"]
             if not analysisdict["reference"] in source:
-                if "petagene" not in source:
+                if "sentieon" not in source:
                     continue
             destination = binddirs[binddir]["destination"]
             logger(f"preparing binddir variable {binddir} source: {source} destination: {destination}")
