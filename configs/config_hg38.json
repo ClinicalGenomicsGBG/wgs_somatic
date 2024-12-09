@@ -7,11 +7,11 @@
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v201911_hg38.sif",
             "tool_path": "/sentieon-genomics-201911/bin/sentieon",
-            "reference": "/databases/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
-            "mills": "/databases/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
-            "dbsnp": "/databases/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
-            "dnascope_m": "/databases/SentieonDNAscopeModelBeta0.5.model",
-            "tnscope_m": "/databases/Sentieon_GiAB_201711.model"
+            "reference": "/ncbi/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
+            "mills": "/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
+            "dbsnp": "/ncbi/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
+            "dnascope_m": "/sentieon/SentieonDNAscopeModelBeta0.5.model",
+            "tnscope_m": "/sentieon/Sentieon_GiAB_201711.model"
         },
         "canvas":
         {

@@ -22,17 +22,17 @@
         "sentieon":
         {
             "source": "/clinical/exec/wgs_somatic/dependencies/sentieon/",
-            "destination": "/databases"
+            "destination": "/sentieon"
         },
         "databases_hg38":
         {
             "source": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/",
-            "destination": "/databases"
+            "destination": "/ncbi"
         },
         "gatk_hg38":
         {
             "source": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/",
-            "destination": "/databases"
+            "destination": "/gatk"
         },
         "databases_hg19":
         {
