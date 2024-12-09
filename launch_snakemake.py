@@ -375,6 +375,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             "--bind", "/medstore",
             "--bind", "/seqstore",
             "--bind", "/apps",
+            "--bind", "/clinical",
         ]
 
         cluster_args = [
