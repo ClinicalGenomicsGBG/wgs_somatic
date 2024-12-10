@@ -1,17 +1,17 @@
 {
-    "referencegenome": "/apps/bio/dependencies/wgs_somatic/hg38/sentieon/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
-    "referencefai": "/apps/bio/dependencies/wgs_somatic/hg38/sentieon/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai",
+    "referencegenome": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
+    "referencefai": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai",
     "singularities":
     {
         "sentieon":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v202308.03_hg38.sif",
             "tool_path": "/sentieon-genomics-202308.03/bin/sentieon",
-            "reference": "/databases/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
-            "mills": "/databases/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
-            "dbsnp": "/databases/GRCh38.dbSNP156.vcf.gz",
-            "dnascope_m": "/databases/SentieonDNAscopeModel1.0.model",
-            "tnscope_m": "/databases/Sentieon_GiAB_201711.model"
+            "reference": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
+            "mills": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
+            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156.vcf.gz",
+            "dnascope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model",
+            "tnscope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonTNscopeModelWGS0.2.model "
         },
         "canvas":
         {
@@ -73,11 +73,11 @@
         "dnascope":
         {
             "settings": "--pcr_indel_model NONE",
-            "modelpath": "/apps/bio/repos/wgs_somatic/tools/sentieon/SentieonDNAscopeModelBeta0.5.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model"
         },
         "dnascope_modelfilter":
         {
-            "modelpath": "/apps/bio/repos/wgs_somatic/tools/sentieon/SentieonDNAscopeModelBeta0.5.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model"
         },
         "dnascope_vcffilter":
         {
@@ -86,7 +86,7 @@
         },
         "ballele_plot":
         {
-            "dbsnp": "/apps/bio/dependencies/wgs_somatic/hg38/sentieon/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
+            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156.vcf.gz",
             "hg38ref": "yes"
         },
        "generate_tdf":
