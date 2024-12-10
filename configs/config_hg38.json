@@ -89,11 +89,11 @@
         "dnascope":
         {
             "settings": "--pcr_indel_model NONE",
-            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModelBeta0.5.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model"
         },
         "dnascope_modelfilter":
         {
-            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModelBeta0.5.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model"
         },
         "dnascope_vcffilter":
         {
@@ -102,7 +102,7 @@
         },
         "ballele_plot":
         {
-            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
+            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156.vcf.gz",
             "hg38ref": "yes"
         },
        "generate_tdf":
