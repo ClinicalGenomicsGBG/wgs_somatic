@@ -8,7 +8,7 @@ if tumorid:
     if normalid:
         rule share_to_resultdir:
             input:
-                expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
+                #expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
                 expand("{stype}/{caller}/{sname}_{vcftype}.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
                 expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[normalname]["stype"], caller="dnascope", sname=normalid, vcftype="germline"),
                 expand("qc_report/{tumorname}_qc_stats.xlsx", tumorname=tumorname),
@@ -29,6 +29,7 @@ if tumorid:
                 expand("{stype}/realign/{sname}_REALIGNED.{fmt}", fmt=["bam", "bam.bai", "cram", "cram.crai"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
                 expand("{stype}/reports/{sname}_REALIGNED.bam.tdf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
                 expand("{stype}/reports/{sname}_baf.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                expand("{stype}/reports/{sname}_baf.igv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
                 expand("{stype}/manta/{sname}_somatic_MantaBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 #expand("{stype}/manta/{sname}_somatic_MantaBNDs.vcf.gzi.csi", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/manta/{sname}_somatic_MantaNOBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
