@@ -6,11 +6,18 @@ Stage: build
 %files
     /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna databases/
     /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai databases/
+    /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.amb databases/
+    /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.ann databases/
+    /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bwt databases/
+    /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.pac databases/
+    /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.sa databases/
+    /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.dict databases/
     /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156.vcf.gz databases/
     /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156.vcf.gz.tbi databases/
-    /clinical/exec/wgs_somatic/dependencies/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz databases/
-    /clinical/exec/wgs_somatic/dependencies/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi databases/
-    /apps/bio/dependencies/wgs_somatic/hg38/sentieon/Sentieon_GiAB_201711.model databases/
+    /clinical/exec/wgs_somatic/dependencies/gatk/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz databases/
+    /clinical/exec/wgs_somatic/dependencies/gatk/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi databases/
+    /clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model databases/
+    /clinical/exec/wgs_somatic/dependencies/sentieon/SentieonTNscopeModelWGS0.2.model databases/
     
 %post
     # Install python3 and other requirements for git and pip3
@@ -19,13 +26,14 @@ Stage: build
 
     # Get sentieon
     wget https://s3.amazonaws.com/sentieon-release/software/sentieon-genomics-202308.03.tar.gz
-    wget -O databases/SentieonDNAscopeModel1.0.model https://s3.amazonaws.com/sentieon-release/other/SentieonDNAscopeModel1.0.model
 
     # Unzip using tar
     tar -zxvf sentieon-genomics-202308.03.tar.gz
 
 %environment
     # below will be set with bind during execute
+    unset http_proxy
+    unset https_proxy
     SENTIEON_LICENSE=medair1.medair.lcl:8990
     LD_LIBRARY_PATH=/sentieon-genomics-202308.03/lib
     export SENTIEON_LICENSE LD_LIBRARY_PATH
