@@ -14,7 +14,7 @@ import traceback
 import subprocess
 import threading
 
-from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, ROOT_LOGGING_PATH#, INSILICO_CONFIG, INSILICO_PANELS_ROOT
+from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, SlimsSample, find_more_fastqs, get_pair_dict
@@ -164,12 +164,13 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None, runtumor=None, 
 
 def wrapper(instrument):
     '''Wrapper function'''
-    logger = setup_logger('wrapper', os.path.join(ROOT_LOGGING_PATH, f'{instrument}_WS_wrapper.log'))
+    config = read_config(WRAPPER_CONFIG_PATH)
+
+    wrapper_log_path = config["wrapper_log_path"]
+    logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
 
     # Empty dict, will update later with T/N pair info
     pair_dict_all_pairs = {}
-
-    config = read_config(WRAPPER_CONFIG_PATH)
 
     # prepare hcp download directory
     hcptmp = config["hcp_download_dir"]

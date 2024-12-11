@@ -1,7 +1,6 @@
 import os
 import re
 import json
-import yaml
 import subprocess
 import glob
 
@@ -9,6 +8,7 @@ from slims.slims import Slims
 from slims.criteria import is_one_of, equals, conjunction, not_equals
 from slims.content import Status
 
+from tools.helpers import read_config
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, ROOT_LOGGING_PATH
 
 class slims_credentials:
@@ -128,8 +128,7 @@ def get_sample_slims_info(Sctx, run_tag):
 
 def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
     '''Find and download fqs from HCP to fastqdir on seqstore for run'''
-    with open(WRAPPER_CONFIG_PATH, 'r') as conf:
-        config = yaml.safe_load(conf)
+    config = read_config(WRAPPER_CONFIG_PATH)
 
     json_info = json.loads(fqSSample.fastq.cntn_cstm_demuxerBackupSampleResult.value)
     bucket = json_info['bucket']
@@ -139,6 +138,7 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
     qsub_script = config["hcp"]["qsub_script"]
     credentials = config["hcp"]["credentials"]
     hcp_downloads = config["hcp_download_dir"]
+    wrapper_log_path = config["wrapper_log_path"]
     
     hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
     
@@ -147,8 +147,8 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
         hcp_path = f'{hcp_download_runpath}/{os.path.basename(key)}' # This is the complete path of the downloaded file
         if not os.path.exists(local_path) or not os.path.exists(hcp_path):
             
-            standardout = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stdout")
-            standarderr = os.path.join(ROOT_LOGGING_PATH, f"hcp_download_{os.path.basename(key)}.stderr")
+            standardout = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(key)}.stdout")
+            standarderr = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(key)}.stderr")
 
             try:
                 if not os.path.exists(hcp_download_runpath):
@@ -164,12 +164,13 @@ def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
                 pass
 
 def decompress_downloaded_fastq(complete_file_path, logger):
-    with open(WRAPPER_CONFIG_PATH, 'r') as conf:
-        config = yaml.safe_load(conf)
+    config = read_config(WRAPPER_CONFIG_PATH)
     
+    wrapper_log_path = config["wrapper_log_path"]
+
     filename = os.path.basename(complete_file_path) # This is the filename of the downloaded file
-    standardout_decompress = os.path.join(ROOT_LOGGING_PATH, f"decompress_{filename}.stdout")
-    standarderr_decompress = os.path.join(ROOT_LOGGING_PATH, f"decompress_{filename}.stderr")
+    standardout_decompress = os.path.join(wrapper_log_path, f"decompress_{filename}.stdout")
+    standarderr_decompress = os.path.join(wrapper_log_path, f"decompress_{filename}.stderr")
     
     queue = config["hcp"]["queue"]
     threads = config["hcp"]["threads"]
@@ -210,8 +211,7 @@ def decompress_downloaded_fastq(complete_file_path, logger):
 
 def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
     '''Link fastqs to fastq-folder in demultiplexdir of current run.'''
-    with open(WRAPPER_CONFIG_PATH, 'r') as conf:
-        config = yaml.safe_load(conf)
+    config = read_config(WRAPPER_CONFIG_PATH)
     hcp_downloads = config["hcp_download_dir"]
     # TODO: additional fastqs need to still be in demultiplexdir. not considering downloading from hcp right now. need to consider this later...
     for fq_path in list_of_fq_paths:
