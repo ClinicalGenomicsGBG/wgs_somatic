@@ -9,8 +9,10 @@ from slims.criteria import is_one_of, equals, conjunction, not_equals
 from slims.content import Status
 
 from tools.helpers import read_config
-from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, ROOT_LOGGING_PATH
+from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
 
+# TODO: Change to point to a credentials file in the config
+# These are currently set in env/wgs_somatic_env/etc/conda/activate.d/set_slims_env.sh
 class slims_credentials:
     url = os.environ.get('SLIMS_URL')
     user = os.environ.get('SLIMS_USER')
