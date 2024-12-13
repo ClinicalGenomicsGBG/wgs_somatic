@@ -17,22 +17,24 @@ if normalid:
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
             dbsnp = pipeconfig["singularities"]["sentieon"]["dbsnp"],
-            callsettings = pipeconfig["rules"]["tnscope"]["settings"],
+            modelpath = pipeconfig["singularities"]["sentieon"]["tnscope_m"],
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
             tnscope_vcf = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf"),
             tnscope_idx = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf.idx"),
-            tnscope_bam = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"),
-            tnscope_bai = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam.bai")
         shadow:
             pipeconfig["rules"].get("tnscope", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
-            "echo $HOSTNAME;"
-            "{params.sentieon} driver -t {params.threads} -r {params.reference} "
-                "-i {input.tumorbam} -q {input.tumortable} -i {input.normalbam} -q {input.normaltable} "
-                "--algo TNscope --tumor_sample {params.tumorname} --normal_sample {params.normalname} --bam_output {output.tnscope_bam} "
-                "{params.callsettings} {output.tnscope_vcf}"
+            """
+            {params.sentieon} driver -r {params.reference} -t {params.threads} \
+                -i {input.tumorbam} -q {input.tumortable} \
+                -i {input.normalbam} -q {input.normaltable} \
+                --algo TNscope --tumor_sample {params.tumorname} --normal_sample {params.normalname} \
+                --dbsnp {params.dbsnp} \
+                --model {params.modelpath} {output.tnscope_vcf} || \
+                {{ echo 'TNscope failed'; exit 1; }}
+            """
 else:
     rule tnscope:
         input:
@@ -45,24 +47,25 @@ else:
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
             dbsnp = pipeconfig["singularities"]["sentieon"]["dbsnp"],
-            callsettings = pipeconfig["rules"]["tnscope"]["settings"],
             pon = pipeconfig["rules"]["tnscope"]["pon"],
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
             tnscope_vcf = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf"),
             tnscope_idx = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf.idx"),
-            tnscope_bam = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"),
-            tnscope_bai = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam.bai")
         shadow:
             pipeconfig["rules"].get("tnscope", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
-            "echo $HOSTNAME;"
-            "{params.sentieon} driver -t {params.threads} -r {params.reference} "
-                "-i {input.tumorbam} -q {input.tumortable} "
-                "--algo TNscope --tumor_sample {params.tumorname} --pon {params.pon} --bam_output {output.tnscope_bam} "
-                "{params.callsettings} {output.tnscope_vcf}"
+            """
+            {params.sentieon} driver -r {params.reference} -t {params.threads} \
+                -i {input.tumorbam} -q {input.tumortable} \
+                --algo TNscope --tumor_sample {params.tumorname} --pon {params.pon} \
+                --dbsnp {params.dbsnp} \
+                --model {params.modelpath} {output.tnscope_vcf} || \
+                {{ echo 'TNscope failed'; exit 1; }}
+            """
 
+# Why dont we use the modelfilter for tumor-only runs?
 if normalid:
     rule tnscope_modelfilter:
         input:
@@ -81,10 +84,14 @@ if normalid:
         shadow:
             pipeconfig["rules"].get("tnscope_modelfilter", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
-            "echo $HOSTNAME;"
-            "{params.sentieon} driver -t {params.threads} -r {params.reference} "
-            "--algo TNModelApply -m {params.modelpath} -v {input.tnscopevcf} {output.vcf}"
+            """
+            {params.sentieon} driver -r {params.reference} -t {params.threads} --algo TNModelApply \
+                --model {params.modelpath} -v {input.tnscopevcf} {output.vcf} || \
+                {{ echo 'TNModelApply failed'; exit 1; }}
+            """
 
+# For the filtering, sentieon recommends a threshold of 0.81:
+# filter -s "ML_FAIL" -i "INFO/ML_PROB > 0.81"
 if normalid:
     rule tnscope_vcffilter:
         input:
