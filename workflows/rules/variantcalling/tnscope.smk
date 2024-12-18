@@ -31,7 +31,6 @@ if normalid:
                 -i {input.tumorbam} -q {input.tumortable} \
                 -i {input.normalbam} -q {input.normaltable} \
                 --algo TNscope --tumor_sample {params.tumorname} --normal_sample {params.normalname} \
-                --dbsnp {params.dbsnp} \
                 --model {params.modelpath} {output.tnscope_vcf} || \
                 {{ echo 'TNscope failed'; exit 1; }}
             """
@@ -60,7 +59,6 @@ else:
             {params.sentieon} driver -r {params.reference} -t {params.threads} \
                 -i {input.tumorbam} -q {input.tumortable} \
                 --algo TNscope --tumor_sample {params.tumorname} --pon {params.pon} \
-                --dbsnp {params.dbsnp} \
                 --model {params.modelpath} {output.tnscope_vcf} || \
                 {{ echo 'TNscope failed'; exit 1; }}
             """
