@@ -229,4 +229,4 @@ LogR <- plot_ly(tumorLogR_df_red,
 
 p <- subplot(SEG,BAF,LogR, nrows = 3, shareX = T, titleY = T, titleX = F)
 
-saveWidget(p, file.path(output,paste0(tumorid,".ascat_out.html")), selfcontained = T)
+saveWidget(p, file.path(output,paste0(tumorid,"ascat_interactive.html")), selfcontained = T)
