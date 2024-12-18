@@ -8,3 +8,5 @@ dependencies:
   - conda-forge::r-ggpubr
   - conda-forge::r-cowplot
   - conda-forge::r-tidyverse
+  - conda-forge::r-htmlwidgets
+  - conda-forge::r-plotly

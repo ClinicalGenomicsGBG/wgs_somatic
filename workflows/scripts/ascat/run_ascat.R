@@ -3,7 +3,22 @@ library(data.table)
 library(ggpubr)
 library(cowplot)
 library(tidyverse)
+library(plotly)
+library(htmlwidgets)
 
+
+data_reduce <- function(X,Y, fract){
+  len_new <- floor(length(X)/fract)
+  if(len_new <= 1){
+    stop('Not enough points for given value of fract. Reduce the value of fract!!!')
+  }
+  ind_new <- seq(1:len_new)
+  X_new <- X[fract*ind_new]
+  Y_new <- Y[fract*ind_new]
+  df_new <- data.frame(X_new, Y_new)
+  names(df_new) <- c('X','Y')
+  return(df_new)
+}
 
 # Get command line arguments
 args <- commandArgs(trailingOnly = TRUE)
@@ -100,7 +115,7 @@ Segment_plot <- ggplot(fai)+
                  aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
                  size = 2.5, position = position_dodge(width = -0.1))+
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5)+
-  ylab("Ascat ploidy")+
+  ylab("Copy number")+
   theme(legend.title=element_blank(), axis.title.x = element_blank())
 
 BAF_plot <-  ggplot(fai)+
@@ -123,3 +138,109 @@ plot_grid(Segment_plot, BAF_plot, LogR_plot,
 
 dev.off()
 
+vline <- function(x = 0, color = "#00000033") {
+  list(
+    type = "line",
+    y0 = 0,
+    y1 = 1,
+    yref = "paper",
+    x0 = x,
+    x1 = x,
+    line = list(color = color, dash = "dot")
+  )
+}
+
+vlines <- list()
+for (i in 1:nrow(fai)) {
+  vlines <-  append(vlines, list(vline(fai$start[i])))
+}
+
+plot_SEG <- mySeg%>%
+  mutate(gap = NA)%>%
+  pivot_longer(cols = c(startpos, endpos, gap), names_to = "pos_name", values_to = "pos")%>%
+  mutate(ascat_ploidy = ascat_ploidy + ifelse(allele == "major_allele", 0.01, -0.01))
+
+SEG <- plot_ly(plot_SEG,
+               x = ~pos,
+               y = ~ascat_ploidy,
+               color = ~allele,
+               colors = c("#FC4E07","#2E9FDF"),
+               type = "scatter", mode = "lines")%>%
+  layout(shapes = vlines,
+         annotations = list(
+           x = fai$middle,
+           y = 1,
+           text = fai$chr,
+           xref = "x",
+           yref = "paper",
+           showarrow = F
+         ),
+        yaxis = list(title = list(text = "Copy number"),
+                     zerolinecolor = "#FFFFFF"),
+        xaxis = list(zerolinecolor = "#FFFFFF"),
+        legend = list(orientation = "h",
+                      y = 100,
+                      x = 0)
+         )
+
+
+show_points = 2E4
+
+tumorBAF_df_red <- tumorBAF_df%>%
+  dplyr::filter(BAF < 0.99 & BAF > 0.01)%>%
+  slice(which(row_number() %% floor(n()/show_points) == 1))
+
+BAF <- plot_ly(tumorBAF_df_red,
+               x = ~pos,
+               y = ~BAF,
+               type = "scatter",
+               mode = "markers",
+               marker = list(
+                 color = "#000000CC",
+                 size = 2
+               ),
+               showlegend = F)%>%
+  layout(shapes = vlines,
+         annotations = list(
+           x = fai$middle,
+           y = 1,
+           text = fai$chr,
+           xref = "x",
+           yref = "paper",
+           showarrow = F
+         ),
+         yaxis = list(title = list(text = "BAF"),
+                      zerolinecolor = "#FFFFFF"),
+         xaxis = list(zerolinecolor = "#FFFFFF"))
+
+tumorLogR_df_red <- tumorLogR_df%>%
+  slice(which(row_number() %% floor(n()/show_points) == 1))
+
+LogR <- plot_ly(tumorLogR_df_red,
+               x = ~pos,
+               y = ~LogR,
+               type = "scatter",
+               mode = "markers",
+               marker = list(
+                 color = "#000000CC",
+                 size = 2
+               ),
+               showlegend = F)%>%
+  layout(shapes = vlines,
+         annotations = list(
+           x = fai$middle,
+           y = 1,
+           text = fai$chr,
+           xref = "x",
+           yref = "paper",
+           showarrow = F
+         ),
+         yaxis = list(title = list(text = "LogR"),
+                      zerolinecolor = "#FFFFFF"),
+         xaxis = list(zerolinecolor = "#FFFFFF"))
+
+
+
+p <- subplot(SEG,BAF,LogR, nrows = 3, shareX = T, titleY = T, titleX = F)
+
+saveWidget(p, file.path(output,paste0(tumorid,".ascat_out.html")), selfcontained = T)
