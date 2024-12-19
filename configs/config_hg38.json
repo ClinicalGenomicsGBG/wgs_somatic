@@ -98,6 +98,12 @@
         {
             "annotate_ref": "/apps/bio/dependencies/wgs_somatic/hg38/refseq/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
         },
+        "ascat":
+        {
+            "resources": "/apps/bio/dependencies/wgs_somatic/hg38/ascat",
+            "singularity": "/apps/bio/dependencies/wgs_somatic/hg38/ascat/ascat_v3.2.0.sif",
+            "genome_id": "hg38"         
+        },
         "share_to_resultdir":
         {
         },
