@@ -129,7 +129,7 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
 def call_script(**kwargs):
     '''Function to call main function from launch_snakemake.py'''
     args = argparse.Namespace(**kwargs)
-    subprocess.call(analysis_main(args, **kwargs))
+    analysis_main(args, **kwargs)
 
 
 def check_ok(outputdir):
