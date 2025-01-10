@@ -79,6 +79,7 @@ if tumorid and normalid:
             before_corr_germline = temp("{stype}/ascat/Before_correction_{sname}.germline.png"),
             before_corr_tumour = temp("{stype}/ascat/Before_correction_{sname}.tumour.png"),
             ascat_plot = temp("{stype}/ascat/{sname}.ascat_out.png"),
+            ascat_interactive = temp("{stype}/ascat/{sname}.ascat_interactive.html"),
         shell:
             "Rscript {params.run_ascat_script} {params.tumorid} {input.LogR_tumor_file} {input.BAF_tumor_file} {input.LogR_normal_file} {input.BAF_normal_file} {params.GCcontentfile} {params.replictimingfile} {output.stats_file} {params.genome_id} {params.genome_fai}"
 

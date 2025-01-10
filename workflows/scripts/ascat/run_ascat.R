@@ -65,11 +65,12 @@ mySeg <- merge(mySeg, fai, by = "chr")
 mySeg <- mySeg %>%
   mutate(
     startpos = startpos + start,
-    endpos = endpos + start
+    endpos = endpos + start,
+    segment_size = endpos - startpos,
+    segment_frac = segment_size / sum(segment_size)
   )%>%
   rename(minor_allele = nBraw, major_allele = nAraw)%>%
   pivot_longer(cols = c(major_allele, minor_allele), names_to = "allele", values_to = "ascat_ploidy")
-
 
 setDT(ascat.bc$Tumor_BAF, keep.rownames = T)[]%>%
   separate_wider_delim(rn, "_", names = c("chr","pos"))%>%
@@ -95,6 +96,10 @@ theme_set(theme_pubclean())
 
 png(file.path(output,paste0(tumorid,".ascat_out.png")), width = 24, height = 24, units = "cm", res = 1200)
 
+# Set the ylims according to segments longer than 1% of total segments (visible in the plot)
+# Smaller fragments can be studied in interactive plot
+lim_y <- c(0,0.5+max(mySeg$ascat_ploidy[mySeg$segment_frac>0.001])) 
+
 Segment_plot <- ggplot(fai)+
   geom_vline(aes(xintercept = start), col = "grey")+
   geom_linerange(data = mySeg, 
@@ -102,6 +107,7 @@ Segment_plot <- ggplot(fai)+
                  size = 2.5, position = position_dodge(width = -0.1))+
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5)+
   ylab("Copy number")+
+  coord_cartesian(ylim = lim_y)+
   theme(legend.title=element_blank(), axis.title.x = element_blank())
 
 BAF_plot <-  ggplot(fai)+
@@ -229,4 +235,4 @@ LogR <- plot_ly(tumorLogR_df_red,
 
 p <- subplot(SEG,BAF,LogR, nrows = 3, shareX = T, titleY = T, titleX = F)
 
-saveWidget(p, file.path(output,paste0(tumorid,"ascat_interactive.html")), selfcontained = T)
+saveWidget(p, file.path(output,paste0(tumorid,".ascat_interactive.html")), selfcontained = T)
