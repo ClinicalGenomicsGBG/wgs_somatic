@@ -88,8 +88,7 @@ if normalid:
                 {{ echo 'TNModelApply failed'; exit 1; }}
             """
 
-# For the filtering, sentieon recommends a threshold of 0.81:
-# filter -s "ML_FAIL" -i "INFO/ML_PROB > 0.81"
+# In the latest version the ML_PROB was inverted, with low scores meaning high confidence
 if normalid:
     rule tnscope_vcffilter:
         input:
@@ -112,7 +111,7 @@ if normalid:
                             f"{params.bcftools} filter -s uncertainAF -e 'FORMAT/AF[0]<0.045 && FORMAT/AD[0:1]<4' -m + {params.outputdir}/{vcfname}_altalleleinnormal4.vcf", f"> {params.outputdir}/{vcfname}_uncertainaf6.vcf ;",
                             f"{params.bcftools} filter -s likely_artifact -e 'FORMAT/AF[0]<0.1 && FORMAT/AF[1]>0.06' -m + {params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {params.outputdir}/{vcfname}_likelyartifact7.vcf ;",
                             f"{params.bcftools} filter -s lowAD -e 'FORMAT/AD[0:1] < 3' {params.outputdir}/{vcfname}_likelyartifact7.vcf", f"> {params.outputdir}/{vcfname}_lowad8.vcf ;",
-                            f"{params.bcftools} filter -s MLrejected -e 'INFO/ML_PROB<0.37' -m + {params.outputdir}/{vcfname}_lowad8.vcf", f"> {params.outputdir}/{vcfname}_mladjusted9.vcf ;",
+                            f"{params.bcftools} filter -s MLrejected -e 'INFO/ML_PROB>0.63' -m + {params.outputdir}/{vcfname}_lowad8.vcf", f"> {params.outputdir}/{vcfname}_mladjusted9.vcf ;",
                             f"{params.bcftools} filter -s 'orientation_bias' -e 'FMT/FOXOG[0] == 1' -m + {params.outputdir}/{vcfname}_mladjusted9.vcf", f"> {params.outputdir}/{vcfname}_foxogadj.vcf ;",
                             f"{params.bcftools} filter -s 'strand_bias' -e 'SOR > 3' -m + {params.outputdir}/{vcfname}_foxogadj.vcf", f"> {params.outputdir}/{vcfname}_strandbiasadj.vcf ;",
                             f"{params.bcftools} filter -i 'FILTER=\"PASS\"' {params.outputdir}/{vcfname}_strandbiasadj.vcf > {output.somatic_n} ;",
@@ -143,7 +142,7 @@ else:
                             f"{params.bcftools} filter -s uncertainAF -e 'FORMAT/AF[0]<0.045 && FORMAT/AD[0:1]<4' -m + {params.outputdir}/{vcfname}_altalleleinnormal4.vcf", f"> {params.outputdir}/{vcfname}_uncertainaf6.vcf ;",
                             #f"{params.bcftools} filter -s likely_artifact -e 'FORMAT/AF[0]<0.1 && FORMAT/AF[1]>0.06' -m + {params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {params.outputdir}/{vcfname}_likelyartifact7.vcf ;",
                             #f"{params.bcftools} filter -s lowAD -e 'FORMAT/AD[0:1] < 3' {params.outputdir}/{vcfname}_likelyartifact7.vcf", f"> {params.outputdir}/{vcfname}_lowad8.vcf ;",
-                            #f"{params.bcftools} filter -s MLrejected -e 'INFO/ML_PROB<0.37' -m + {params.outputdir}/{vcfname}_lowad8.vcf", f"> {params.outputdir}/{vcfname}_mladjusted9.vcf ;",
+                            #f"{params.bcftools} filter -s MLrejected -e 'INFO/ML_PROB>0.63' -m + {params.outputdir}/{vcfname}_lowad8.vcf", f"> {params.outputdir}/{vcfname}_mladjusted9.vcf ;",
                             f"{params.bcftools} filter -s 'orientation_bias' -e 'FMT/FOXOG[0] == 1' -m + {params.outputdir}/{vcfname}_uncertainaf6.vcf", f"> {params.outputdir}/{vcfname}_foxogadj.vcf ;",
                             f"{params.bcftools} filter -s 'strand_bias' -e 'SOR > 3' -m + {params.outputdir}/{vcfname}_foxogadj.vcf", f"> {params.outputdir}/{vcfname}_strandbiasadj.vcf ;",
                             f"{params.bcftools} filter -i 'FILTER=\"PASS\"' {params.outputdir}/{vcfname}_strandbiasadj.vcf > {output.somatic_n} ;",
