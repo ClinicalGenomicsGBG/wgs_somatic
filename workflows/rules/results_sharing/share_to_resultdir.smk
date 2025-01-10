@@ -10,6 +10,7 @@ if tumorid:
             input:
                 #expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
                 expand("{stype}/{caller}/{sname}_{vcftype}.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
+                expand("{stype}/tnscope/{sname}_tnscope_filterstats.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
                 expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[normalname]["stype"], caller="dnascope", sname=normalid, vcftype="germline"),
                 expand("qc_report/{tumorname}_qc_stats.xlsx", tumorname=tumorname),
                 expand("{stype}/canvas/{sname}_CNV_somatic.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
@@ -55,6 +56,7 @@ if tumorid:
         rule share_to_resultdir:
             input:
                 expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
+                expand("{stype}/tnscope/{sname}_tnscope_filterstats.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
                 expand("qc_report/{tumorname}_qc_stats.xlsx", tumorname=tumorname),
                 expand("{stype}/canvas/{sname}_CNV_germline.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
