@@ -1,0 +1,12 @@
+name: ascat
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::ascat=3.2.0
+  - bioconda::cancerit-allelecount=4.3.0
+  - conda-forge::r-ggpubr
+  - conda-forge::r-cowplot
+  - conda-forge::r-tidyverse
+  - conda-forge::r-htmlwidgets
+  - conda-forge::r-plotly
