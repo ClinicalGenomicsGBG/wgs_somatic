@@ -411,14 +411,19 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             "--shadow-prefix", shadow_dir
         ] + dev_args
 
-        # Execute Snakemake command
-        subprocess.run(snakemake_args, env=my_env, check=True)
+        # Execute Snakemake command with output redirection
+        snakemake_args_str = " ".join(snakemake_args) + f" &>> {samplelog}"
+        subprocess.run(snakemake_args_str, shell=True, env=my_env, check=True)
 
     except subprocess.CalledProcessError as e:
+        tb = traceback.format_exc()
         logger(f"Error running Snakemake: {e}")
+        logger(f"Traceback: {tb}")
+        sys.exit(1)
     except Exception as e:
         tb = traceback.format_exc()
         logger(f"An error occurred: {e}\n{tb}")
+        sys.exit(1)
 
 
 
