@@ -28,7 +28,7 @@ Stage: build
     mkdir -p /dotnet && tar zxf dotnet-sdk-2.2.207-linux-x64.tar.gz -C /dotnet
 
     # Pull Down CanvasRepo
-    git clone https://Bart-Edelbroek@github.com/ClinicalGenomicsGBG/canvas.git
+    git clone https://github.com/ClinicalGenomicsGBG/canvas.git
 
     # Install Canvas 
     tar -zxvf /Canvas-1.40.0.1613.master_x64.tar.gz
