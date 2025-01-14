@@ -186,6 +186,10 @@ def wrapper(instrument):
     # Read all previously analysed runs
     previous_runs_file = config['previous_runs_file_path']
     previous_runs_file_path = os.path.join(ROOT_DIR, previous_runs_file)
+
+    if not os.path.exists(previous_runs_file_path):
+        raise FileNotFoundError(f"Runlist file not found: {previous_runs_file_path}")
+
     with open(previous_runs_file_path, 'r') as prev:
         previous_runs = [line.rstrip() for line in prev]
 

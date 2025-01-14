@@ -16,7 +16,7 @@ hg38ref:
   GMS-BT: 'yes'
   GMS-AL: 'yes'
 
-workingdir: '/clinical/data/wgs_somatic'
+workingdir: '/clinical/data/wgs_somatic/cron'
 
 #hcp_download_dir: '/medstore/results/wgs/tmp/hcp_downloads'
 hcp_download_dir: '/medstore/projects/P23-075/wgs_somatic/hcp_downloads'
