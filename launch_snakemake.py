@@ -412,8 +412,8 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         ] + dev_args
 
         # Execute Snakemake command with output redirection
-        snakemake_args_str = " ".join(snakemake_args) + f" &>> {samplelog}"
-        subprocess.run(snakemake_args_str, shell=True, env=my_env, check=True)
+        with open(samplelog, "a") as log_file:
+            subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
 
     except subprocess.CalledProcessError as e:
         tb = traceback.format_exc()
