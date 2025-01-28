@@ -5,7 +5,7 @@
     {
         "sentieon":
         {
-            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v201911_hg38.sif",
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v201911_250128.sif",
             "tool_path": "/sentieon-genomics-201911/bin/sentieon",
             "reference": "/ncbi/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
             "mills": "/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
