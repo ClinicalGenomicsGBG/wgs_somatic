@@ -1,0 +1,50 @@
+Bootstrap: docker
+From: debian:12.8-slim
+Stage: build
+
+%files
+    /clinical/exec/wgs_somatic/dependencies/canvas/Canvas-1.40.0.1613.master_x64.tar.gz /Canvas-1.40.0.1613.master_x64.tar.gz
+    /clinical/exec/wgs_somatic/dependencies/canvas/hg38/filter13.bed /canvasfiles/canvasfiles/filter13.bed
+    /clinical/exec/wgs_somatic/dependencies/canvas/hg38/genome.fa /canvasfiles/canvasfiles/genome.fa
+    /clinical/exec/wgs_somatic/dependencies/canvas/hg38/genome.fa.fai /canvasfiles/canvasfiles/genome.fa.fai
+    /clinical/exec/wgs_somatic/dependencies/canvas/hg38/kmer.fa /canvasfiles/canvasfiles/kmer.fa
+    /clinical/exec/wgs_somatic/dependencies/canvas/hg38/GenomeSize.xml /canvasfiles/canvasfiles/GenomeSize.xml
+    /clinical/exec/wgs_somatic/dependencies/canvas/hg38/GenomeSize.xml /Sequence/WholeGenomeFasta/GenomeSize.xml
+
+%post
+    # Update package list and install python3 and other requirements for git and pip3
+    apt-get update && apt-get install -y python3 python3-pip wget git
+
+    # Install libssl1.1
+    wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.0g-2ubuntu4_amd64.deb
+    dpkg -i libssl1.1_1.1.0g-2ubuntu4_amd64.deb
+
+    # Install libpng12
+    wget http://snapshot.debian.org/archive/debian/20160413T160058Z/pool/main/libp/libpng/libpng12-0_1.2.54-6_amd64.deb
+    dpkg --force-all -i libpng12-0_1.2.54-6_amd64.deb || apt-get install -f -y
+
+    # Install dotnet
+    wget https://download.visualstudio.microsoft.com/download/pr/022d9abf-35f0-4fd5-8d1c-86056df76e89/477f1ebb70f314054129a9f51e9ec8ec/dotnet-sdk-2.2.207-linux-x64.tar.gz
+    mkdir -p /dotnet && tar zxf dotnet-sdk-2.2.207-linux-x64.tar.gz -C /dotnet
+
+    # Pull Down CanvasRepo
+    git clone https://github.com/ClinicalGenomicsGBG/canvas.git
+
+    # Install Canvas 
+    tar -zxvf /Canvas-1.40.0.1613.master_x64.tar.gz
+    # change permissions on canvasdir
+    chmod -R 775 /Canvas-1.40.0.1613+master_x64/
+    chmod +x /Canvas-1.40.0.1613+master_x64/tabix
+    chmod +x /Canvas-1.40.0.1613+master_x64/CanvasPedigreeCaller/bedGraphToBigWig
+
+%environment
+    DOTNET_ROOT=/dotnet
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+    PATH=/dotnet:$PATH
+    export DOTNET_ROOT DOTNET_SYSTEM_GLOBALIZATION_INVARIANT PATH
+
+%runscript
+    exec /bin/bash "$@"
+
+%labels
+    Version v0.0.2

@@ -6,7 +6,6 @@ import sys
 import argparse
 import os
 import re
-import yaml
 import glob
 from datetime import datetime
 import json
@@ -15,9 +14,9 @@ import traceback
 import subprocess
 import threading
 
-from definitions import CONFIG_PATH, ROOT_DIR, ROOT_LOGGING_PATH#, INSILICO_CONFIG, INSILICO_PANELS_ROOT
-from context import RunContext, SampleContext
-from helpers import setup_logger
+from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
+from tools.context import RunContext, SampleContext
+from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, SlimsSample, find_more_fastqs, get_pair_dict
 from tools.email import start_email, end_email, error_email
 from launch_snakemake import analysis_main, yearly_stats, alissa_upload, copy_results, get_timestamp
@@ -130,7 +129,7 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
 def call_script(**kwargs):
     '''Function to call main function from launch_snakemake.py'''
     args = argparse.Namespace(**kwargs)
-    subprocess.call(analysis_main(args, **kwargs))
+    analysis_main(args, **kwargs)
 
 
 def check_ok(outputdir):
@@ -165,13 +164,13 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None, runtumor=None, 
 
 def wrapper(instrument):
     '''Wrapper function'''
-    logger = setup_logger('wrapper', os.path.join(ROOT_LOGGING_PATH, f'{instrument}_WS_wrapper.log'))
+    config = read_config(WRAPPER_CONFIG_PATH)
+
+    wrapper_log_path = config["wrapper_log_path"]
+    logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
 
     # Empty dict, will update later with T/N pair info
     pair_dict_all_pairs = {}
-
-    with open(CONFIG_PATH, 'r') as conf:
-        config = yaml.safe_load(conf)
 
     # prepare hcp download directory
     hcptmp = config["hcp_download_dir"]
@@ -187,6 +186,10 @@ def wrapper(instrument):
     # Read all previously analysed runs
     previous_runs_file = config['previous_runs_file_path']
     previous_runs_file_path = os.path.join(ROOT_DIR, previous_runs_file)
+
+    if not os.path.exists(previous_runs_file_path):
+        raise FileNotFoundError(f"Runlist file not found: {previous_runs_file_path}")
+
     with open(previous_runs_file_path, 'r') as prev:
         previous_runs = [line.rstrip() for line in prev]
 

@@ -1,21 +1,21 @@
 {
-    "referencegenome": "/apps/bio/dependencies/wgs_somatic/hg38/sentieon/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
-    "referencefai": "/apps/bio/dependencies/wgs_somatic/hg38/sentieon/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai",
+    "referencegenome": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
+    "referencefai": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai",
     "singularities":
     {
         "sentieon":
         {
-            "sing": "/apps/bio/singularities/wgs_somatic/sentieon_peta_201911_hg38_new220503.simg",
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v201911_250128.sif",
             "tool_path": "/sentieon-genomics-201911/bin/sentieon",
-            "reference": "/databases/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
-            "mills": "/databases/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
-            "dbsnp": "/databases/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
-            "dnascope_m": "/databases/SentieonDNAscopeModelBeta0.5.model",
-            "tnscope_m": "/databases/Sentieon_GiAB_201711.model"
+            "reference": "/ncbi/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
+            "mills": "/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
+            "dbsnp": "/ncbi/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
+            "dnascope_m": "/sentieon/SentieonDNAscopeModelBeta0.5.model",
+            "tnscope_m": "/sentieon/Sentieon_GiAB_201711.model"
         },
         "canvas":
         {
-            "sing": "/apps/bio/singularities/wgs_somatic/canvas_hg38.simg",
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/canvas_hg38_v1.40.0.1613.sif",
             "dll": "/Canvas-1.40.0.1613+master_x64/Canvas.dll",
             "tool_path": "/canvas/run_canvas.py",
             "reference": "/canvasfiles/canvasfiles/",
@@ -24,11 +24,11 @@
         }, 
         "pindel":
         {
-            "sing": "/apps/bio/singularities/gms_hematology/pindel-0.2.5b8.simg"
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/pindel-0.2.5b8.simg"
         },
         "samtools":
         {
-            "sing": "/apps/bio/singularities/samtools-1.20.img"
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/samtools-1.20.img"
         }
     },
     "shadow": "copy-minimal",
@@ -52,14 +52,14 @@
         },
         "insilico":
         {
-        "samtools": "/apps/bio/software/samtools/1.9/bin/samtools",
-        "python": "/apps/bio/software/anaconda2/envs/sentieon_py/bin/python"
+        "samtools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/samtools",
+        "python": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/python"
         },
         "tnscope":
         {
             "outputdir": "tumor/tnscope",
             "settings": "--min_init_normal_lod 0.5 --min_normal_lod 3.0 --min_init_tumor_lod 1.0 --min_tumor_lod 3 --trim_soft_clip",
-            "pon": "/apps/bio/dependencies/wgs_somatic/hg38/wgs-somatic-panel_of_normal.vcf.gz"
+            "pon": "/clinical/exec/wgs_somatic/dependencies/pon/hg38/wgs-somatic-panel_of_normal.vcf.gz "
         },
         "tnscope_modelfilter":
         {
@@ -67,51 +67,51 @@
         },
         "tnscope_vcffilter":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
+            "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools",
             "outputdir": "tumor/tnscope"
         },
         "dnascope":
         {
             "settings": "--pcr_indel_model NONE",
-            "modelpath": "/apps/bio/repos/wgs_somatic/tools/sentieon/SentieonDNAscopeModelBeta0.5.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModelBeta0.5.model"
         },
         "dnascope_modelfilter":
         {
-            "modelpath": "/apps/bio/repos/wgs_somatic/tools/sentieon/SentieonDNAscopeModelBeta0.5.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModelBeta0.5.model"
         },
         "dnascope_vcffilter":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
-            "vcftools": "/apps/bio/apps/vcftools/0.1.12a/bin/vcftools"
+            "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools",
+            "vcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/vcftools"
         },
         "ballele_plot":
         {
-            "dbsnp": "/apps/bio/dependencies/wgs_somatic/hg38/sentieon/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
+            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
             "hg38ref": "yes"
         },
        "generate_tdf":
         {
-           "igvtools_jar_path": "/apps/bio/software/igvtools/2.3.71/igvtools.jar",
+           "igvtools_jar_path": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/share/igvtools-2.3.75-1/igvtools.jar",
            "igvtools_memory_limit": "32768m"
         },
         "canvas":
         {
-            "annotate_ref": "/apps/bio/dependencies/wgs_somatic/hg38/refseq/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
+            "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
         },
         "share_to_resultdir":
         {
         },
         "filter_variants_in_bed":
         {
-            "rtg": "/apps/bio/dependencies/wgs_somatic/rtg-tools-3.11/rtg",
-            "bedfile": "/apps/bio/dependencies/wgs_somatic/hg38/refseq/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions_3000.bed" 
+            "rtg": "/clinical/exec/wgs_somatic/dependencies/software/rtg-tools-3.11/rtg",
+            "bedfile": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions_3000.bed" 
         },
         "manta":
         {
-            "svdb": "/apps/bio/software/anaconda2/envs/svdb2.3/bin/svdb",
-            "mantaconf": "/apps/bio/software/Manta/manta-1.6.0.centos6_x86_64/bin/configManta.py",
-            "annotate_ref": "/apps/bio/dependencies/wgs_somatic/hg38/refseq/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf",
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools"
+            "svdb": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/svdb",
+            "mantaconf": "/clinical/exec/wgs_somatic/dependencies/software/manta-1.6.0.centos6_x86_64/bin/configManta.py",
+            "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf",
+            "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools"
         },
         "upload_to_iva":
         {
@@ -128,30 +128,30 @@
         },
         "convert_to_alissaformat":
         {
-            "python": "/apps/bio/software/anaconda2/envs/sentieon_py/bin/python"
+            "python": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/python"
         },
         "merge_snvs_cnvs":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools"
+            "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools"
         },
         "manta_summary":
         {
-            "genelist": "/apps/bio/dependencies/wgs_somatic/genelist_v1.1.txt",
-            "genelist_tumoronly": "/apps/bio/dependencies/wgs_somatic/Genelist_GMS-AL_tumor-only_v1.2.txt"
+            "genelist": "/clinical/exec/wgs_somatic/dependencies/in_house/genelist_v1.1.txt",
+            "genelist_tumoronly": "/clinical/exec/wgs_somatic/dependencies/in_house/Genelist_GMS-AL_tumor-only_v1.2.txt"
         },
         "pindel":
         {
-            "bed": "/apps/bio/dependencies/wgs_somatic/hg38/new_twist_shortlist_pindel_hg38_padded50.bed",
-            "python": "/apps/bio/software/anaconda2/envs/wgs_somatic/bin/python"
+            "bed": "/clinical/exec/wgs_somatic/dependencies/in_house/new_twist_shortlist_pindel_hg38_padded50.bed",
+            "python": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/python"
         },
         "bgzip":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
-            "bgzip": "/apps/bio/software/htslib/htslib/bgzip"
+            "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools",
+            "bgzip": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bgzip"
         },
         "tmb_calculation":
         {
-            "bcftools": "/apps/bio/software/bcftools/1.9/bin/bcftools",
+            "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools",
             "effective_genome_size": 3049315783
         }
     }

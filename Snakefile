@@ -5,11 +5,9 @@ import glob
 import time
 from pathlib import Path
 import yaml
-import helpers
+from tools.helpers import read_config
 import os
 from definitions import ROOT_DIR
-
-__author__ = "Rickard 'Ricksy' Rickardsson"
 
 normalfastqdirs = config["normalfastqs"]
 normalname = config["normalname"]
@@ -25,20 +23,10 @@ workingdir = config["workingdir"]
 
 insilico_panels = config["insilico"]
 
-##################################################
-# Chose Config based on Reference
-# ---------------------------------------------
-
-if reference == "hg38":
-    configfilepath = f"{ROOT_DIR}/configs/config_hg38.json"
-else:
-    configfilepath = f"{ROOT_DIR}/configs/config_hg19.json"
-#----------------------------------------------
-
-
-pipeconfig = helpers.read_config(configfilepath)
-clusterconf = helpers.read_config(f"{ROOT_DIR}/configs/cluster.yaml")
-filterconfig = helpers.read_config(f"{ROOT_DIR}/configs/filters.yaml")
+# It uses the following configs from the working directory
+pipeconfig = read_config(config["pipeconfig"])  # In launch_snakemake.py the pipeconfig is adjusted to the genome (hg19/hg38)
+clusterconf = read_config(config["clusterconfig"])
+filterconfig = read_config(config["filterconfig"])
 
 shell.executable("/bin/bash")
 
