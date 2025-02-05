@@ -234,6 +234,8 @@ def link_fastqs_to_workingdir(fastq_dict, workingdir, logger):
             else:
                 logger.info(f'Link {link_name} already exists')
 
+    return fastq_dir
+
 
 def download_and_decompress(bucket, remote_key, logger, hcp_runtag):
     downloaded_fq = download_hcp_fq(bucket, remote_key, logger, hcp_runtag)

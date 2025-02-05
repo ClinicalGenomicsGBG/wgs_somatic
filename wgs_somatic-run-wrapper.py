@@ -82,49 +82,6 @@ def generate_context_objects(Rctx, logger):
 
     return Rctx
 
-def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
-
-    # FIXME Use boolean values instead of 'yes' for hg38ref and handle the translation later on
-    hg38ref = config['hg38ref']['GMS-BT']
-    hcp_downloads = config['hcp_download_dir']
-    timestamp = get_timestamp()
-    if n:
-        normalsample = n
-        normalfastqs = os.path.join(Rctx_run.run_path, "fastq")
-        runnormal = Rctx_run.run_name
-        if not t:
-            date, _, _, chip, *_ = runnormal.split('+')[0].split('_')
-            normalid= '_'.join([normalsample, date, chip])
-            workingdir = os.path.join(config['workingdir'], "normal_only", normalid)
-            workingdir = f'{workingdir}_{timestamp}'
-            #workingdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "normal_only", normalsample) #use for testing
-            pipeline_args = {'runnormal': f'{runnormal}', 'workingdir': f'{workingdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
-    if t:
-        runtumor = Rctx_run.run_name
-        tumorsample = t
-        tumorfastqs = os.path.join(Rctx_run.run_path, "fastq")
-        date, _, _, chip, *_ = runtumor.split('+')[0].split('_')
-        tumorid = '_'.join([tumorsample, date, chip])
-        if not n:
-            workingdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
-            workingdir = f'{workingdir}_{timestamp}'
-            #workingdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "tumor_only", tumorsample) #use for testing
-            pipeline_args = {'workingdir': f'{workingdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
-        else:
-            workingdir = os.path.join(config['workingdir'], tumorid)
-            workingdir = f'{workingdir}_{timestamp}'
-            #workingdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", tumorsample) #use for testing
-            pipeline_args = {'runnormal': f'{runnormal}', 'workingdir': f'{workingdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}'}
-
-    if os.path.exists(workingdir):
-        if t:
-            logger.info(f'workingdir exists for {tumorsample}. Renaming old workingdir {workingdir} to {workingdir}_old')
-            os.rename(workingdir, f'{workingdir}_old')
-        else:
-            logger.info(f'workingdir exists for {normalsample}. Renaming old workingdir {workingdir} to {workingdir}_old')
-            os.rename(workingdir, f'{workingdir}_old')
-
-    return pipeline_args
 
 def call_script(**kwargs):
     '''Function to call main function from launch_snakemake.py'''
@@ -141,7 +98,7 @@ def check_ok(workingdir):
         return False
 
 
-def analysis_end(workingdir, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
+def analysis_end(workingdir, tumorsample=None, normalsample=None):
     '''Function to check if analysis has finished correctly and add to yearly stats and copy results'''
 
     if os.path.isfile(f"{workingdir}/reporting/workflow_finished.txt"):
@@ -149,13 +106,13 @@ def analysis_end(workingdir, tumorsample=None, normalsample=None, runtumor=None,
             if normalsample:
                 # these functions are only executed if snakemake workflow has finished successfully
                 yearly_stats(tumorsample, normalsample)
-                copy_results(workingdir, runnormal=runnormal, normalname=normalsample, runtumor=runtumor, tumorname=tumorsample)
+                copy_results(workingdir)
             else:
                 yearly_stats(tumorsample, 'None')
-                copy_results(workingdir, runtumor=runtumor, tumorname=tumorsample)
+                copy_results(workingdir)
         else:
             yearly_stats('None', normalsample)
-            copy_results(workingdir, runnormal=runnormal, normalname=normalsample)
+            copy_results(workingdir)
     else:
         pass
 
@@ -228,14 +185,47 @@ def wrapper(instrument):
         paired_samples = []
 
         def submit_pipeline(tumorsample, normalsample):
-            pipeline_args = get_pipeline_args(config, logger, Rctx_run, tumorsample, normalsample)
-            workingdir = pipeline_args.get('workingdir')
-            if tumorsample:
+            hg38ref = config['hg38ref']['GMS-BT']
+            timestamp = get_timestamp()
+            workingdir = None
+            if tumorsample and normalsample:
                 fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
-                link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
-            if normalsample:
                 fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
-                link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
+                workingdir = os.path.join(config['workingdir'], f"{fastq_dict_tumor.keys()[0]}_{timestamp}")
+                os.makedirs(workingdir, exist_ok=False)  # Make sure a new workingdir is created, not overwriting old results
+                tumor_fastq_dir = link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
+                normal_fastq_dir = link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
+                pipeline_args = {'workingdir': f'{workingdir}', 
+                                 'normalname': f'{normalsample}', 
+                                 'normalfastqs': f'{normal_fastq_dir}', 
+                                 'tumorname': f'{tumorsample}', 
+                                 'tumorfastqs': f'{tumor_fastq_dir}', 
+                                 'hg38ref': f'{hg38ref}'}
+
+            elif tumorsample:
+                fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
+                workingdir = os.path.join(config['workingdir'], "tumor_only")
+                os.makedirs(workingdir, exist_ok=True)
+                workingdir = os.path.join(workingdir, f"{fastq_dict_tumor.keys()[0]}_{timestamp}")
+                os.makedirs(workingdir, exist_ok=False)
+                tumor_fastq_dir = link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
+                pipeline_args = {'workingdir': f'{workingdir}', 
+                                 'tumorname': f'{tumorsample}', 
+                                 'tumorfastqs': f'{tumor_fastq_dir}', 
+                                 'hg38ref': f'{hg38ref}'}
+                
+            elif normalsample:
+                fastq_dict_tumor = find_or_download_fastqs(normalsample, logger)
+                workingdir = os.path.join(config['workingdir'], "normal_only")
+                os.makedirs(workingdir, exist_ok=True)
+                workingdir = os.path.join(workingdir, f"{fastq_dict_tumor.keys()[0]}_{timestamp}")
+                os.makedirs(workingdir, exist_ok=False)
+                normal_fastq_dir = link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
+                pipeline_args = {'workingdir': f'{workingdir}', 
+                                 'normalname': f'{normalsample}', 
+                                 'normalfastqs': f'{normal_fastq_dir}', 
+                                 'hg38ref': f'{hg38ref}'}
+            
             threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
             logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
             check_ok_outdirs.append(workingdir)
