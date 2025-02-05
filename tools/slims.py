@@ -3,6 +3,8 @@ import re
 import json
 import subprocess
 import glob
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from slims.slims import Slims
 from slims.criteria import is_one_of, equals, conjunction, not_equals
@@ -128,120 +130,104 @@ def get_sample_slims_info(Sctx, run_tag):
         return
     return translate_slims_info(SSample.dna)
 
-def download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag):
+def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     '''Find and download fqs from HCP to fastqdir on seqstore for run'''
     config = read_config(WRAPPER_CONFIG_PATH)
-
-    json_info = json.loads(fqSSample.fastq.cntn_cstm_demuxerBackupSampleResult.value)
-    bucket = json_info['bucket']
-    remote_keys = json_info['remote_keys']
 
     queue = config["hcp"]["queue"]
     qsub_script = config["hcp"]["qsub_script"]
     credentials = config["hcp"]["credentials"]
     hcp_downloads = config["hcp_download_dir"]
     wrapper_log_path = config["wrapper_log_path"]
-    
-    hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
-    
-    for key in remote_keys:
-        local_path = f'{run_path}/fastq/{os.path.basename(key)}' # This is were the file
-        hcp_path = f'{hcp_download_runpath}/{os.path.basename(key)}' # This is the complete path of the downloaded file
-        if not os.path.exists(local_path) or not os.path.exists(hcp_path):
-            
-            standardout = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(key)}.stdout")
-            standarderr = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(key)}.stderr")
 
-            try:
-                if not os.path.exists(hcp_download_runpath):
-                    os.makedirs(f'{hcp_download_runpath}')
-                
-                qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, key, hcp_path] 
-                logger.info(f'Downloading {os.path.basename(key)} from HCP')
-                subprocess.call(qsub_args)
-                
-                decompress_downloaded_fastq(hcp_path, logger)
-                
-            except FileExistsError:
-                pass
+    hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
+
+    hcp_path = f'{hcp_download_runpath}/{os.path.basename(remote_key)}' # This is the complete path of the downloaded file
+    if not os.path.exists(hcp_path):
+
+        standardout = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(remote_key)}.stdout")
+        standarderr = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(remote_key)}.stderr")
+
+        os.makedirs(hcp_download_runpath, exist_ok=True)
+
+        qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(remote_key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, remote_key, hcp_path] 
+        logger.info(f'Downloading {os.path.basename(remote_key)} from HCP')
+        subprocess.call(qsub_args)
+
+        # Poll for the existence of the downloaded file
+        while not os.path.exists(hcp_path):
+            logger.info(f'Waiting for {hcp_path} to be downloaded...')
+            time.sleep(10)  # Wait for 10 seconds before checking again
+
+    else:
+        logger.info(f'{os.path.basename(remote_key)} already exists in {hcp_download_runpath}')
+    return hcp_path
+
 
 def decompress_downloaded_fastq(complete_file_path, logger):
     config = read_config(WRAPPER_CONFIG_PATH)
-    
+
     wrapper_log_path = config["wrapper_log_path"]
 
     filename = os.path.basename(complete_file_path) # This is the filename of the downloaded file
     standardout_decompress = os.path.join(wrapper_log_path, f"decompress_{filename}.stdout")
     standarderr_decompress = os.path.join(wrapper_log_path, f"decompress_{filename}.stderr")
-    
+
     queue = config["hcp"]["queue"]
     threads = config["hcp"]["threads"]
     compression_type = filename.split('.')[-1] # This is the compression type of the downloaded file, could be either 'spring' or 'fasterq'
-    
+
     if compression_type == 'spring':
         # Decompress the file using spring
-        
-        decompress_script = os.path.join(ROOT_DIR, config["hcp"]["spring_script"])
         complete_decompressed_file_path = complete_file_path.replace('.spring', '.fastq.gz')
-        
-        qsub_args = ["qsub", "-N", f"decompressing_{filename}", "-q", queue, "-sync", "y", "-pe", "mpi", f"{threads}",
-                     "-o", standardout_decompress, "-e", standarderr_decompress, "-v", f"THREADS={threads}",
-                     decompress_script, complete_file_path, complete_decompressed_file_path, str(threads)]
-        
-        logger.info(f"Decompressing {filename} using spring with args: {qsub_args}")
-        subprocess.call(qsub_args)
-        logger.info(f"Done decompressing {filename}")
-    
+        if not os.path.exists(complete_decompressed_file_path):
+            decompress_script = os.path.join(ROOT_DIR, config["hcp"]["spring_script"])
+
+            qsub_args = ["qsub", "-N", f"decompressing_{filename}", "-q", queue, "-sync", "y", "-pe", "mpi", f"{threads}",
+                        "-o", standardout_decompress, "-e", standarderr_decompress, "-v", f"THREADS={threads}",
+                        decompress_script, complete_file_path, complete_decompressed_file_path, str(threads)]
+
+            logger.info(f"Decompressing {filename} using spring with args: {qsub_args}")
+            subprocess.call(qsub_args)
+            logger.info(f"Done decompressing {filename}")
+        return complete_decompressed_file_path
+
     elif compression_type == 'fasterq':
         # Decompress the file using petasuite
-        
-        decompress_script = os.path.join(ROOT_DIR, config["hcp"]["peta_script"])
-        dir_of_downloaded_file = os.path.dirname(complete_file_path)
-        cwd = os.getcwd() # Save current working directory
-        os.chdir(f'{dir_of_downloaded_file}') # Change to the directory of the downloaded file
-        
-        peta_args = ["qsub", "-N", f"decompressing_file_{filename}", "-q", queue, "-sync", "y", 
-                     "-pe", "mpi", f"{threads}", "-o", standardout_decompress, "-e", standarderr_decompress, "-v",f"THREADS={threads}",
-                     decompress_script, str(threads)] 
-        
-        logger.info(f"Running petasuite with args: {peta_args}")
-        subprocess.call(peta_args)
-        logger.info(f"Done with petasuite for file {filename}")
-        os.chdir(cwd) # Change back to the original working directory
-    
-    
+        complete_decompressed_file_path = complete_file_path.replace('.fasterq', '.fastq.gz')
+        if not os.path.exists(complete_decompressed_file_path):
+            decompress_script = os.path.join(ROOT_DIR, config["hcp"]["peta_script"])
+            dir_of_downloaded_file = os.path.dirname(complete_file_path)
+            cwd = os.getcwd() # Save current working directory
+            os.chdir(f'{dir_of_downloaded_file}') # Change to the directory of the downloaded file
 
-def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
-    '''Link fastqs to fastq-folder in demultiplexdir of current run.'''
-    config = read_config(WRAPPER_CONFIG_PATH)
-    hcp_downloads = config["hcp_download_dir"]
-    # TODO: additional fastqs need to still be in demultiplexdir. not considering downloading from hcp right now. need to consider this later...
-    for fq_path in list_of_fq_paths:
-        fq_link = os.path.join(run_path, "fastq", os.path.basename(fq_path))
-#        hcp_runtag = fq_path.split("/")[-3] # This could cause problems if we change the file structure
-        hcp_runtag = fqSSample.fastq.cntn_cstm_runTag.value
-        hcp_path =  f'{hcp_downloads}/{hcp_runtag}'
-        if os.path.exists(fq_path): # If fq still on seqstore
-        # Only links if link doesn't already exist
-            if not os.path.islink(fq_link):
-            # Now symlinks all additional paths to fastqs for tumor and normal in other runs.
-                os.symlink(fq_path, fq_link)
-        #If fq not in seqstore
-        elif not os.path.exists(fq_path):
-            # Check /medstore/tmp/hcp_downloads 
-            # If one DNA object has multiple fastq objects linked we want them to be in the same folder
-            previously_downloaded_samples_same_DNA = sorted(glob.glob(os.path.join(hcp_downloads,"*",os.path.basename(fq_path).split('_')[0]+"*.gz")))
-            if previously_downloaded_samples_same_DNA:
-                hcp_runtag = os.path.basename(os.path.dirname(previously_downloaded_samples_same_DNA[0]))
-                hcp_path = f'{hcp_downloads}/{hcp_runtag}'
-                logger.info(f"Found previously downloaded file {os.path.basename(fq_path).split('_')[0]} in {hcp_path}")
-                logger.info(f"Setting download directory to {hcp_path}")
-            if os.path.isdir(hcp_path):
-                if os.path.basename(fq_path) in os.listdir(hcp_path):
-                    logger.info(f'The file {os.path.basename(fq_path)} exists in {hcp_path}')
-                else:
-                    logger.info(f'{fq_path} does not exist. Need to download from hcp')
-                    download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag)
+            peta_args = ["qsub", "-N", f"decompressing_file_{filename}", "-q", queue, "-sync", "y", 
+                        "-pe", "mpi", f"{threads}", "-o", standardout_decompress, "-e", standarderr_decompress, "-v", f"THREADS={threads}",
+                        decompress_script, complete_file_path, str(threads)] 
+
+            logger.info(f"Running petasuite with args: {peta_args}")
+            subprocess.call(peta_args)
+            logger.info(f"Done with petasuite for file {filename}")
+            os.chdir(cwd) # Change back to the original working directory
+        return complete_decompressed_file_path
+    else:
+        logger.error(f"Unknown compression type {compression_type} for file {filename}")
+        return None
+
+
+def link_fastqs_to_workingdir(fastq_dict, workingdir, logger):
+    """
+    Link the fastq files in the dictionary to the workingdir/fastq/ directory.
+    """
+    fastq_dir = os.path.join(workingdir, 'fastq')
+    os.makedirs(fastq_dir, exist_ok=True)
+
+    for sample_tag, fastq_paths in fastq_dict.items():
+        for fq_path in fastq_paths:
+            link_name = os.path.join(fastq_dir, os.path.basename(fq_path))
+            if not os.path.exists(link_name):
+                logger.info(f'Linking {fq_path} to {link_name}')
+                os.symlink(fq_path, link_name)
             else:
                 download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag)
             
@@ -254,27 +240,65 @@ def link_fastqs(list_of_fq_paths, run_path, fqSSample, logger):
                     logger.info(f"Linking {downloaded_fq_path} to {fq_link}")
                     os.symlink(downloaded_fq_path, fq_link)
 
-def find_more_fastqs(sample_name, Rctx, logger):
+
+def download_and_decompress(bucket, remote_key, logger, hcp_runtag):
+    downloaded_fq = download_hcp_fq(bucket, remote_key, logger, hcp_runtag)
+    decompressed_fq = decompress_downloaded_fastq(downloaded_fq, logger)
+    return decompressed_fq
+
+
+def find_or_download_fastqs(sample_name, logger):
     """
     If a sample name has fastqs from additional sequencing runs - fetch those fastq objects and link them to Demultiplexdir of current run. 
     """
-    run_tag = Rctx.run_tag
-    more_fastqs = slims_connection.fetch('Content', conjunction()
+    fq_objs = slims_connection.fetch('Content', conjunction()
                               .add(equals('cntn_id', sample_name))
-                              .add(equals('cntn_fk_contentType', 22))
-                              .add(not_equals('cntn_cstm_runTag', run_tag)))
-    if more_fastqs:
-        logger.info('There are more fastqs in other sequencing runs')
+                              .add(equals('cntn_fk_contentType', 22)))
+                              # Removed the condition to exclude the current run_tag
+    fastq_dict = {}
+    if fq_objs:
         runtags = []
-        for fq in more_fastqs:
-            fqs_runtag = fq.cntn_cstm_runTag.value
+        for fq_obj in fq_objs:
+            fqs_runtag = fq_obj.cntn_cstm_runTag.value
             runtags.append(fqs_runtag)
-        for tag in runtags:
-            fqSSample = SlimsSample(sample_name, tag)
-            json_info = json.loads(fqSSample.fastq.cntn_cstm_demuxerSampleResult.value)
-            fq_paths = json_info['fastq_paths']
-            logger.info(f'linking fastqs for {sample_name}_{tag}')
-            link_fastqs(fq_paths, Rctx.run_path, fqSSample, logger)
+        with ThreadPoolExecutor() as executor:
+            future_to_fq = {}
+            for tag in runtags:
+                fqSSample = SlimsSample(sample_name, tag)
+                json_info = json.loads(fqSSample.fastq.cntn_cstm_demuxerSampleResult.value)
+                fq_paths = json_info['fastq_paths']
+                for fq_path in fq_paths:
+                    if os.path.exists(fq_path):
+                        logger.info(f'Found fastq {fq_path}')
+                        if f'{sample_name}_{tag}' in fastq_dict:
+                            fastq_dict[f'{sample_name}_{tag}'].append(fq_path)
+                        else:
+                            fastq_dict[f'{sample_name}_{tag}'] = [fq_path]
+                    else:
+                        logger.info(f'Fastq {fq_path} does not exist. Need to download from HCP')
+                        json_backup = json.loads(fqSSample.fastq.cntn_cstm_demuxerBackupSampleResult.value)
+                        bucket = json_backup['bucket']
+                        remote_keys = json_backup['remote_keys']
+                        fq_basename_fasterq = os.path.basename(fq_path).replace('.fastq.gz', '.fasterq')
+                        fq_basename_spring = os.path.basename(fq_path).replace('.fastq.gz', '.spring')
+                        matching_key = [key for key in remote_keys if fq_basename_fasterq in key or fq_basename_spring in key]
+                        if matching_key:
+                            future = executor.submit(download_and_decompress, bucket, matching_key[0], logger, tag)
+                            future_to_fq[future] = f'{sample_name}_{tag}'
+                        else:
+                            logger.info(f'No matching remote keys found for {fq_basename_fasterq} or {fq_basename_spring}')
+            for future in as_completed(future_to_fq):
+                samplename_tag = future_to_fq[future]
+                try:
+                    decompressed_fq = future.result()
+                    if samplename_tag in fastq_dict:
+                        fastq_dict[samplename_tag].append(decompressed_fq)
+                    else:
+                        fastq_dict[samplename_tag] = [decompressed_fq]
+                except Exception as exc:
+                    logger.error(f'{tag} generated an exception: {exc}')
+            logger.info(f'Found fastqs for {sample_name}_{tag}')
+    return fastq_dict
 
 def get_pair_dict(Sctx, Rctx, logger):
     """
@@ -311,7 +335,6 @@ def get_pair_dict(Sctx, Rctx, logger):
                 pair_slims_sample['tumorNormalType'] == pair_type:
             pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
             # Check if there are additional fastqs in other runs and symlink fastqs
-            find_more_fastqs(pair.cntn_id.value, Rctx, logger)
     for p in pairs2:
         pair_slims_sample = translate_slims_info(p)
         if not pair_slims_sample['tumorNormalType'] == pair_type:
@@ -321,8 +344,6 @@ def get_pair_dict(Sctx, Rctx, logger):
         if not pair_slims_sample['tumorNormalType']:
             logger.warning(f'The sample {pair_slims_sample["content_id"]} does not have any assigned tumorNormalType, will not be used in pairing')
         pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
-        #FIND MORE FQS
-        find_more_fastqs(p.cntn_id.value, Rctx, logger)
     return pair_dict
 
 

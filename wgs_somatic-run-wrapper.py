@@ -17,7 +17,7 @@ import threading
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, SlimsSample, find_more_fastqs, get_pair_dict
+from tools.slims import get_sample_slims_info, SlimsSample, find_or_download_fastqs, get_pair_dict, link_fastqs_to_workingdir
 from tools.email import start_email, end_email, error_email
 from launch_snakemake import analysis_main, yearly_stats, alissa_upload, copy_results, get_timestamp
 
@@ -221,78 +221,61 @@ def wrapper(instrument):
             pair_dict = get_pair_dict(sctx, Rctx, logger)
             pair_dict_all_pairs.update(pair_dict)
 
+
         # Uses the dictionary of T/N samples to put the correct pairs together and finds the correct input arguments to the pipeline
         threads = []
         check_ok_outdirs = []
         end_threads = []
         final_pairs = []
         paired_samples = []
-        for key in pair_dict_all_pairs:
-            if 'tumor' in pair_dict_all_pairs.get(key):
-                t = key
-                # Using the list containing values 'tumor', value of tumorNormalID, department and prio status
-                # Removing the value 'tumor' from the list to get the tumorNormalID
-                # TODO: Would be nice to do in a better way rather than using [0] to get the first value in the list
-                t_ID = [val for val in pair_dict_all_pairs.get(key) if val != 'tumor'][0] 
-                for k in pair_dict_all_pairs:
-                    if 'normal' in pair_dict_all_pairs.get(k):
-                        n = k
-                        n_ID = [val for val in pair_dict_all_pairs.get(k) if val != 'normal'][0]
-                        department = [val for val in pair_dict_all_pairs.get(k) if val != 'normal'][1]
-                        is_prio = [val for val in pair_dict_all_pairs.get(k) if val != 'normal'][2]
-                        if is_prio:
-                            prio_sample = 'prio'
-                        else:
-                            prio_sample = ''
-                        # As of now, tumorNormalID is the same for tumor and normal.
-                        # In the future, this will be changed to pairID
-                        # The or statements are here to prepare to when we change to pair ID
-                        # Pair ID for tumor will be normal name (minus DNA) and the opposite for normal
-                        if n_ID == t_ID or t_ID == n.split("DNA")[1] or n_ID == t.split("DNA")[1]: 
-                            if os.path.exists(os.path.join(Rctx_run.run_path,"fastq", n+"*.gz")):
-                                 pipeline_args = get_pipeline_args(config, logger, Rctx_run, t, n)
-                            else:
-                                pipeline_args = get_pipeline_args(config, logger, Rctx_run, t, n)
 
-                            # Use this list of final pairs for email
-                            final_pairs.append(f'{t} (T) {n} (N), {department} {prio_sample}')
+        def submit_pipeline(tumorsample, normalsample):
+            pipeline_args = get_pipeline_args(config, logger, Rctx_run, tumorsample, normalsample)
 
-                            # Using threading to start the pipeline for several samples at the same time
-                            threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
-                            logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
+            if tumorsample:
+                fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
+                print(fastq_dict_tumor)
+                link_fastqs_to_workingdir(fastq_dict_tumor, Rctx_run.run_path, logger)
+            if normalsample:
+                fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
+                print(fastq_dict_normal)
+                #link_fastqs(fastq_dict_normal, Rctx_run.run_path, logger)
+            threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
+            logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
+            outputdir = pipeline_args.get('output')
+            check_ok_outdirs.append(outputdir)
+            end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
 
-                            outputdir = pipeline_args.get('output')
-                            check_ok_outdirs.append(outputdir)
-                            end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t, n, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
+        tumor_samples = {}
+        normal_samples = {}
 
-                            paired_samples.append(t)
-                            paired_samples.append(n)
-
-        # Find possible unpaired samples in run
+        # Separate tumor and normal samples
         for key, value in pair_dict_all_pairs.items():
-            if not key in paired_samples:
-                department = value[2]
-                prio_sample = 'prio' if value[3] else ''
-                if 'tumor' in value:
-                    tumorsample = key
-                    normalsample = None
-                    # Use this list of final pairs for email
-                    final_pairs.append(f'{tumorsample} (T), {department} {prio_sample}')
+            if value[0] == 'tumor':
+                tumor_samples[key] = value
+            elif value[0] == 'normal':
+                normal_samples[key] = value
 
-                elif 'normal' in value:
-                    tumorsample = None
-                    normalsample = key
-                    # Use this list of final pairs for email
-                    final_pairs.append(f'{normalsample} (N), {department} {prio_sample}')
+        # Pair samples based on tumorNormalID
+        for t_key, t_value in tumor_samples.items():
+            t_ID = t_value[1]  # tumorNormalID
+            paired = False
+            for n_key, n_value in normal_samples.items():
+                n_ID = n_value[1]  # tumorNormalID
+                if t_ID == n_ID or t_ID == n_key.split("DNA")[1] or n_ID == t_key.split("DNA")[1]:
+                    paired_samples.append((t_key, n_key))
+                    paired = True
+                    submit_pipeline(t_key, n_key)
+                    final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
+                    break
+            if not paired:
+                submit_pipeline(t_key, None)
+                final_pairs.append(f'{t_key} (T), {t_value[2]} {["prio" if t_value[3] else ""][0]}')
 
-                # Using threading to start the pipeline for several samples at the same time
-                pipeline_args = get_pipeline_args(config, logger, Rctx_run, t=tumorsample, n=normalsample)
-                threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
-                logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
-
-                outputdir = pipeline_args.get('output')
-                check_ok_outdirs.append(outputdir)
-                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
+        for n_key in normal_samples:
+            if not any(n_key == pair[1] for pair in paired_samples):
+                submit_pipeline(None, n_key)
+                final_pairs.append(f'{n_key} (N), {n_value[2]} {["prio" if n_value[3] else ""][0]}')
 
         
         # Start several samples at the same time
