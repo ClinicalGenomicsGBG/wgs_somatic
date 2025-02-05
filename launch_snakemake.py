@@ -84,7 +84,6 @@ def copy_results(workingdir, runnormal=None, normalname=None, runtumor=None, tum
         with open(f"{workingdir}/configs/{normalid}_config.json", "r") as analysisdict:
             analysisdict = json.load(analysisdict)
     resultdir = analysisdict["resultdir"]
-    workdir = analysisdict["workingdir"]
     os.makedirs(resultdir, exist_ok=True)
     igv_dir = os.path.join(resultdir, 'igv_files')
     os.makedirs(igv_dir, exist_ok=True)
@@ -95,11 +94,11 @@ def copy_results(workingdir, runnormal=None, normalname=None, runtumor=None, tum
     for files in files_match:
         copy_files = copy_files + glob.glob(os.path.join(workdir, f'*{files}*'))
     copy_files = set(copy_files)
-    for f in os.listdir(workdir):
-        f = os.path.join(workdir, f)
+    for f in os.listdir(workingdir):
+        f = os.path.join(workingdir, f)
         if os.path.isdir(f):
             if 'configs' in f:
-                copy(os.path.join(workdir, 'configs', 'config_hg38.json'), resultdir)
+                copy(os.path.join(workingdir, 'configs', 'config_hg38.json'), resultdir)
                 # copy config file to resultdir
                 logger("Run configuration file copied successfully")
         if os.path.isfile(f):
