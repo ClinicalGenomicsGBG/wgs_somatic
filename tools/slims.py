@@ -219,6 +219,9 @@ def link_fastqs_to_workingdir(fastq_dict, workingdir, logger):
     """
     Link the fastq files in the dictionary to the workingdir/fastq/ directory.
     """
+    if workingdir is None:
+        raise ValueError("workingdir is not defined")
+
     fastq_dir = os.path.join(workingdir, 'fastq')
     os.makedirs(fastq_dir, exist_ok=True)
 
@@ -229,16 +232,7 @@ def link_fastqs_to_workingdir(fastq_dict, workingdir, logger):
                 logger.info(f'Linking {fq_path} to {link_name}')
                 os.symlink(fq_path, link_name)
             else:
-                download_hcp_fqs(fqSSample, run_path, logger, hcp_runtag)
-            
-            # Link the downloaded sample to the current rundir
-            downloaded_fq_path = os.path.join(hcp_path, os.path.basename(fq_path))
-            logger.info(f"The downloaded file is located {downloaded_fq_path}")
-            fq_link = os.path.join(run_path, "fastq", os.path.basename(fq_path))
-            if os.path.exists(downloaded_fq_path):
-                if not os.path.islink(fq_link):
-                    logger.info(f"Linking {downloaded_fq_path} to {fq_link}")
-                    os.symlink(downloaded_fq_path, fq_link)
+                logger.info(f'Link {link_name} already exists')
 
 
 def download_and_decompress(bucket, remote_key, logger, hcp_runtag):
@@ -330,6 +324,7 @@ def get_pair_dict(Sctx, Rctx, logger):
 
     for pair in pairs:
         pair_slims_sample = translate_slims_info(pair)
+        print(pair_slims_sample)
         # Check if the sample we have found is either our newly sequenced sample (including the same sample previously sequenced) OR a complementing tumorNormalType to our newly sequenced sample
         if pair_slims_sample['content_id'] == Sctx.slims_info['content_id'] or\
                 pair_slims_sample['tumorNormalType'] == pair_type:
@@ -337,6 +332,7 @@ def get_pair_dict(Sctx, Rctx, logger):
             # Check if there are additional fastqs in other runs and symlink fastqs
     for p in pairs2:
         pair_slims_sample = translate_slims_info(p)
+        print(pair_slims_sample)
         if not pair_slims_sample['tumorNormalType'] == pair_type:
             continue
         if not pair_slims_sample['content_id'] in pair_dict:
