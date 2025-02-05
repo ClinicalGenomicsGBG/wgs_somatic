@@ -73,8 +73,6 @@ def yearly_stats(tumorname, normalname):
 def copy_results(workingdir, runnormal=None, normalname=None, runtumor=None, tumorname=None):
     '''Rsync result files from workingdir to resultdir'''
 
-    config = read_config(LAUNCHER_CONFIG_PATH)
-
     # Find correct resultdir on webstore from sample config in workingdir
     normalid, tumorid = get_normalid_tumorid(runnormal, normalname, runtumor, tumorname)
     if tumorid:
@@ -123,14 +121,6 @@ def copy_results(workingdir, runnormal=None, normalname=None, runtumor=None, tum
                                 logger(f"Error occurred while removing {f}")
                     except:
                         logger(f"Error occurred while copying {f}")
-
-    # Make webstore portal API call to make path searchable
-    # The idea was to separate webstore from the cluster, we can remove this
-    webstore_api_url = config["webstore_api_url"]
-    json_payload = {'path': resultdir}
-    response = requests.post(webstore_api_url, json=json_payload)
-    if response.status_code != 200:
-        raise WebstoreError(f'Webstore api call returned a non 200 return: {response.text}')
 
 
 def analysis_main(args, workingdir, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, development=False):
