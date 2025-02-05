@@ -70,25 +70,25 @@ def yearly_stats(tumorname, normalname):
     yearly_stats.close()
 
 
-def alissa_upload(outputdir, normalname, runnormal, ref=False):
+def alissa_upload(workingdir, normalname, runnormal, ref=False):
     '''Upload germline SNV_CNV vcf to Alissa'''
     ref = 'hg38'  # reference genome, change so it can also be hg19. but probably shouldn't upload vcf for hg19 samples
     size = '240_000_000'  # needed as argument for alissa upload. if vcf is larger than this, it is split
     date, _, _, chip, *_ = runnormal.split('_')
     normalid = f"{normalname}_{date}_{chip}"
-    vcfpath = f"{outputdir}/{normalid}_{ref}_SNV_CNV_germline.vcf.gz"
+    vcfpath = f"{workingdir}/{normalid}_{ref}_SNV_CNV_germline.vcf.gz"
     config = read_config(LAUNCHER_CONFIG_PATH)
     logger(f"Uploading vcf to Alissa for {normalname}")
     queue = config["alissa"]["queue"]
     threads = config["alissa"]["threads"]  # not used
     qsub_script = config["alissa"]["qsub_script"]
-    standardout = f"{outputdir}/logs/{normalid}_alissa_upload_standardout.txt"
-    standarderr = f"{outputdir}/logs/{normalid}_alissa_upload_standarderr.txt"
+    standardout = f"{workingdir}/logs/{normalid}_alissa_upload_standardout.txt"
+    standarderr = f"{workingdir}/logs/{normalid}_alissa_upload_standarderr.txt"
     qsub_args = ["qsub", "-N", f"WGSSomatic-{normalname}_alissa_upload", "-q", queue, "-o", standardout, "-e", standarderr, qsub_script, normalname, vcfpath, size, ref]
     subprocess.call(qsub_args, shell=False)
 
 
-def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumorname=None):
+def copy_results(workingdir, runnormal=None, normalname=None, runtumor=None, tumorname=None):
     '''Rsync result files from workingdir to resultdir'''
 
     config = read_config(LAUNCHER_CONFIG_PATH)
@@ -96,10 +96,10 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
     # Find correct resultdir on webstore from sample config in workingdir
     normalid, tumorid = get_normalid_tumorid(runnormal, normalname, runtumor, tumorname)
     if tumorid:
-        with open(f"{outputdir}/configs/{tumorid}_config.json", "r") as analysisdict:
+        with open(f"{workingdir}/configs/{tumorid}_config.json", "r") as analysisdict:
             analysisdict = json.load(analysisdict)
     else:
-        with open(f"{outputdir}/configs/{normalid}_config.json", "r") as analysisdict:
+        with open(f"{workingdir}/configs/{normalid}_config.json", "r") as analysisdict:
             analysisdict = json.load(analysisdict)
     resultdir = analysisdict["resultdir"]
     workdir = analysisdict["workingdir"]
@@ -152,7 +152,7 @@ def copy_results(outputdir, runnormal=None, normalname=None, runtumor=None, tumo
         raise WebstoreError(f'Webstore api call returned a non 200 return: {response.text}')
 
 
-def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, development=False):
+def analysis_main(args, workingdir, runnormal=False, normalname=False, normalfastqs=False, runtumor=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, development=False):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -173,8 +173,8 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         #################################################################
         # Validate Inputs
         ################################################################
-        if output.endswith("/"):
-            output = output[:-1]
+        if workingdir.endswith("/"):
+            workingdir = workingdir[:-1]
         if normalfastqs:
             if normalfastqs.endswith("/"):
                 normalfastqs = normalfastqs[:-1]
@@ -226,12 +226,12 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
                         if not f_tumorfastqs:
                             error_list.append("No fastqs or fasterqs found in tumordir")
 
-        # prepare outputdirectory
-        if not os.path.isdir(output):
+        # prepare workingdirectory
+        if not os.path.isdir(workingdir):
             try:
-                os.mkdir(output)
+                os.mkdir(workingdir)
             except Exception as e:
-                error_list.append(f"outputdirectory: {output} does not exist and could not be created: {e}")
+                error_list.append(f"workingdirectory: {workingdir} does not exist and could not be created: {e}")
 
         if error_list:
             logger("Errors found in arguments to script:")
@@ -246,10 +246,10 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         # Prepare AnalysisFolder
         #################################################################
         normalid, tumorid = get_normalid_tumorid(runnormal, normalname, runtumor, tumorname)
-        samplelogs = f"{output}/logs"
+        samplelogs = f"{workingdir}/logs"
         if not os.path.isdir(samplelogs):
             os.mkdir(samplelogs)
-        runconfigs = os.path.join(output, configdir)
+        runconfigs = os.path.join(workingdir, configdir)
         if not os.path.isdir(runconfigs):
             os.mkdir(runconfigs)
 
@@ -282,7 +282,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         analysisdict["tumorname"] = tumorname
         analysisdict["tumorid"] = tumorid
         analysisdict["tumorfastqs"] = [tumorfastqs]
-        analysisdict["workingdir"] = output
+        analysisdict["workingdir"] = workingdir
 
         # configs
         analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
@@ -292,26 +292,26 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         # insilico
         analysisdict["insilico"] = config["insilicopanels"]
 
-        basename_output = os.path.basename(output)
+        basename_workingdir = os.path.basename(workingdir)
 
         if hg38ref == "yes":
             analysisdict["reference"] = "hg38"
             if tumorname:
                 if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_output}'  # Use f'{config["testresultdir"]}/{tumorname}'for testing
+                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_workingdir}'  # Use f'{config["testresultdir"]}/{tumorname}'for testing
                 else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_output}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_workingdir}'
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_output}'
+                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_workingdir}'
         else:
             analysisdict["reference"] = "hg19"
             if tumorname:
                 if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/{basename_output}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/{basename_workingdir}'
                 else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/tumor_only/{basename_output}'
+                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/tumor_only/{basename_workingdir}'
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/normal_only/{basename_output}'
+                analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/normal_only/{basename_workingdir}'
         
         if tumorname:
             snakemake_config = f"{runconfigs}/{tumorid}_config.json"
@@ -340,7 +340,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             if tumorname:
                 for tumorfastqdir in analysisdict["tumorfastqs"]:
                     binddir_string = f"{binddir_string}{tumorfastqdir},"
-        binddir_string = f"{binddir_string}{output}"
+        binddir_string = f"{binddir_string}{workingdir}"
         print(binddir_string)
 
     except Exception as e:
@@ -393,7 +393,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
         snakemake_args_DAG = [
             "snakemake", "-s", "Snakefile",
             "--configfile", snakemake_config,
-            "--directory", output,
+            "--directory", workingdir,
             "--dag", "|", "dot", "-Tsvg", ">", f"{samplelogs}/dag_{current_date}.svg"
         ]
         snakemake_args_DAG_str = " ".join(snakemake_args_DAG)
@@ -407,13 +407,13 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
             "--cluster", " ".join(cluster_args),
             "--jobs", "999",
             "--latency-wait", "60",
-            "--directory", output,
+            "--directory", workingdir,
             "--shadow-prefix", shadow_dir
         ] + dev_args
 
-        # Execute Snakemake command with output redirection
-        with open(samplelog, "a") as log_file:
-            subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
+        # Execute Snakemake command with workingdir redirection
+        #with open(samplelog, "a") as log_file:
+        #    subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
 
     except subprocess.CalledProcessError as e:
         tb = traceback.format_exc()
@@ -430,7 +430,7 @@ def analysis_main(args, output, runnormal=False, normalname=False, normalfastqs=
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-rn', '--runnormal', nargs='?', help='the sequencing run the normalsample was sequenced in', required=False)
-    parser.add_argument('-o', '--outputdir', nargs='?', help='output directory, where to put results', required=True)
+    parser.add_argument('-w', '--workingdir', nargs='?', help='working directory, where to put results', required=True)
     parser.add_argument('-ns', '--normalsample', nargs='?', help='normal samplename', required=False)
     parser.add_argument('-nf', '--normalfastqs', nargs='?', help='path to directory containing normal fastqs', required=False)
     parser.add_argument('-rt', '--runtumor', nargs='?', help='the sequencing run the tumorsample was sequenced in',     required=False)
@@ -444,25 +444,25 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if not args.development:
         timestamp = get_timestamp()
-        args.outputdir = f'{args.outputdir}_{timestamp}'
-    analysis_main(args, args.outputdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
+        args.workingdir = f'{args.workingdir}_{timestamp}'
+    analysis_main(args, args.workingdir, args.runnormal, args.normalsample, args.normalfastqs, args.runtumor, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
 
-    if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
+    if os.path.isfile(f"{args.workingdir}/reporting/workflow_finished.txt"):
         if args.tumorsample:
             if args.normalsample:
                 # these functions are only executed if snakemake workflow has finished successfully
                 yearly_stats(args.tumorsample, args.normalsample)
                 if args.copyresults:
-                    copy_results(args.outputdir, args.runnormal, args.normalsample, args.runtumor, args.tumorsample)
+                    copy_results(args.workingdir, args.runnormal, args.normalsample, args.runtumor, args.tumorsample)
                 if args.hg38ref and not args.noalissa:
-                    alissa_upload(args.outputdir, args.normalsample, args.runnormal, args.hg38ref)
+                    alissa_upload(args.workingdir, args.normalsample, args.runnormal, args.hg38ref)
             else:
                 yearly_stats(args.tumorsample, 'None')
                 if args.copyresults:
-                    copy_results(args.outputdir, runtumor=args.runtumor, tumorname=args.tumorsample)
+                    copy_results(args.workingdir, runtumor=args.runtumor, tumorname=args.tumorsample)
         else:
             yearly_stats('None', args.normalsample)
             if args.copyresults:
-                copy_results(args.outputdir, runnormal=args.runnormal, normalname=args.normalsample)
+                copy_results(args.workingdir, runnormal=args.runnormal, normalname=args.normalsample)
             if args.hg38ref and not args.noalissa:
-                alissa_upload(args.outputdir, args.normalsample, args.runnormal, args.hg38ref)
+                alissa_upload(args.workingdir, args.normalsample, args.runnormal, args.hg38ref)

@@ -95,10 +95,10 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         if not t:
             date, _, _, chip, *_ = runnormal.split('+')[0].split('_')
             normalid= '_'.join([normalsample, date, chip])
-            outputdir = os.path.join(config['workingdir'], "normal_only", normalid)
-            outputdir = f'{outputdir}_{timestamp}'
-            #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "normal_only", normalsample) #use for testing
-            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
+            workingdir = os.path.join(config['workingdir'], "normal_only", normalid)
+            workingdir = f'{workingdir}_{timestamp}'
+            #workingdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "normal_only", normalsample) #use for testing
+            pipeline_args = {'runnormal': f'{runnormal}', 'workingdir': f'{workingdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'hg38ref': f'{hg38ref}', 'runtumor': None}
     if t:
         runtumor = Rctx_run.run_name
         tumorsample = t
@@ -106,23 +106,23 @@ def get_pipeline_args(config, logger, Rctx_run, t=None, n=None):
         date, _, _, chip, *_ = runtumor.split('+')[0].split('_')
         tumorid = '_'.join([tumorsample, date, chip])
         if not n:
-            outputdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
-            outputdir = f'{outputdir}_{timestamp}'
-            #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "tumor_only", tumorsample) #use for testing
-            pipeline_args = {'output': f'{outputdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
+            workingdir = os.path.join(config['workingdir'], "tumor_only", tumorid)
+            workingdir = f'{workingdir}_{timestamp}'
+            #workingdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", "tumor_only", tumorsample) #use for testing
+            pipeline_args = {'workingdir': f'{workingdir}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}', 'runnormal': None}
         else:
-            outputdir = os.path.join(config['workingdir'], tumorid)
-            outputdir = f'{outputdir}_{timestamp}'
-            #outputdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", tumorsample) #use for testing
-            pipeline_args = {'runnormal': f'{runnormal}', 'output': f'{outputdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}'}
+            workingdir = os.path.join(config['workingdir'], tumorid)
+            workingdir = f'{workingdir}_{timestamp}'
+            #workingdir = os.path.join("/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", tumorsample) #use for testing
+            pipeline_args = {'runnormal': f'{runnormal}', 'workingdir': f'{workingdir}', 'normalname': f'{normalsample}', 'normalfastqs': f'{normalfastqs}', 'runtumor': f'{runtumor}', 'tumorname': f'{tumorsample}', 'tumorfastqs': f'{tumorfastqs}', 'hg38ref': f'{hg38ref}'}
 
-    if os.path.exists(outputdir):
+    if os.path.exists(workingdir):
         if t:
-            logger.info(f'Outputdir exists for {tumorsample}. Renaming old outputdir {outputdir} to {outputdir}_old')
-            os.rename(outputdir, f'{outputdir}_old')
+            logger.info(f'workingdir exists for {tumorsample}. Renaming old workingdir {workingdir} to {workingdir}_old')
+            os.rename(workingdir, f'{workingdir}_old')
         else:
-            logger.info(f'Outputdir exists for {normalsample}. Renaming old outputdir {outputdir} to {outputdir}_old')
-            os.rename(outputdir, f'{outputdir}_old')
+            logger.info(f'workingdir exists for {normalsample}. Renaming old workingdir {workingdir} to {workingdir}_old')
+            os.rename(workingdir, f'{workingdir}_old')
 
     return pipeline_args
 
@@ -132,32 +132,32 @@ def call_script(**kwargs):
     analysis_main(args, **kwargs)
 
 
-def check_ok(outputdir):
+def check_ok(workingdir):
     '''Function to check if analysis has finished correctly'''
 
-    if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+    if os.path.isfile(f"{workingdir}/reporting/workflow_finished.txt"):
         return True
     else:
         return False
 
 
-def analysis_end(outputdir, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
+def analysis_end(workingdir, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
     '''Function to check if analysis has finished correctly and add to yearly stats, upload to alissa and copy results'''
 
-    if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+    if os.path.isfile(f"{workingdir}/reporting/workflow_finished.txt"):
         if tumorsample:
             if normalsample:
                 # these functions are only executed if snakemake workflow has finished successfully
-                alissa_upload(outputdir, normalsample, runnormal, hg38ref)
+                alissa_upload(workingdir, normalsample, runnormal, hg38ref)
                 yearly_stats(tumorsample, normalsample)
-                copy_results(outputdir, runnormal=runnormal, normalname=normalsample, runtumor=runtumor, tumorname=tumorsample)
+                copy_results(workingdir, runnormal=runnormal, normalname=normalsample, runtumor=runtumor, tumorname=tumorsample)
             else:
                 yearly_stats(tumorsample, 'None')
-                copy_results(outputdir, runtumor=runtumor, tumorname=tumorsample)
+                copy_results(workingdir, runtumor=runtumor, tumorname=tumorsample)
         else:
             yearly_stats('None', normalsample)
-            copy_results(outputdir, runnormal=runnormal, normalname=normalsample)
-            alissa_upload(outputdir, normalsample, runnormal, hg38ref)
+            copy_results(workingdir, runnormal=runnormal, normalname=normalsample)
+            alissa_upload(workingdir, normalsample, runnormal, hg38ref)
     else:
         pass
 
@@ -178,7 +178,7 @@ def wrapper(instrument):
         try:
             os.makedirs(hcptmp)
         except Exception as e:
-            error_list.append(f"outputdirectory: {hcptmp} does not exist and could not be created")
+            error_list.append(f"workingdirectory: {hcptmp} does not exist and could not be created")
 
 
     # Grab all available local run paths
@@ -231,20 +231,17 @@ def wrapper(instrument):
 
         def submit_pipeline(tumorsample, normalsample):
             pipeline_args = get_pipeline_args(config, logger, Rctx_run, tumorsample, normalsample)
-
+            workingdir = pipeline_args.get('workingdir')
             if tumorsample:
                 fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
-                print(fastq_dict_tumor)
-                link_fastqs_to_workingdir(fastq_dict_tumor, Rctx_run.run_path, logger)
+                link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
             if normalsample:
                 fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
-                print(fastq_dict_normal)
-                #link_fastqs(fastq_dict_normal, Rctx_run.run_path, logger)
+                link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
             threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
             logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
-            outputdir = pipeline_args.get('output')
-            check_ok_outdirs.append(outputdir)
-            end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
+            check_ok_outdirs.append(workingdir)
+            end_threads.append(threading.Thread(target=analysis_end, args=(workingdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
 
         tumor_samples = {}
         normal_samples = {}
@@ -326,7 +323,7 @@ def wrapper(instrument):
         # if cron runs every 30 mins it will find other runs at the next cron instance and run from there instead (and add to novaseq_runlist)
         break
 
-    # DON'T FORGET TO UNCOMMENT PETAGENE COMPRESSION AND CHANGE BACK TO CORRECT OUTPUTDIR AND IGVUSER!!!!!!
+    # DON'T FORGET TO UNCOMMENT PETAGENE COMPRESSION AND CHANGE BACK TO CORRECT workingdir AND IGVUSER!!!!!!
 
     # some arguments are hardcoded right now, need to fix this. 
     # only considers barncancer hg38 (GMS-AL + GMS-BT samples) right now. 
