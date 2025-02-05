@@ -19,7 +19,7 @@ from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, SlimsSample, find_or_download_fastqs, get_pair_dict, link_fastqs_to_workingdir
 from tools.email import start_email, end_email, error_email
-from launch_snakemake import analysis_main, yearly_stats, alissa_upload, copy_results, get_timestamp
+from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 
 
 # Store info about samples to use for sending report emails
@@ -142,13 +142,12 @@ def check_ok(workingdir):
 
 
 def analysis_end(workingdir, tumorsample=None, normalsample=None, runtumor=None, runnormal=None, hg38ref=None):
-    '''Function to check if analysis has finished correctly and add to yearly stats, upload to alissa and copy results'''
+    '''Function to check if analysis has finished correctly and add to yearly stats and copy results'''
 
     if os.path.isfile(f"{workingdir}/reporting/workflow_finished.txt"):
         if tumorsample:
             if normalsample:
                 # these functions are only executed if snakemake workflow has finished successfully
-                alissa_upload(workingdir, normalsample, runnormal, hg38ref)
                 yearly_stats(tumorsample, normalsample)
                 copy_results(workingdir, runnormal=runnormal, normalname=normalsample, runtumor=runtumor, tumorname=tumorsample)
             else:
@@ -157,7 +156,6 @@ def analysis_end(workingdir, tumorsample=None, normalsample=None, runtumor=None,
         else:
             yearly_stats('None', normalsample)
             copy_results(workingdir, runnormal=runnormal, normalname=normalsample)
-            alissa_upload(workingdir, normalsample, runnormal, hg38ref)
     else:
         pass
 

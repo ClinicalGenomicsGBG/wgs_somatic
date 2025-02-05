@@ -70,24 +70,6 @@ def yearly_stats(tumorname, normalname):
     yearly_stats.close()
 
 
-def alissa_upload(workingdir, normalname, runnormal, ref=False):
-    '''Upload germline SNV_CNV vcf to Alissa'''
-    ref = 'hg38'  # reference genome, change so it can also be hg19. but probably shouldn't upload vcf for hg19 samples
-    size = '240_000_000'  # needed as argument for alissa upload. if vcf is larger than this, it is split
-    date, _, _, chip, *_ = runnormal.split('_')
-    normalid = f"{normalname}_{date}_{chip}"
-    vcfpath = f"{workingdir}/{normalid}_{ref}_SNV_CNV_germline.vcf.gz"
-    config = read_config(LAUNCHER_CONFIG_PATH)
-    logger(f"Uploading vcf to Alissa for {normalname}")
-    queue = config["alissa"]["queue"]
-    threads = config["alissa"]["threads"]  # not used
-    qsub_script = config["alissa"]["qsub_script"]
-    standardout = f"{workingdir}/logs/{normalid}_alissa_upload_standardout.txt"
-    standarderr = f"{workingdir}/logs/{normalid}_alissa_upload_standarderr.txt"
-    qsub_args = ["qsub", "-N", f"WGSSomatic-{normalname}_alissa_upload", "-q", queue, "-o", standardout, "-e", standarderr, qsub_script, normalname, vcfpath, size, ref]
-    subprocess.call(qsub_args, shell=False)
-
-
 def copy_results(workingdir, runnormal=None, normalname=None, runtumor=None, tumorname=None):
     '''Rsync result files from workingdir to resultdir'''
 

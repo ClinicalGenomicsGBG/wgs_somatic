@@ -11,12 +11,6 @@
     "resultdir_hg19": "/seqstore/webfolders/wgs/neuroblastom",
     "testresultdir" : "/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", 
     "webstore_api_url": "http://webstore.sa.gu.se/api/paths",
-    "alissa":
-    {
-	    "threads": 1,
-	    "queue": "routine.q",
-	    "qsub_script": "tools/alissa_upload.sh"
-    },
     "singularitybinddirs":
     {
         "sentieon":
