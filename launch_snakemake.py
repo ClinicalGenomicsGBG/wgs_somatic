@@ -82,22 +82,27 @@ def yearly_stats(tumorname, normalname):
 def copy_results(workingdir, resultdir=None):
     '''Rsync result files from workingdir to resultdir'''
     if not resultdir:
-        config_dir = os.path.join(workingdir, 'config')
+        config_dir = os.path.join(workingdir, 'configs')
         config_pattern = re.compile(r'DNA\d+_.+_.+_config\.json')
-        config_file = None
         if os.path.isdir(config_dir):
             for f in os.listdir(config_dir):
                 if config_pattern.match(f):
                     config_file = os.path.join(config_dir, f)
                     with open(config_file, 'r') as cf:
-                        resultdir = json.load(cf)['resultdir']
+                        resultdir = json.load(cf).get('resultdir')
+                        logger(f"Resultdir found in config file: {resultdir}")
                     break
-            else:
+            if not resultdir:
                 logger(f"Automatic detection of config file failed. No matching configuration file found in {config_dir}")
+                raise ValueError("No resultdir found in config file")
 
-    os.makedirs(resultdir, exist_ok=True)
-    igv_dir = os.path.join(resultdir, 'igv_files')
-    os.makedirs(igv_dir, exist_ok=True)
+    try:
+        os.makedirs(resultdir, exist_ok=True)
+        igv_dir = os.path.join(resultdir, 'igv_files')
+        os.makedirs(igv_dir, exist_ok=True)
+    except Exception as e:
+        logger(f"Error creating resultdir: {e}")
+        raise
 
     # Find resultfiles to copy to resultdir on webstore
     copy_files = []
@@ -396,8 +401,8 @@ def analysis_main(args, workingdir, normalname=False, normalfastqs=False, tumorn
         ] + dev_args
 
         # Execute Snakemake command with workingdir redirection
-        #with open(samplelog, "a") as log_file:
-        #    subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
+        with open(samplelog, "a") as log_file:
+            subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
 
     except subprocess.CalledProcessError as e:
         tb = traceback.format_exc()
@@ -421,24 +426,29 @@ if __name__ == '__main__':
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
     parser.add_argument('-dev', '--development', action="store_true", help='Run the pipeline in development mode (no temp, no timestamp, rerun incomplete)', required=False)
+    parser.add_argument('-onlycopy', '--onlycopyresults', action="store_true", help='Only run the copy_results function', required=False)
     args = parser.parse_args()
-    if not args.development:
-        timestamp = get_timestamp()
-        args.workingdir = f'{args.workingdir}_{timestamp}'
-    analysis_main(args, args.workingdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
 
-    if os.path.isfile(f"{args.workingdir}/reporting/workflow_finished.txt"):
-        if args.tumorsample:
-            if args.normalsample:
-                # these functions are only executed if snakemake workflow has finished successfully
-                yearly_stats(args.tumorsample, args.normalsample)
-                if args.copyresults:
-                    copy_results(args.workingdir)
+    if args.onlycopyresults:
+        copy_results(args.workingdir)
+    else:
+        if not args.development:
+            timestamp = get_timestamp()
+            args.workingdir = f'{args.workingdir}_{timestamp}'
+        analysis_main(args, args.workingdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
+
+        if os.path.isfile(f"{args.workingdir}/reporting/workflow_finished.txt"):
+            if args.tumorsample:
+                if args.normalsample:
+                    # these functions are only executed if snakemake workflow has finished successfully
+                    yearly_stats(args.tumorsample, args.normalsample)
+                    if args.copyresults:
+                        copy_results(args.workingdir)
+                else:
+                    yearly_stats(args.tumorsample, 'None')
+                    if args.copyresults:
+                        copy_results(args.workingdir)
             else:
-                yearly_stats(args.tumorsample, 'None')
+                yearly_stats('None', args.normalsample)
                 if args.copyresults:
                     copy_results(args.workingdir)
-        else:
-            yearly_stats('None', args.normalsample)
-            if args.copyresults:
-                copy_results(args.workingdir)
