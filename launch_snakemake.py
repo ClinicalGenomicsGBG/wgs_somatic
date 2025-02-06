@@ -67,16 +67,18 @@ def get_normalid_tumorid(normalfastqs=None, normalname=None, tumorfastqs=None, t
 
 def yearly_stats(tumorname, normalname):
     '''Update yearly stats file with sample that has finished running in pipeline correctly'''
-    # config_data = read_config(LAUNCHER_CONFIG_PATH)
-    # yearly_stats = open(config_data["yearly_stats"], "a")
     yearly_stats = "yearly_stats.txt"
-    if not os.path.exists(yearly_stats):
-        os.mknod(yearly_stats)
-        os.chmod(yearly_stats, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-    yearly_stats = open(yearly_stats, "a")
-    date_time = time.strftime("%Y-%m-%d-%H-%M-%S")
-    yearly_stats.write("Tumor ID: " + tumorname + " Normal ID: " + normalname + " Date and Time: " + date_time + "\n")
-    yearly_stats.close()
+    try:
+        if not os.path.exists(yearly_stats):
+            os.mknod(yearly_stats)
+            os.chmod(yearly_stats, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+    except FileExistsError:
+        # Ignore error when multiple threads try to create the file at the same time
+        pass
+
+    with open(yearly_stats, "a") as yearly_stats_file:
+        date_time = time.strftime("%Y-%m-%d-%H-%M-%S")
+        yearly_stats_file.write(f"Tumor ID: {tumorname} Normal ID: {normalname} Date and Time: {date_time}\n")
 
 
 def copy_results(workingdir, resultdir=None):
