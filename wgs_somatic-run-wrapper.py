@@ -189,6 +189,7 @@ def wrapper(instrument):
             timestamp = get_timestamp()
             workingdir = None
             if tumorsample and normalsample:
+                logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
                 fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
                 fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
                 tumorid = list(fastq_dict_tumor.keys())[0]  # E.g. DNA123456_250101_AHJLJHBGXF
@@ -204,6 +205,7 @@ def wrapper(instrument):
                                  'hg38ref': f'{hg38ref}'}
 
             elif tumorsample:
+                logger.info(f'Preparing run: Tumor-only {tumorsample}')
                 fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
                 workingdir = os.path.join(config['workingdir'], "tumor_only")
                 os.makedirs(workingdir, exist_ok=True)
@@ -217,6 +219,7 @@ def wrapper(instrument):
                                  'hg38ref': f'{hg38ref}'}
                 
             elif normalsample:
+                logger.info(f'Preparing run: Normal-only {normalsample}')
                 fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
                 workingdir = os.path.join(config['workingdir'], "normal_only")
                 os.makedirs(workingdir, exist_ok=True)
