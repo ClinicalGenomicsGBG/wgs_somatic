@@ -191,7 +191,8 @@ def wrapper(instrument):
             if tumorsample and normalsample:
                 fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
                 fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
-                workingdir = os.path.join(config['workingdir'], f"{fastq_dict_tumor.keys()[0]}_{timestamp}")
+                tumorid = list(fastq_dict_tumor.keys())[0]  # E.g. DNA123456_250101_AHJLJHBGXF
+                workingdir = os.path.join(config['workingdir'], f"{tumorid}_{timestamp}")
                 os.makedirs(workingdir, exist_ok=False)  # Make sure a new workingdir is created, not overwriting old results
                 tumor_fastq_dir = link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
                 normal_fastq_dir = link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
@@ -206,7 +207,8 @@ def wrapper(instrument):
                 fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
                 workingdir = os.path.join(config['workingdir'], "tumor_only")
                 os.makedirs(workingdir, exist_ok=True)
-                workingdir = os.path.join(workingdir, f"{fastq_dict_tumor.keys()[0]}_{timestamp}")
+                tumorid = list(fastq_dict_tumor.keys())[0]
+                workingdir = os.path.join(workingdir, f"{tumorid}_{timestamp}")
                 os.makedirs(workingdir, exist_ok=False)
                 tumor_fastq_dir = link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
                 pipeline_args = {'workingdir': f'{workingdir}', 
@@ -215,10 +217,11 @@ def wrapper(instrument):
                                  'hg38ref': f'{hg38ref}'}
                 
             elif normalsample:
-                fastq_dict_tumor = find_or_download_fastqs(normalsample, logger)
+                fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
                 workingdir = os.path.join(config['workingdir'], "normal_only")
                 os.makedirs(workingdir, exist_ok=True)
-                workingdir = os.path.join(workingdir, f"{fastq_dict_tumor.keys()[0]}_{timestamp}")
+                normalid = list(fastq_dict_normal.keys())[0]
+                workingdir = os.path.join(workingdir, f"{normalid}_{timestamp}")
                 os.makedirs(workingdir, exist_ok=False)
                 normal_fastq_dir = link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
                 pipeline_args = {'workingdir': f'{workingdir}', 
@@ -229,7 +232,7 @@ def wrapper(instrument):
             threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
             logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
             check_ok_outdirs.append(workingdir)
-            end_threads.append(threading.Thread(target=analysis_end, args=(workingdir, tumorsample, normalsample, pipeline_args['runtumor'], pipeline_args['runnormal'], pipeline_args['hg38ref'])))
+            end_threads.append(threading.Thread(target=analysis_end, args=(workingdir, tumorsample, normalsample)))
 
         tumor_samples = {}
         normal_samples = {}
