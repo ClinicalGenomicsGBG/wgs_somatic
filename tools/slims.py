@@ -198,17 +198,15 @@ def decompress_downloaded_fastq(complete_file_path, logger):
         if not os.path.exists(complete_decompressed_file_path):
             decompress_script = os.path.join(ROOT_DIR, config["hcp"]["peta_script"])
             dir_of_downloaded_file = os.path.dirname(complete_file_path)
-            cwd = os.getcwd() # Save current working directory
             os.chdir(f'{dir_of_downloaded_file}') # Change to the directory of the downloaded file
 
-            peta_args = ["qsub", "-N", f"decompressing_file_{filename}", "-q", queue, "-sync", "y", 
+            peta_args = ["qsub", "-N", f"decompressing_file_{filename}", "-q", queue, "-sync", "y",
                         "-pe", "mpi", f"{threads}", "-o", standardout_decompress, "-e", standarderr_decompress, "-v", f"THREADS={threads}",
                         decompress_script, complete_file_path, str(threads)] 
 
             logger.info(f"Running petasuite with args: {peta_args}")
             subprocess.call(peta_args)
             logger.info(f"Done with petasuite for file {filename}")
-            os.chdir(cwd) # Change back to the original working directory
         return complete_decompressed_file_path
     else:
         logger.error(f"Unknown compression type {compression_type} for file {filename}")
