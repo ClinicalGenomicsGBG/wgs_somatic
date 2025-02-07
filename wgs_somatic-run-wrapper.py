@@ -43,7 +43,6 @@ def generate_context_objects(Rctx, logger):
     with open(Rctx.demultiplex_summary_path, 'r') as inp:
         demuxer_info = json.load(inp)
 
-
     for sample_id, sample_info in demuxer_info['samples'].items():
         logger.info(f'Setting up context for {sample_id}.')
 
@@ -197,11 +196,11 @@ def wrapper(instrument):
                 os.makedirs(workingdir, exist_ok=False)  # Make sure a new workingdir is created, not overwriting old results
                 tumor_fastq_dir = link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
                 normal_fastq_dir = link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
-                pipeline_args = {'workingdir': f'{workingdir}', 
-                                 'normalname': f'{normalsample}', 
-                                 'normalfastqs': f'{normal_fastq_dir}', 
-                                 'tumorname': f'{tumorsample}', 
-                                 'tumorfastqs': f'{tumor_fastq_dir}', 
+                pipeline_args = {'workingdir': f'{workingdir}',
+                                 'normalname': f'{normalsample}',
+                                 'normalfastqs': f'{normal_fastq_dir}',
+                                 'tumorname': f'{tumorsample}',
+                                 'tumorfastqs': f'{tumor_fastq_dir}',
                                  'hg38ref': f'{hg38ref}'}
 
             elif tumorsample:
@@ -213,11 +212,11 @@ def wrapper(instrument):
                 workingdir = os.path.join(workingdir, f"{tumorid}_{timestamp}")
                 os.makedirs(workingdir, exist_ok=False)
                 tumor_fastq_dir = link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
-                pipeline_args = {'workingdir': f'{workingdir}', 
-                                 'tumorname': f'{tumorsample}', 
-                                 'tumorfastqs': f'{tumor_fastq_dir}', 
+                pipeline_args = {'workingdir': f'{workingdir}',
+                                 'tumorname': f'{tumorsample}',
+                                 'tumorfastqs': f'{tumor_fastq_dir}',
                                  'hg38ref': f'{hg38ref}'}
-                
+
             elif normalsample:
                 logger.info(f'Preparing run: Normal-only {normalsample}')
                 fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
@@ -227,11 +226,11 @@ def wrapper(instrument):
                 workingdir = os.path.join(workingdir, f"{normalid}_{timestamp}")
                 os.makedirs(workingdir, exist_ok=False)
                 normal_fastq_dir = link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
-                pipeline_args = {'workingdir': f'{workingdir}', 
-                                 'normalname': f'{normalsample}', 
-                                 'normalfastqs': f'{normal_fastq_dir}', 
+                pipeline_args = {'workingdir': f'{workingdir}',
+                                 'normalname': f'{normalsample}',
+                                 'normalfastqs': f'{normal_fastq_dir}',
                                  'hg38ref': f'{hg38ref}'}
-            
+
             threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
             logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
             check_ok_outdirs.append(workingdir)
@@ -247,6 +246,8 @@ def wrapper(instrument):
             elif value[0] == 'normal':
                 normal_samples[key] = value
 
+        logger.info(f"tumor_samples: {tumor_samples}")
+        logger.info(f"normal_samples: {normal_samples}\n")
         # Pair samples based on tumorNormalID
         for t_key, t_value in tumor_samples.items():
             t_ID = t_value[1]  # tumorNormalID
@@ -268,7 +269,6 @@ def wrapper(instrument):
                 submit_pipeline(None, n_key)
                 final_pairs.append(f'{n_key} (N), {n_value[2]} {["prio" if n_value[3] else ""][0]}')
 
-        
         # Start several samples at the same time
         for t in threads:
             t.start()
