@@ -85,7 +85,7 @@ def copy_results(workingdir, resultdir=None):
     '''Rsync result files from workingdir to resultdir'''
     if not resultdir:
         config_dir = os.path.join(workingdir, 'configs')
-        config_pattern = re.compile(r'DNA\d+_.+_.+_config\.json')
+        config_pattern = re.compile(r'DNA[\dA-Za-z]+_.+_.+_config\.json')
         if os.path.isdir(config_dir):
             for f in os.listdir(config_dir):
                 if config_pattern.match(f):
