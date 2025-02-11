@@ -431,13 +431,24 @@ if __name__ == '__main__':
     parser.add_argument('-onlycopy', '--onlycopyresults', action="store_true", help='Only run the copy_results function', required=False)
     args = parser.parse_args()
 
+    if not args.outputdir.startswith("/"):
+        args.outputdir = os.path.abspath(args.outputdir)
+        logger(f"Adjusted outputdir to {args.outputdir}")
     if args.onlycopyresults:
         copy_results(args.workingdir)
     else:
         if not args.development:
             timestamp = get_timestamp()
-            args.workingdir = f'{args.workingdir}_{timestamp}'
-        analysis_main(args, args.workingdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
+            args.outputdir = f'{args.outputdir}_{timestamp}'
+        if args.tumorfastqs:
+            if not args.tumorfastqs.startswith("/"):
+                args.tumorfastqs = os.path.abspath(args.tumorfastqs)
+                logger(f"Adjusted tumorfastqs to {args.tumorfastqs}")
+        if args.normalfastqs:
+            if not args.normalfastqs.startswith("/"):
+                args.normalfastqs = os.path.abspath(args.normalfastqs)
+                logger(f"Adjusted normalfastqs to {args.normalfastqs}")
+        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
 
         if os.path.isfile(f"{args.workingdir}/reporting/workflow_finished.txt"):
             if args.tumorsample:
