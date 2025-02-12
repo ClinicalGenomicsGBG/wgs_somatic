@@ -26,41 +26,15 @@ For paired tumor and normal FASTQs, the results contain:
 
 ## Usage
 
-### Installation
-
-Clone the repository with submodules:
-
-`git clone --recurse-submodules https://github.com/ClinicalGenomicsGBG/wgs_somatic`
-
-Submodules used are annotate\_manta\_canvas, b\_allele\_igv\_plot and canvas\_to\_interpreter. They can all be found at [CGG](https://github.com/ClinicalGenomicsGBG).
-
-#### Dependencies
-
-The paths to the dependencies are in configs/config_hg38.json.
-
-They consist of:
-
-- Conda environment specified in `environment.yml`
-- Singularity images for analysis tools (definition files in `singularities/`; incomplete)
-- Genome, annotations, genelists and databases
-
-When running on the CGG cluster, the dependencies should be set up correctly when cloning the repo.
-
-### FASTQ requirements
-
-For the pipeline to be able to run the following is required for the naming of the FASTQs:
-
-- The filenames must end in `_R{1|2}_001.fastq.gz` or `_{1|2}.fastq.gz` for the 1 and 2 paired-end sequencing files, respectively.
-- The provided names of the tumor and normal samples must match the beginning of the FASTQ file.
-- When using multiple paired-end FASTQ files to be merged, they must all use the same tumor or normal sample name
-- The pipeline will use the first three parts seperated by `_` to generate the output files
-  - e.g, `DNA123456_250101_CHIPCHIP_S12_R{1|2}_001.fastq.gz` becomes `DNA123456_250101_CHIPCHIP`
-
 ### How to run manually
 
-1. Clone the repository and submodules (see above), and navigate there
-2. Change the log and commandlog paths in launcher_config.json (or they will end up in `/clinical/exec/wgs/logs`)
-3. Adjust and run the qsub script below:
+1. Clone the repository and submodules:
+
+   `git clone --recurse-submodules https://github.com/ClinicalGenomicsGBG/wgs_somatic`
+
+2. Make sure the FASTQ file names follow the [FASTQ requirements](#fastq-requirements).
+3. Change the log and commandlog paths in launcher_config.json (or they will end up in `/clinical/exec/wgs/logs`)
+4. Adjust and run the qsub script below:
 
 ```{bash}
 #!/bin/bash -l
@@ -83,11 +57,8 @@ python launch_snakemake.py \
     --development <save intermediate files; allows for resuming of crashed runs>
 ```
 
-For hg38ref, write 'yes' if you want this option. hg19 is no longer supported by the pipeline so you always have to use hg38.
-
-If you want to run pipeline for normal only (run only germline steps of pipeline), simply don't use arguments tumorsample and tumorfastqs.
-
-If you want to run pipeline for tumor only, simply don't use arguments normalsample and normalfastqs.
+- For normal-only analysis (run only germline steps of pipeline), simply don't use arguments tumorsample and tumorfastqs.
+- For tumor-only analysis, omit the `--normalsample` and `--normalfastqs` arguments.
 
 #### Optional arguments
 
@@ -105,6 +76,28 @@ python launch_snakemake.py \
 
 Used for running the pipeline while developing new features. Runs the pipeline without creating a timestamp, without removing temporary files (`--notemp`) and rerunning uncompleted files (`--rerun-incomplete`).
 
+### Dependencies
+
+The paths to the dependencies are in configs/config_hg38.json.
+
+They consist of:
+
+- Conda environment specified in `environment.yml`
+- Singularity images for analysis tools (definition files in `singularities/`; incomplete)
+- Genome, annotations, genelists and databases
+
+When running on the CGG cluster, the dependencies should be set up correctly when cloning the repo.
+
+### FASTQ requirements
+
+For the pipeline to be able to run the following is required for the naming of the FASTQs:
+
+- The filenames must end in `_R{1|2}_001.fastq.gz` or `_{1|2}.fastq.gz` for the `1` and `2` paired-end sequencing files, respectively.
+- The provided names of the tumor and normal samples must match the beginning of the FASTQ file.
+- When using multiple paired-end FASTQ files to be merged, they must all use the same tumor or normal sample name
+- The pipeline will use the first three parts seperated by `_` to generate the output files
+  - e.g, `DNA123456_250101_CHIPCHIP_S12_R{1|2}_001.fastq.gz` becomes `DNA123456_250101_CHIPCHIP`
+
 ### Automatic start of pipeline
 
 The pipeline is started automatically when new runs with GMS-BT/AL samples appear in novaseq_687_gc or novaseq_A01736 Demultiplexdirs.
@@ -113,15 +106,6 @@ Cron runs every 30 minutes (in crontab of cronuser)
 
 Wrapper script `wgs_somatic-run-wrapper.py` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file `/clinical/exec/wgs_somatic/runlists/novaseq_runlist.txt` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory `/clinical/data/wgs_somatic/cron/` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
 
-### Goal
-
-- Have a high quality analysis of all types of genetic abberations (starting with SNVs and InDels, CNVs and SVs).
-- Which is fast (because some of these samples can help treatment of urgent pediatric cases).
-- Automated and connected to hospital systems so that it is not relied upon bioinformatician working-hours.
-- Packaged into Singularities so that it can in the future be run on a cloud-platform like AWS.
-- Connected to HCP to upload results and download data for analysis.
-- Robust and well-documented to fit into the clinical requirements.
-
 ### Yearly statistics
 
 After running the pipeline for the first time, a yearly\_statistics text file is created in the repo. Every time the pipeline is run, sample name and date/time is added to this text file.
@@ -129,3 +113,12 @@ After running the pipeline for the first time, a yearly\_statistics text file is
 ### Simplified DAG
 
 <img src="assets/wgs_somatic_simplified_DAG.png" alt="Simplified DAG" width="1000">
+
+## Goals
+
+- Have a high quality analysis of all types of genetic abberations (starting with SNVs and InDels, CNVs and SVs).
+- Which is fast (because some of these samples can help treatment of urgent pediatric cases).
+- Automated and connected to hospital systems so that it is not relied upon bioinformatician working-hours.
+- Packaged into Singularities so that it can in the future be run on a cloud-platform like AWS.
+- Connected to HCP to upload results and download data for analysis.
+- Robust and well-documented to fit into the clinical requirements.
