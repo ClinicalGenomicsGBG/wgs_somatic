@@ -1,6 +1,13 @@
-<img src="assets/wgs-somatic-logo.svg" alt="WGS_somatic logo" width="600">
-[![WGS_somatic release badge](https://img.shields.io/github/v/release/ClinicalGenomicsGBG/wgs_somatic)](https://github.com/ClinicalGenomicsGBG/wgs_somatic/releases/)
-[![Open pull requests](https://img.shields.io/github/issues-pr/ClinicalGenomicsGBG/wgs_somatic)](https://github.com/ClinicalGenomicsGBG/wgs_somatic/pulls)
+<img src="assets/wgs-somatic-logo.svg" alt="WGS_somatic logo" width="1000">
+
+<p align="left">
+  <a href="https://github.com/ClinicalGenomicsGBG/wgs_somatic/releases/">
+    <img alt="WGS_somatic release badge" src="https://img.shields.io/github/v/release/ClinicalGenomicsGBG/wgs_somatic">
+  </a>
+  <a href="https://github.com/ClinicalGenomicsGBG/wgs_somatic/pulls">
+    <img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/ClinicalGenomicsGBG/wgs_somatic">
+  </a>
+</p>
 
 ## General description
 
@@ -43,7 +50,7 @@ When running on the CGG cluster, the dependencies should be set up correctly whe
 
 For the pipeline to be able to run the following is required for the naming of the FASTQs:
 
-- The filenames must end in `_R{1|2}_001.fastq.gz` or `_{1|2}.fastq.gz` for the 1 and 2 paired-ends reads, respectively.
+- The filenames must end in `_R{1|2}_001.fastq.gz` or `_{1|2}.fastq.gz` for the 1 and 2 paired-end sequencing files, respectively.
 - The provided names of the tumor and normal samples must match the beginning of the FASTQ file.
 - When using multiple paired-end FASTQ files to be merged, they must all use the same tumor or normal sample name
 - The pipeline will use the first three parts seperated by `_` to generate the output files
@@ -121,4 +128,4 @@ After running the pipeline for the first time, a yearly\_statistics text file is
 
 ### Simplified DAG
 
-<img src="assets/wgs_somatic_simplified_DAG.png" alt="Simplified DAG" width="600" height="450">
+<img src="assets/wgs_somatic_simplified_DAG.png" alt="Simplified DAG" width="1000">
