@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="89.348839mm"
+   height="25.269793mm"
+   viewBox="0 0 89.348839 25.269793"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb1, 2024-10-09)"
+   sodipodi:docname="wgs-somatic-logo.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.4742077"
+     inkscape:cx="184.09934"
+     inkscape:cy="56.1796"
+     inkscape:window-width="1424"
+     inkscape:window-height="781"
+     inkscape:window-x="87"
+     inkscape:window-y="1489"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <filter
+       style="color-interpolation-filters:sRGB"
+       inkscape:label="Drop Shadow"
+       id="filter56"
+       x="-0.03513072"
+       y="-0.15701313"
+       width="1.0823755"
+       height="1.3681687">
+      <feFlood
+         result="flood"
+         in="SourceGraphic"
+         flood-opacity="0.498039"
+         flood-color="rgb(0,0,0)"
+         id="feFlood55" />
+      <feGaussianBlur
+         result="blur"
+         in="SourceGraphic"
+         stdDeviation="1.000000"
+         id="feGaussianBlur55" />
+      <feOffset
+         result="offset"
+         in="blur"
+         dx="1.000000"
+         dy="1.000000"
+         id="feOffset55" />
+      <feComposite
+         result="comp1"
+         operator="in"
+         in="flood"
+         in2="offset"
+         id="feComposite55" />
+      <feComposite
+         result="comp2"
+         operator="over"
+         in="SourceGraphic"
+         in2="comp1"
+         id="feComposite56" />
+    </filter>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0.13973807,0.46263268)">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-dasharray:none;stroke-opacity:1;filter:url(#filter56)"
+       id="rect1"
+       width="82.548836"
+       height="18.469793"
+       x="2.760262"
+       y="2.4373674" />
+    <text
+       xml:space="preserve"
+       style="font-size:3.78983px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;white-space:pre;inline-size:38.2392;fill:#000000;stroke-width:0.264583"
+       x="26.5114"
+       y="43.405918"
+       id="text1"
+       transform="matrix(2.9787343,0,0,2.9787343,-70.379852,-113.77219)"><tspan
+         x="26.5114"
+         y="43.405918"
+         id="tspan3"><tspan
+           style="font-weight:600;font-family:'Gill Sans';-inkscape-font-specification:'Gill Sans Semi-Bold'"
+           id="tspan2">WGS_somatic</tspan></tspan></text>
+  </g>
+</svg>
