@@ -17,7 +17,7 @@ import threading
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, SlimsSample, find_or_download_fastqs, get_pair_dict, link_fastqs_to_workingdir
+from tools.slims import get_sample_slims_info, SlimsSample, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
 from tools.email import start_email, end_email, error_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 
@@ -88,30 +88,30 @@ def call_script(**kwargs):
     analysis_main(args, **kwargs)
 
 
-def check_ok(workingdir):
+def check_ok(outputdir):
     '''Function to check if analysis has finished correctly'''
 
-    if os.path.isfile(f"{workingdir}/reporting/workflow_finished.txt"):
+    if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
         return True
     else:
         return False
 
 
-def analysis_end(workingdir, tumorsample=None, normalsample=None):
+def analysis_end(outputdir, tumorsample=None, normalsample=None):
     '''Function to check if analysis has finished correctly and add to yearly stats and copy results'''
 
-    if os.path.isfile(f"{workingdir}/reporting/workflow_finished.txt"):
+    if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
         if tumorsample:
             if normalsample:
                 # these functions are only executed if snakemake workflow has finished successfully
                 yearly_stats(tumorsample, normalsample)
-                copy_results(workingdir)
+                copy_results(outputdir)
             else:
                 yearly_stats(tumorsample, 'None')
-                copy_results(workingdir)
+                copy_results(outputdir)
         else:
             yearly_stats('None', normalsample)
-            copy_results(workingdir)
+            copy_results(outputdir)
     else:
         pass
 
@@ -132,7 +132,7 @@ def wrapper(instrument):
         try:
             os.makedirs(hcptmp)
         except Exception as e:
-            error_list.append(f"workingdirectory: {hcptmp} does not exist and could not be created")
+            error_list.append(f"outputdirectory: {hcptmp} does not exist and could not be created")
 
 
     # Grab all available local run paths
@@ -186,17 +186,17 @@ def wrapper(instrument):
         def submit_pipeline(tumorsample, normalsample):
             hg38ref = config['hg38ref']['GMS-BT']
             timestamp = get_timestamp()
-            workingdir = None
+            outputdir = None
             if tumorsample and normalsample:
                 logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
                 fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
                 fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
                 tumorid = list(fastq_dict_tumor.keys())[0]  # E.g. DNA123456_250101_AHJLJHBGXF
-                workingdir = os.path.join(config['workingdir'], f"{tumorid}_{timestamp}")
-                os.makedirs(workingdir, exist_ok=False)  # Make sure a new workingdir is created, not overwriting old results
-                tumor_fastq_dir = link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
-                normal_fastq_dir = link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
-                pipeline_args = {'workingdir': f'{workingdir}',
+                outputdir = os.path.join(config['outputdir'], f"{tumorid}_{timestamp}")
+                os.makedirs(outputdir, exist_ok=False)  # Make sure a new outputdir is created, not overwriting old results
+                tumor_fastq_dir = link_fastqs_to_outputdir(fastq_dict_tumor, outputdir, logger)
+                normal_fastq_dir = link_fastqs_to_outputdir(fastq_dict_normal, outputdir, logger)
+                pipeline_args = {'outputdir': f'{outputdir}',
                                  'normalname': f'{normalsample}',
                                  'normalfastqs': f'{normal_fastq_dir}',
                                  'tumorname': f'{tumorsample}',
@@ -206,13 +206,13 @@ def wrapper(instrument):
             elif tumorsample:
                 logger.info(f'Preparing run: Tumor-only {tumorsample}')
                 fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
-                workingdir = os.path.join(config['workingdir'], "tumor_only")
-                os.makedirs(workingdir, exist_ok=True)
+                outputdir = os.path.join(config['outputdir'], "tumor_only")
+                os.makedirs(outputdir, exist_ok=True)
                 tumorid = list(fastq_dict_tumor.keys())[0]
-                workingdir = os.path.join(workingdir, f"{tumorid}_{timestamp}")
-                os.makedirs(workingdir, exist_ok=False)
-                tumor_fastq_dir = link_fastqs_to_workingdir(fastq_dict_tumor, workingdir, logger)
-                pipeline_args = {'workingdir': f'{workingdir}',
+                outputdir = os.path.join(outputdir, f"{tumorid}_{timestamp}")
+                os.makedirs(outputdir, exist_ok=False)
+                tumor_fastq_dir = link_fastqs_to_outputdir(fastq_dict_tumor, outputdir, logger)
+                pipeline_args = {'outputdir': f'{outputdir}',
                                  'tumorname': f'{tumorsample}',
                                  'tumorfastqs': f'{tumor_fastq_dir}',
                                  'hg38ref': f'{hg38ref}'}
@@ -220,21 +220,22 @@ def wrapper(instrument):
             elif normalsample:
                 logger.info(f'Preparing run: Normal-only {normalsample}')
                 fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
-                workingdir = os.path.join(config['workingdir'], "normal_only")
-                os.makedirs(workingdir, exist_ok=True)
+                outputdir = os.path.join(config['outputdir'], "normal_only")
+                os.makedirs(outputdir, exist_ok=True)
                 normalid = list(fastq_dict_normal.keys())[0]
-                workingdir = os.path.join(workingdir, f"{normalid}_{timestamp}")
-                os.makedirs(workingdir, exist_ok=False)
-                normal_fastq_dir = link_fastqs_to_workingdir(fastq_dict_normal, workingdir, logger)
-                pipeline_args = {'workingdir': f'{workingdir}',
+                outputdir = os.path.join(outputdir, f"{normalid}_{timestamp}")
+                os.makedirs(outputdir, exist_ok=False)
+                normal_fastq_dir = link_fastqs_to_outputdir(fastq_dict_normal, outputdir, logger)
+                pipeline_args = {'outputdir': f'{outputdir}',
                                  'normalname': f'{normalsample}',
                                  'normalfastqs': f'{normal_fastq_dir}',
                                  'hg38ref': f'{hg38ref}'}
 
             threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
             logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
-            check_ok_outdirs.append(workingdir)
-            end_threads.append(threading.Thread(target=analysis_end, args=(workingdir, tumorsample, normalsample)))
+            check_ok_outdirs.append(outputdir)
+            end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample)))
+        # End of submit_pipeline function
 
         tumor_samples = {}
         normal_samples = {}
@@ -317,18 +318,9 @@ def wrapper(instrument):
         # if cron runs every 30 mins it will find other runs at the next cron instance and run from there instead (and add to novaseq_runlist)
         break
 
-    # DON'T FORGET TO UNCOMMENT PETAGENE COMPRESSION AND CHANGE BACK TO CORRECT workingdir AND IGVUSER!!!!!!
 
     # some arguments are hardcoded right now, need to fix this. 
-    # only considers barncancer hg38 (GMS-AL + GMS-BT samples) right now. 
-
-    # the arguments runtumor and runnormal could be "wrong" by doing it like this 
-    # since they use run name of current run 
-    # but if for example normal is in older run it has the wrong argument for "runnormal". 
-    # this argument is not that important, it is only used to create a unique sample name. 
-    # maybe it would be better discard/modify this argument than spending time on getting the correct value of it for samples from different runs. 
-    # also, if fastqs come from more than one run, what will the value of this argument be then to be "correct"?...
-
+    # only considers barncancer hg38 (GMS-AL + GMS-BT samples) right now.
 
 def main():
     parser = argparse.ArgumentParser()

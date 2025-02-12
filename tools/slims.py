@@ -213,14 +213,14 @@ def decompress_downloaded_fastq(complete_file_path, logger):
         return None
 
 
-def link_fastqs_to_workingdir(fastq_dict, workingdir, logger):
+def link_fastqs_to_outputdir(fastq_dict, outputdir, logger):
     """
-    Link the fastq files in the dictionary to the workingdir/fastq/ directory.
+    Link the fastq files in the dictionary to the outputdir/fastq/ directory.
     """
-    if workingdir is None:
-        raise ValueError("workingdir is not defined")
+    if outputdir is None:
+        raise ValueError("outputdir is not defined")
 
-    fastq_dir = os.path.join(workingdir, 'fastq')
+    fastq_dir = os.path.join(outputdir, 'fastq')
     os.makedirs(fastq_dir, exist_ok=True)
 
     for sample_tag, fastq_paths in fastq_dict.items():
@@ -324,7 +324,6 @@ def get_pair_dict(Sctx, Rctx, logger):
 
     for pair in pairs:
         pair_slims_sample = translate_slims_info(pair)
-        print(pair_slims_sample)
         # Check if the sample we have found is either our newly sequenced sample (including the same sample previously sequenced) OR a complementing tumorNormalType to our newly sequenced sample
         if pair_slims_sample['content_id'] == Sctx.slims_info['content_id'] or\
                 pair_slims_sample['tumorNormalType'] == pair_type:
@@ -332,7 +331,6 @@ def get_pair_dict(Sctx, Rctx, logger):
             # Check if there are additional fastqs in other runs and symlink fastqs
     for p in pairs2:
         pair_slims_sample = translate_slims_info(p)
-        print(pair_slims_sample)
         if not pair_slims_sample['tumorNormalType'] == pair_type:
             continue
         if not pair_slims_sample['content_id'] in pair_dict:

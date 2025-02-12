@@ -16,9 +16,9 @@ hg38ref:
   GMS-BT: 'yes'
   GMS-AL: 'yes'
 
-workingdir: '/clinical/data/wgs_somatic/cron'
+outdir: '/clinical/data/wgs_somatic/cron'
 
-hcp_download_dir: '/clinical/data/wgs_somatic/hcp_download'
+hcp_download_dir: '/clinical/data/wgs_somatic/hcp_downloads'
 
 hcp:
   qsub_script: 'tools/hcp_download_fq.sh'
