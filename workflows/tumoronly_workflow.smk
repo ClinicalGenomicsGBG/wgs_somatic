@@ -30,7 +30,7 @@ def get_insilico(wcs):
     insilico_data = config['insilico']
     insilico_names = insilico_data.keys()
 
-    # NOTE: sampleid and workingdir is essentially global because defined in snakefile
+    # NOTE: sampleid is essentially global because defined in snakefile
     insilico_files = []
     for insilico_name in insilico_names:
         insilico_files.extend([f"tumor/insilico/{insilico_name}/{tumorid}_{insilico_name}_10x.xlsx",

@@ -19,8 +19,6 @@ tumorid = config["tumorid"]
 
 reference = config["reference"]
 
-workingdir = config["workingdir"]
-
 insilico_panels = config["insilico"]
 
 # It uses the following configs from the working directory

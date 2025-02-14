@@ -1,137 +1,126 @@
-# The WGS Somatic Pipeline
+<img src="assets/wgs-somatic-logo.svg" alt="WGS_somatic logo" width="1000">
 
+<p align="left">
+  <a href="https://github.com/ClinicalGenomicsGBG/wgs_somatic/releases/">
+    <img alt="WGS_somatic release badge" src="https://img.shields.io/github/v/release/ClinicalGenomicsGBG/wgs_somatic">
+  </a>
+  <a href="https://github.com/ClinicalGenomicsGBG/wgs_somatic/pulls">
+    <img alt="Open pull requests" src="https://img.shields.io/github/issues-pr/ClinicalGenomicsGBG/wgs_somatic">
+  </a>
+</p>
 
 ## General description
 
- Pipeline started out as a giant shell-script developed specifically for analysing neuroblastoma WholeGenomeSequenced samples.
+Pipeline for analysis of Whole Genome Sequenced tumor and normal samples. Developed and in use at [Clinical Genomics Göteborg](https://www.scilifelab.se/units/clinical-genomics-goteborg/).
 
- Pipeline was converted to Snakemake and updated in various ways, including a transition from hg19 to hg38 as a reference genome in conjunction with the project from BarncancerFonden in association with Genomic Medicine Sweden. Clinical Genomics Göteborg has had a bioinformatician employed in this project at 80% (of FTE).
+The pipeline takes paired-end Illumina short read sequencing FASTQs as input files from tumor and normal (germline) samples. Depending on the input, the pipeline will perform different tasks.
 
- The pipeline takes as input-data fastqfiles from a TUMOR and a NORMAL sample and generates a group of result and QC-files. The results contain Somatic AND Germline variantcalls of SNVs and InDels, as well as Structural Variants (SVs) and Copy Number Variants (CNVs) -- to provide the possibility of discovering both cancer pre-disposition variants but with a primary focus towards acquired mutations.
+For paired tumor and normal FASTQs, the results contain:
 
-### How to install:
+- Somatic SNV/indels ([TNscope; Sentieon](https://support.sentieon.com/manual/TNscope_usage/tnscope/))
+- Structural variants ([Manta; Illumina](https://github.com/Illumina/manta))
+- Copy number variants ([Canvas; Illumina](https://github.com/Illumina/canvas))
+- Germline SNV/indels ([DNAscope; Sentieon](https://support.sentieon.com/manual/DNAscope_usage/dnascope/))
+- Breakpoints from large deletions and SVs ([Pindel](https://github.com/genome/pindel))
+- Tumor mutation burden (in-house script; see [Wadensten et al., (2023)](https://doi.org/10.1200/PO.23.00039))
 
-1. Clone the repository
+## Usage
 
-`$ git clone https://github.com/ClinicalGenomicsGBG/wgs_somatic`
+### How to run manually
 
-2. Install submodules
+1. Clone the repository and submodules:
 
-`$ git submodule update --init --recursive --remote`
+   `git clone --recurse-submodules https://github.com/ClinicalGenomicsGBG/wgs_somatic`
 
-Submodules used are annotate\_manta\_canvas, b\_allele\_igv\_plot, canvas\_to\_interpreter and Alissa\_API\_tools. They can all be found at [CGG](https://github.com/ClinicalGenomicsGBG).
+2. Make sure the FASTQ file names follow the [FASTQ requirements](#fastq-requirements).
+3. Change the log and commandlog paths in launcher_config.json (or they will end up in `/clinical/exec/wgs/logs`)
+4. Adjust and run the qsub script below:
 
+```{bash}
+#!/bin/bash -l
+#$ -cwd
+#$ -pe mpi 1
+#$ -N wgs_somatic_standalone
+#$ -q development.q
 
+module load micromamba
+micromamba activate /clinical/exec/wgs_somatic/env/wgs_somatic_env
 
-You shouldn't have to build singularity images since paths to them are specified in the configs but if you would like to build them, you can use the definition files in the singularity subfolders.
-
-Singularity images are located here: /apps/bio/singularities/wgs\_somatic/
-
-
-
-### How to run manually:
-
-Go to  `/apps/bio/repos/wgs_somatic` (or clone the repository and install submodules). 
-
-1. Start a screen
-
-2. Load anaconda2
-
-`$ module load anaconda2`
-
-3. Activate conda environment
-
-`$ source activate wgs_somatic_minimal`
-
-4. Run launch\_snakemake.py
-
-
-```
-$ ./launch_snakemake.py \
-    --runnormal <ID of sequencing run> \
-    --runtumor <ID of sequencing run> \
-    --outputdir <Output directory> \
-    --normalsample <Name of normal sample> \
-    --normalfastqs <path to directory containing normal fastqs> \
-    --tumorsample <Name of tumor sample> \
+python launch_snakemake.py \
+    --outputdir <Output directory; required> \
+    --normalsample <e.g. "DNA123456", should match beginning of normal fastqs> \
+    --normalfastqs <directory containing normal fastqs> \
+    --tumorsample <e.g. "DNA654321", should match beginning of tumor fastqs> \
     --tumorfastqs <path to directory containing tumor fastqs> \
-    --hg38ref yes
+    --hg38ref yes \
+    --copyresults <copy results to resultdir_hg38 in launcher_config.json> \
+    --development <save intermediate files; allows for resuming of crashed runs>
 ```
 
-For hg38ref, write 'yes' if you want this option. If you want to use hg19, simply don't use hg38ref argument. Hg19 is not used anymore so you always have to use hg38. 
+- For normal-only analysis (run only germline steps of pipeline), simply don't use arguments tumorsample and tumorfastqs.
+- For tumor-only analysis, omit the `--normalsample` and `--normalfastqs` arguments.
 
+#### Optional arguments
 
-If you want to run pipeline for normal only (run only germline steps of pipeline), simply don't use arguments runtumor, tumorsample and tumorfastqs.
+##### --copyresults
 
+When including the `--copyresults` flag, results will automatically be copied to the result directory on webstore. If the pipeline was run without, but you want to copy the results afterwards you can run the command below:
 
-If you want to run pipeline for tumor only, simply don't use arguments runnormal, normalsample and normalfastqs.
+```{bash}
+python launch_snakemake.py \
+    --outputdir <Same directory as specified when running the pipeline> \
+    --onlycopyresults
+```
 
+##### --development
 
-Runnormal and runtumor is only used to create a unique samplename based on the sequencing run the data comes from. Could probably be done in a better way.
+Used for running the pipeline while developing new features. Runs the pipeline without creating a timestamp, without removing temporary files (`--notemp`) and rerunning uncompleted files (`--rerun-incomplete`).
 
+### Dependencies
 
-Optional arguments to launch_snakemake.py:
+The paths to the dependencies are in configs/config_hg38.json.
 
-```--noalissa``` Disables automatic upload of germline SNV_CNV vcf to Alissa. 
+They consist of:
 
-```--copyresults``` Use this argument if you want to automatically copy result files to result directory on webstore.
+- Conda environment specified in `environment.yml`
+- Singularity images for analysis tools (definition files in `singularities/`; incomplete)
+- Genome, annotations, genelists and databases
 
-`--development` Used for running the pipeline while developing new features. Runs the pipeline without creating a timestamp, without removing temporary files (`--notemp`) and rerunning uncompleted files (`--rerun-incomplete`).
+When running on the CGG cluster, the dependencies should be set up correctly when cloning the repo.
 
+### FASTQ requirements
 
+For the pipeline to be able to run the following is required for the naming of the FASTQs:
 
- ### Goal:
+- The filenames must end in `_R{1|2}_001.fastq.gz` or `_{1|2}.fastq.gz` for the `1` and `2` paired-end sequencing files, respectively.
+- The provided names of the tumor and normal samples must match the beginning of the FASTQ file.
+- When using multiple paired-end FASTQ files to be merged, they must all use the same tumor or normal sample name
+  - e.g. `DNA123456_250101_CHIPCHIP_S12_R{1|2}_001.fastq.gz` and `DNA123456_241212_ABCDEFGH_{1|2}.fastq.gz` will be merged
+- The pipeline will use the first three parts seperated by `_` to generate the output files
+  - e.g, `DNA123456_250101_CHIPCHIP_S12_R{1|2}_001.fastq.gz` becomes `DNA123456_250101_CHIPCHIP`
+- The FASTQ filenames cannot contain non-ASCII characters (å, ä, ö, etc.)
 
-
- * Have a high quality analysis of all types of genetic abberations (starting with SNVs and InDels, CNVs and SVs).
- * Which is fast (because some of these samples can help treatment of urgent pediatric cases).
- * Automated and connected to hospital systems so that it is not relied upon bioinformatician working-hours.
- * Packaged into Singularities so that it can in the future be run on a cloud-platform like AWS.
- * Connected to HCP to upload results (and download data for analysis?).
- * Robust and well-documented to fit into the clinical requirements.
-
-
- ### Yearly statistics
-
-After running the pipeline for the first time, a yearly\_statistics text file is created in the repo. Every time the pipeline is run, sample name and date/time is added to this text file.
-
-
- ### Automatic start of pipeline
+### Automatic start of pipeline
 
 The pipeline is started automatically when new runs with GMS-BT/AL samples appear in novaseq_687_gc or novaseq_A01736 Demultiplexdirs.
 
 Cron runs every 30 minutes (in crontab of cronuser)
 
-Wrapper script ```wgs_somatic-run-wrapper.py``` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file ```/apps/bio/repos/wgs_somatic/novaseq_runlist.txt``` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory ```/medstore/results/wgs/wgs_somatic``` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
+Wrapper script `wgs_somatic-run-wrapper.py` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file `/clinical/exec/wgs_somatic/runlists/novaseq_runlist.txt` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory `/clinical/data/wgs_somatic/cron/` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
 
+### Yearly statistics
 
- ### Status (2020-10-19):
+After running the pipeline for the first time, a yearly\_statistics text file is created in the repo. Every time the pipeline is run, sample name and date/time is added to this text file.
 
- #### Reference genome
+### Simplified DAG
 
-Can be run using either hg38 or hg19 reference genomes.
+<img src="assets/wgs_somatic_simplified_DAG.png" alt="Simplified DAG" width="1000">
 
- #### Validation and optimisation:
+## Goals
 
- ##### Germline calling:
- * SNVs and InDel calling with DNAscope (was validated through WOPR in hg19, but not on hg38)
- * CNVs -- Canvas
- * SVs -- Manta
-
-
- ##### Somatic calling:
- * SNVs and InDel calling with TNscope and custom Bcftools filters. Optimised against artificial truthset by mixing coriell samples (see wiki)
- * CNVs -- Canvas
- * SVs -- Manta
-
- #### Code structure and organisation of dependencies
-
- Most of the pipeline is packaged in Singularities, Sentieon and Canvas (Sentieon is majority of pipeline).
- The remaining rules relies primarily on small python scripts, bcftools and Manta. Should not be too difficult to package these into singularities as well.
-
- #### Validation project 
-
- * Analyse all samples in the project with hg38 (nearly done)
- * Calculate sensitivity and precision with artificial truthset (nearly done)
-
-
+- Have a high quality analysis of all types of genetic abberations (starting with SNVs and InDels, CNVs and SVs).
+- Which is fast (because some of these samples can help treatment of urgent pediatric cases).
+- Automated and connected to hospital systems so that it is not relied upon bioinformatician working-hours.
+- Packaged into Singularities so that it can in the future be run on a cloud-platform like AWS.
+- Connected to HCP to upload results and download data for analysis.
+- Robust and well-documented to fit into the clinical requirements.

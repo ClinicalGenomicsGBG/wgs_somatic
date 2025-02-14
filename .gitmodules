@@ -10,7 +10,3 @@
 	path = workflows/scripts/canvas_to_interpreter
 	url = https://github.com/ClinicalGenomicsGBG/canvas_to_interpreter.git
         ignore = dirty
-[submodule "workflows/scripts/Alissa_API_tools"]
-	path = workflows/scripts/Alissa_API_tools
-	url = https://github.com/ClinicalGenomicsGBG/Alissa_API_tools.git
-	branch = main
