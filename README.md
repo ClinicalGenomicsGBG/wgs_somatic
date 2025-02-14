@@ -95,9 +95,10 @@ For the pipeline to be able to run the following is required for the naming of t
 - The filenames must end in `_R{1|2}_001.fastq.gz` or `_{1|2}.fastq.gz` for the `1` and `2` paired-end sequencing files, respectively.
 - The provided names of the tumor and normal samples must match the beginning of the FASTQ file.
 - When using multiple paired-end FASTQ files to be merged, they must all use the same tumor or normal sample name
+  - e.g. `DNA123456_250101_CHIPCHIP_S12_R{1|2}_001.fastq.gz` and `DNA123456_241212_ABCDEFGH_{1|2}.fastq.gz` will be merged
 - The pipeline will use the first three parts seperated by `_` to generate the output files
   - e.g, `DNA123456_250101_CHIPCHIP_S12_R{1|2}_001.fastq.gz` becomes `DNA123456_250101_CHIPCHIP`
-- The FASTQ filenames cannot contain non-ASCII characters (ö, ä, å, etc.)
+- The FASTQ filenames cannot contain non-ASCII characters (å, ä, ö, etc.)
 
 ### Automatic start of pipeline
 
