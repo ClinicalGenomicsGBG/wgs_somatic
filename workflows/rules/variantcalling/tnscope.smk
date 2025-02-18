@@ -120,9 +120,9 @@ if normalid:
             shell_command = " ".join(shell_command)
             print(shell_command)      
             shell(shell_command)
-            filter_stats_command = ["awk -F'\t' '!/^#/ { split($7, filters, ';');", 
-                                    "for (i in filters) count[filters[i]]++; total++; }",
-                                    "END { for (f in count) { fraction = count[f] / total; printf '%s\t%d\t%.4f\n', f, count[f], fraction; } }'",
+            filter_stats_command = ["awk -F'\t' '!/^#/ {{ split($7, filters, \";\");", 
+                                    "for (i in filters) count[filters[i]]++; total++; }}",
+                                    "END {{ for (f in count) {{ fraction = count[f] / total; printf \"%s\\t%d\\t%.4f\\n\", f, count[f], fraction; }} }}'",
                                     f"{params.outputdir}/{vcfname}_strandbiasadj.vcf | sort > {output.tnscope_filterstats}"]
             filter_stats_command = " ".join(filter_stats_command)
             print(filter_stats_command)
@@ -159,9 +159,9 @@ else:
             shell_command = " ".join(shell_command)
             print(shell_command)
             shell(shell_command)
-            filter_stats_command = ["awk -F'\t' '!/^#/ { split($7, filters, ';');", 
-                                    "for (i in filters) count[filters[i]]++; total++; }",
-                                    "END { for (f in count) { fraction = count[f] / total; printf '%s\t%d\t%.4f\n', f, count[f], fraction; } }'",
+            filter_stats_command = ["awk -F'\t' '!/^#/ {{ split($7, filters, \";\");", 
+                                    "for (i in filters) count[filters[i]]++; total++; }}",
+                                    "END {{ for (f in count) {{ fraction = count[f] / total; printf \"%s\\t%d\\t%.4f\\n\", f, count[f], fraction; }} }}'",
                                     f"{params.outputdir}/{vcfname}_strandbiasadj.vcf | sort > {output.tnscope_filterstats}"]
             filter_stats_command = " ".join(filter_stats_command)
             print(filter_stats_command)
