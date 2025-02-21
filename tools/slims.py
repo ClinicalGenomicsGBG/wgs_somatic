@@ -85,11 +85,14 @@ def translate_slims_info(record):
 
     investigator = 'CGG'  # NOTE: Needed?
 
-    department_record = slims_connection.fetch_by_pk('ReferenceDataRecord', record.cntn_cstm_department.value)
-    department = department_record.rdrc_name.value  
-    responder_records = [slims_connection.fetch_by_pk('ReferenceDataRecord', pk) for
-                         pk in department_record.rdrc_cstm_responder.value]
-    responder_emails = [rec.rdrc_cstm_email.value for rec in responder_records]
+    department = None
+    responder_emails = []
+    if record.cntn_cstm_department.value is not None:
+        department_record = slims_connection.fetch_by_pk('ReferenceDataRecord', record.cntn_cstm_department.value)
+        department = department_record.rdrc_name.value  
+        responder_records = [slims_connection.fetch_by_pk('ReferenceDataRecord', pk) for
+                            pk in department_record.rdrc_cstm_responder.value]
+        responder_emails = [rec.rdrc_cstm_email.value for rec in responder_records]
 
     is_research = record.cntn_cstm_research.value
     research_project = record.cntn_cstm_researchProject.value
