@@ -138,7 +138,7 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     config = read_config(WRAPPER_CONFIG_PATH)
 
     queue = config["hcp"]["queue"]
-    qsub_script = config["hcp"]["qsub_script"]
+    qsub_script = os.path.abspath(config["hcp"]["qsub_script"])
     credentials = config["hcp"]["credentials"]
     hcp_downloads = config["hcp_download_dir"]
     wrapper_log_path = config["wrapper_log_path"]
@@ -200,8 +200,6 @@ def decompress_downloaded_fastq(complete_file_path, logger):
         complete_decompressed_file_path = complete_file_path.replace('.fasterq', '.fastq.gz')
         if not os.path.exists(complete_decompressed_file_path):
             decompress_script = os.path.join(ROOT_DIR, config["hcp"]["peta_script"])
-            dir_of_downloaded_file = os.path.dirname(complete_file_path)
-            os.chdir(f'{dir_of_downloaded_file}') # Change to the directory of the downloaded file
 
             peta_args = ["qsub", "-N", f"decompressing_file_{filename}", "-q", queue, "-sync", "y",
                         "-pe", "mpi", f"{threads}", "-o", standardout_decompress, "-e", standarderr_decompress, "-v", f"THREADS={threads}",
