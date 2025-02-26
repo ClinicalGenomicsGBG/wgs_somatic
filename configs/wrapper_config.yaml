@@ -21,7 +21,6 @@ outputdir: '/clinical/data/wgs_somatic/cron'
 hcp_download_dir: '/clinical/data/wgs_somatic/hcp_downloads'
 
 hcp:
-  qsub_script: 'tools/hcp_download_fq.sh'
   queue: 'routine.q'
   threads: 20
   credentials: '/medstore/credentials/gmc-west_legacy_credentials.json'
