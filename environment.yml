@@ -16,6 +16,8 @@ dependencies:
 - igvtools=2.3.75
 - svdb=2.8.2
 - pyvcf=0.6.8
+- urllib3=2.2.3
+- boto3=1.35.76
 - pip:
     - biopython==1.77
     - slims-python-api==6.8.0
