@@ -134,28 +134,34 @@ def get_sample_slims_info(Sctx, run_tag):
     return translate_slims_info(SSample.dna)
 
 def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
-    '''Find and download fqs from HCP to fastqdir on seqstore for run'''
+    """Find and download fqs from HCP to fastqdir on seqstore for run"""
     config = read_config(WRAPPER_CONFIG_PATH)
 
     queue = config["hcp"]["queue"]
-    qsub_script = os.path.abspath(config["hcp"]["qsub_script"])
-    credentials = config["hcp"]["credentials"]
+    download_script = os.path.abspath(config["hcp"]["download_script"])
     hcp_downloads = config["hcp_download_dir"]
-    wrapper_log_path = config["wrapper_log_path"]
 
     hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
-
     hcp_path = f'{hcp_download_runpath}/{os.path.basename(remote_key)}' # This is the complete path of the downloaded file
-    if not os.path.exists(hcp_path):
 
-        standardout = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(remote_key)}.stdout")
-        standarderr = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(remote_key)}.stderr")
+    if not os.path.exists(hcp_path):
 
         os.makedirs(hcp_download_runpath, exist_ok=True)
 
-        qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(remote_key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, remote_key, hcp_path] 
+        # -cwd and -V make sure the script runs in the current directory and inherits the environment variables
+        qrsh = [
+            "qrsh",
+            "-q", queue,
+            "-N", f"hcp_download_{os.path.basename(remote_key)}",
+            "-pe", "mpi", "1",
+            "-now", "no",
+            "-cwd", "-V"
+        ]
+
+        # The download script takes the local path, remote key, and config file (path) as arguments
+        cmd = qrsh + ["python", download_script, "-l", hcp_path, "-r", remote_key, "-c", WRAPPER_CONFIG_PATH]
         logger.info(f'Downloading {os.path.basename(remote_key)} from HCP')
-        subprocess.call(qsub_args)
+        subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Poll for the existence of the downloaded file
         while not os.path.exists(hcp_path):
