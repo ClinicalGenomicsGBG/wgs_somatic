@@ -18,7 +18,7 @@ from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR #, INSILICO_CONFIG, INSILI
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, SlimsSample, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
-from tools.email import start_email, end_email, error_email
+from tools.custom_email import start_email, end_email, error_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 
 
