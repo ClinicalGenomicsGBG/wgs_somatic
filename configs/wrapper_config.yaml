@@ -23,6 +23,10 @@ hcp_download_dir: '/clinical/data/wgs_somatic/hcp_downloads'
 hcp:
   queue: 'routine.q'
   threads: 20
-  credentials: '/medstore/credentials/gmc-west_legacy_credentials.json'
+  credentials_file: '/clinical/exec/wgs_somatic/dependencies/credentials/gmc-legacy_credentials.json'
+  bucket: data
+  connect_timeout: 10
+  read_timeout: 30
+  max_attempts: 3
   peta_script: 'tools/run_petasuite.sh'
   spring_script: 'tools/run_spring.sh' 
