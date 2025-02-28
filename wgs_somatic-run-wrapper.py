@@ -166,17 +166,12 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
     return outputdir
 
 
-def wrapper(instrument=None, tumorsample=None, normalsample=None, outpath=None, copyresults=False):
-    '''Wrapper function'''
+def wrapper(instrument=None, outpath=None):
+    '''Automatic wrapper function'''
 
-    ### Setup ###
     config = read_config(WRAPPER_CONFIG_PATH)
-
     wrapper_log_path = config["wrapper_log_path"]
-    if instrument:
-        logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
-    else:
-        logger = setup_logger('wrapper', os.path.join(wrapper_log_path, 'Manual_WS_wrapper.log'))
+    logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
 
     # Empty dict, will update later with T/N pair info
     pair_dict_all_pairs = {}
@@ -191,35 +186,12 @@ def wrapper(instrument=None, tumorsample=None, normalsample=None, outpath=None, 
 
     # If outputpath is not specified, get from config
     if not outpath:
-        if instrument:  # Automatic pipeline submission
-            try:
-                outpath = config['cron_outpath']
-            except KeyError:
-                logger.error('Output path for cron job not specified in the configuration.')
-                raise ValueError('Output path for cron job not specified in the configuration.')
-        elif tumorsample or normalsample:  # Manual pipeline submission
-            try:
-                outpath = config['manual_outpath']
-            except KeyError:
-                logger.error('Output path for manual submission not specified in the configuration.')
-                raise ValueError('Output path for manual submission not specified in the configuration.')
+        try:
+            outpath = config['cron_outpath']
+        except KeyError:
+            logger.error('Output path for cron job not specified in the configuration.')
+            raise ValueError('Output path for cron job not specified in the configuration.')
 
-    ### Manual pipeline submission ###
-    if tumorsample or normalsample:
-        threads = []
-        if tumorsample and normalsample:
-            outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
-        elif tumorsample:
-            outputdir = submit_pipeline(tumorsample, None, outpath, config, logger, threads)
-        elif normalsample:
-            outputdir = submit_pipeline(None, normalsample, outpath, config, logger, threads)
-        threads[0].start()  # For manual runs we only have one thread
-
-        if copyresults and os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
-            copy_results(outputdir)
-        return
-
-    ### Automatic pipeline submission ###
     # Grab all available local run paths
     local_run_paths = look_for_runs(config, instrument)
     # Read all previously analysed runs
@@ -291,21 +263,21 @@ def wrapper(instrument=None, tumorsample=None, normalsample=None, outpath=None, 
                     paired = True
                     outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads)
                     outputdirs.append(outputdir)
-                    end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample)))
+                    end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, n_key)))
                     final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
                     break
 
             if not paired:
                 outputdir = submit_pipeline(t_key, None, outpath, config, logger, threads)
                 outputdirs.append(outputdir)
-                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample)))
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, None)))
                 final_pairs.append(f'{t_key} (T), {t_value[2]} {["prio" if t_value[3] else ""][0]}')
 
         for n_key in normal_samples:
             if not any(n_key == pair[1] for pair in paired_samples):
                 outputdir = submit_pipeline(None, n_key, outpath, config, logger, threads)
                 outputdirs.append(outputdir)
-                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, tumorsample, normalsample)))
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, None, n_key)))
                 final_pairs.append(f'{n_key} (N), {n_value[2]} {["prio" if n_value[3] else ""][0]}')
 
         # Start several samples at the same time
@@ -324,7 +296,7 @@ def wrapper(instrument=None, tumorsample=None, normalsample=None, outpath=None, 
         bad_samples = []
         # Check if all samples in run have finished successfully. If not, exit script and send error email.
         for outputdir, sample_info in zip(outputdirs, final_pairs):
-            if check_ok(outputdir) == True:
+            if check_ok(outputdir):
                 ok_samples.append(sample_info)
                 logger.info(f'Finished correctly: {sample_info}')
             else:
@@ -348,9 +320,31 @@ def wrapper(instrument=None, tumorsample=None, normalsample=None, outpath=None, 
         # if cron runs every 30 mins it will find other runs at the next cron instance and run from there instead (and add to novaseq_runlist)
         break
 
-
-    # some arguments are hardcoded right now, need to fix this. 
     # only considers barncancer hg38 (GMS-AL + GMS-BT samples) right now.
+
+
+def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False):
+    '''Manual pipeline submission'''
+    config = read_config(WRAPPER_CONFIG_PATH)
+    wrapper_log_path = config["wrapper_log_path"]
+    logger = setup_logger('wrapper', os.path.join(wrapper_log_path, 'Manual_WS_wrapper.log'))
+
+    # If outputpath is not specified, get from config
+    if not outpath:
+        try:
+            outpath = config['manual_outpath']
+        except KeyError:
+            logger.error('Output path for manual submission not specified in the configuration.')
+            raise ValueError('Output path for manual submission not specified in the configuration.')
+
+    threads = []
+    outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
+    threads[0].start()  # For manual runs we only have one thread
+
+    if copyresults and os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+        copy_results(outputdir)
+    return
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -364,9 +358,9 @@ def main():
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
-        wrapper(args.instrument, None, None, args.outpath, None)
+        wrapper(args.instrument, args.outpath)
     elif args.tumorsample or args.normalsample:
-        wrapper(None, args.tumorsample, args.normalsample, args.outpath, args.copyresults)
+        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults)
     else:
         parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
 
