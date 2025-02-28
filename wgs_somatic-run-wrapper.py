@@ -197,7 +197,7 @@ def wrapper(instrument=None, tumorsample=None, normalsample=None, outpath=None, 
             except KeyError:
                 logger.error('Output path for cron job not specified in the configuration.')
                 raise ValueError('Output path for cron job not specified in the configuration.')
-        if tumorsample:  # Manual pipeline submission
+        elif tumorsample or normalsample:  # Manual pipeline submission
             try:
                 outpath = config['manual_outpath']
             except KeyError:
@@ -205,12 +205,14 @@ def wrapper(instrument=None, tumorsample=None, normalsample=None, outpath=None, 
                 raise ValueError('Output path for manual submission not specified in the configuration.')
 
     ### Manual pipeline submission ###
-    if tumorsample:
+    if tumorsample or normalsample:
         threads = []
-        if normalsample:
+        if tumorsample and normalsample:
             outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
-        else:
-            outputdir = submit_pipeline(tumorsample, None, config, outpath, logger, threads)
+        elif tumorsample:
+            outputdir = submit_pipeline(tumorsample, None, outpath, config, logger, threads)
+        elif normalsample:
+            outputdir = submit_pipeline(None, normalsample, outpath, config, logger, threads)
         threads[0].start()  # For manual runs we only have one thread
 
         if copyresults and os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
@@ -352,15 +354,21 @@ def wrapper(instrument=None, tumorsample=None, normalsample=None, outpath=None, 
 
 def main():
     parser = argparse.ArgumentParser()
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736')
-    group.add_argument('--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)')
+    parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736', required=False)
+    parser.add_argument('--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
     parser.add_argument('--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-cr', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
     args = parser.parse_args()
 
-    wrapper(args.instrument, args.tumorsample, args.normalsample, args.outpath, args.copyresults)
+    if args.instrument:
+        if args.tumorsample or args.normalsample or args.copyresults:
+            parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
+        wrapper(args.instrument, None, None, args.outpath, None)
+    elif args.tumorsample or args.normalsample:
+        wrapper(None, args.tumorsample, args.normalsample, args.outpath, args.copyresults)
+    else:
+        parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
 
 
 if __name__ == '__main__':
