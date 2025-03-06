@@ -268,8 +268,10 @@ def find_or_download_fastqs(sample_name, logger):
                 fqSSample = SlimsSample(sample_name, tag)
                 json_info = json.loads(fqSSample.fastq.cntn_cstm_demuxerSampleResult.value)
                 fq_paths = json_info['fastq_paths']
+                fq_matched = False
                 for fq_path in fq_paths:
                     if os.path.exists(fq_path):
+                        fq_matched = True
                         logger.info(f'Found fastq {fq_path}')
                         if f'{sample_name}_{tag}' in fastq_dict:
                             fastq_dict[f'{sample_name}_{tag}'].append(fq_path)
@@ -284,10 +286,17 @@ def find_or_download_fastqs(sample_name, logger):
                         fq_basename_spring = os.path.basename(fq_path).replace('.fastq.gz', '.spring')
                         matching_key = [key for key in remote_keys if fq_basename_fasterq in key or fq_basename_spring in key]
                         if matching_key:
+                            fq_matched = True
                             future = executor.submit(download_and_decompress, bucket, matching_key[0], logger, tag)
                             future_to_fq[future] = f'{sample_name}_{tag}'
                         else:
                             logger.info(f'No matching remote keys found for {fq_basename_fasterq} or {fq_basename_spring}')
+                if not fq_matched:
+                    logger.info(f"None of the remote fastqs for {sample_name}_{tag} were matched")
+                    logger.info(f"Downloading all remote fastqs for {sample_name}_{tag}")
+                    for remote_key in remote_keys:
+                        future = executor.submit(download_and_decompress, bucket, remote_key, logger, tag)
+                        future_to_fq[future] = f'{sample_name}_{tag}'
             for future in as_completed(future_to_fq):
                 samplename_tag = future_to_fq[future]
                 try:
