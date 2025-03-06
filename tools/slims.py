@@ -140,6 +140,7 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     queue = config["hcp"]["queue"]
     download_script = os.path.abspath(config["hcp"]["download_script"])
     hcp_downloads = config["hcp_download_dir"]
+    credentials_file =  config['hcp']['credentials_file']
 
     hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
     hcp_path = f'{hcp_download_runpath}/{os.path.basename(remote_key)}' # This is the complete path of the downloaded file
@@ -159,7 +160,7 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
         ]
 
         # The download script takes the local path, remote key, and config file (path) as arguments
-        cmd = qrsh + ["python", download_script, "-l", hcp_path, "-r", remote_key, "-c", WRAPPER_CONFIG_PATH]
+        cmd = qrsh + ["python", download_script, "-l", hcp_path, "-r", remote_key, "-c", credentials_file, "-b", bucket]
         logger.info(f'Downloading {os.path.basename(remote_key)} from HCP')
         subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 

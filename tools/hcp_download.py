@@ -3,20 +3,21 @@ from botocore.client import Config
 from botocore.utils import fix_s3_host
 import urllib3
 import argparse
-import os
-from helpers import setup_logger, read_config
+import json
+import logging
+import sys
 
 # Disable SSL warnings globally as they fill the stderr log otherwise
 # Ok to disable because we usually work with local non-443
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def get_sg_s3_connector(config, logger):
+def get_sg_s3_connector(credentials_path, logger):
     """
     Get an S3 connector for the specified storage gateway.
 
     Args:
-        config (ConfigParser): Configuration object containing S3 details.
+        credentials_path (str): Path to the credentials file.
 
     Returns:
         boto3.resource: S3 resource object.
@@ -29,13 +30,12 @@ def get_sg_s3_connector(config, logger):
         logger.debug("Initializing S3 connector.")
 
         # Read credentials from the JSON file
-        credentials_path = config['hcp']['credentials_file']
-        credentials = read_config(credentials_path)
+        credentials = json.load(open(credentials_path, 'r'))
 
         s3_config = Config(signature_version='s3v4',
-                           connect_timeout=int(config['hcp']['connect_timeout']),  # Time (s) to establish connection
-                           read_timeout=int(config['hcp']['read_timeout']),  # Time in seconds to wait for a response
-                           retries={'max_attempts': int(config['hcp']['max_attempts']),  # Number of retries
+                           connect_timeout=int(10),  # Time (s) to establish connection
+                           read_timeout=int(30),  # Time in seconds to wait for a response
+                           retries={'max_attempts': int(20),  # Number of retries
                                     'mode': 'standard'})  # Standard: Exponential backoff, random jitter, 1-8s delay
 
         # Set up the connection to the local S3 API server
@@ -60,17 +60,53 @@ def get_sg_s3_connector(config, logger):
         raise
 
 
-def download_file(local_path, remote_path, config, logger):
+def setup_logger(name):
+    """
+    Set up a logger that logs to stdout.
+
+    Args:
+        name (str): Name of the logger.
+
+    Returns:
+        logging.Logger: Configured logger.
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
+    return logger
+
+
+def download_file(local_path, remote_path, credentials_path, bucket):
+    """
+    Download a file from an S3 bucket.
+
+    Args:
+        local_path (str): Local path to save the downloaded file.
+        remote_path (str): Remote path of the file to download.
+        credentials_path (str): Path to the credentials file.
+        bucket (str): Name of the S3 bucket.
+
+    Raises:
+        Exception: If an error occurs during the download.
+    """
+    logger = setup_logger("hcp_download")
+
     try:
         logger.debug(f"Downloading file from {remote_path} to {local_path}.")
 
         # Get the S3 connector
-        connector = get_sg_s3_connector(config, logger)
-        bucket = connector.Bucket(config['hcp']['bucket'])
+        s3 = get_sg_s3_connector(credentials_path, logger)
+        s3_bucket = s3.Bucket(bucket)
 
         # Download the file
-        bucket.download_file(remote_path, local_path)
-    
+        s3_bucket.download_file(remote_path, local_path)
+        logger.debug("File downloaded successfully.")
+
     except Exception as e:
         logger.error(f"An unexpected error occurred while downloading file: {e}")
         raise
@@ -80,24 +116,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-l", "--local_path", help="Local path to save the downloaded file.", required=True, type=str)
     parser.add_argument("-r", "--remote_path", help="Remote path of the file to download.", required=True, type=str)
-    parser.add_argument("-c", "--config_path", help="Path to the configuration file.", required=True, type=str)
-    parser.add_argument("--log_path", help="Path to the log file.", type=str, required=False)
+    parser.add_argument("-c", "--credentials_path", help="Path to the json configuration file.", required=True, type=str)
+    parser.add_argument("-b", "--bucket", help="Name of the bucket to download from.", required=True, type=str)
     args = parser.parse_args()
 
-
-    # Read the configuration file
-    config = read_config(args.config_path)
-
-    # Set up the logger
-    log_path = args.log_path if args.log_path else config['wrapper_log_path']
-    logger = setup_logger("hcp_download", os.path.join(log_path, "hcp_download.log"))
-
     try:
-        download_file(args.local_path, args.remote_path, config, logger)
-        logger.info(f"File downloaded successfully to {args.local_path}")
-
+        download_file(args.local_path, args.remote_path, args.credentials_path, args.bucket)
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
+        print(f"An error occurred: {e}")
         raise
 
 
