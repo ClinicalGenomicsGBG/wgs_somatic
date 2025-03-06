@@ -13,7 +13,7 @@ def send_email(subject, body):
 
     msg['Subject'] = subject
     msg['From'] = "cgg-cancer@gu.se" # TODO Get from config
-    msg['To'] = "gms_btb@gu.se" # TODO Get from config and have different recipients for errors and success
+    msg['To'] = "gms_btb@gu.se, su.vokliniskgen.wgsadmin@vgregion.se" # TODO Get from config and have different recipients for errors and success
     msg['Cc'] = "cgg-cancer@gu.se" # TODO Get from config
 
 
