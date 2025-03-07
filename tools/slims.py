@@ -171,12 +171,29 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
         # stitch and submit the command
         cmd = qrsh + main_args + optional_args
         logger.info(f'Downloading {os.path.basename(remote_key)} from HCP')
-        subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        logger.info(f"Running hcp_download.py with args: {cmd}")
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        if stdout:
+            logger.info(stdout.decode('utf-8'))
+        if stderr:
+            logger.error(stderr.decode('utf-8'))
 
-        # Poll for the existence of the downloaded file
+        if process.returncode != 0:
+            logger.error(f"hcp_download.py failed with return code {process.returncode}")
+            raise RuntimeError(f"hcp_download.py failed with return code {process.returncode}")
+
+        # In rare cases, there may be a delay post-download before the file appears in the directory
+        start_time = time.time()
         while not os.path.exists(hcp_path):
             logger.info(f'Waiting for {hcp_path} to be downloaded...')
             time.sleep(10)  # Wait for 10 seconds before checking again
+
+            # The delay should not be more than a minute
+            elapsed_time = time.time() - start_time
+            if elapsed_time > 60:
+                logger.error(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
+                raise RuntimeError(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
 
     else:
         logger.info(f'{os.path.basename(remote_key)} already exists in {hcp_download_runpath}')
