@@ -12,12 +12,15 @@ import sys
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def get_sg_s3_connector(credentials_path, logger):
+def get_sg_s3_connector(credentials_path, logger, connect_timeout, read_timeout, retries):
     """
     Get an S3 connector for the specified storage gateway.
 
     Args:
         credentials_path (str): Path to the credentials file.
+        connect_timeout (int): Time (s) to establish connection.
+        read_timeout (int): Time (s) to wait for a response.
+        retries (int): Number of retries.
 
     Returns:
         boto3.resource: S3 resource object.
@@ -33,9 +36,9 @@ def get_sg_s3_connector(credentials_path, logger):
         credentials = json.load(open(credentials_path, 'r'))
 
         s3_config = Config(signature_version='s3v4',
-                           connect_timeout=int(10),  # Time (s) to establish connection
-                           read_timeout=int(30),  # Time in seconds to wait for a response
-                           retries={'max_attempts': int(20),  # Number of retries
+                           connect_timeout=connect_timeout,  # Time (s) to establish connection
+                           read_timeout=read_timeout,  # Time in seconds to wait for a response
+                           retries={'max_attempts': retries,  # Number of retries
                                     'mode': 'standard'})  # Standard: Exponential backoff, random jitter, 1-8s delay
 
         # Set up the connection to the local S3 API server
@@ -81,7 +84,7 @@ def setup_logger(name):
     return logger
 
 
-def download_file(local_path, remote_path, credentials_path, bucket):
+def download_file(local_path, remote_path, credentials_path, bucket, connect_timeout, read_timeout, retries):
     """
     Download a file from an S3 bucket.
 
@@ -90,6 +93,9 @@ def download_file(local_path, remote_path, credentials_path, bucket):
         remote_path (str): Remote path of the file to download.
         credentials_path (str): Path to the credentials file.
         bucket (str): Name of the S3 bucket.
+        connect_timeout (int): Time (s) to establish connection.
+        read_timeout (int): Time (s) to wait for a response.
+        retries (int): Number of retries.
 
     Raises:
         Exception: If an error occurs during the download.
@@ -100,7 +106,7 @@ def download_file(local_path, remote_path, credentials_path, bucket):
         logger.debug(f"Downloading file from {remote_path} to {local_path}.")
 
         # Get the S3 connector
-        s3 = get_sg_s3_connector(credentials_path, logger)
+        s3 = get_sg_s3_connector(credentials_path, logger, connect_timeout, read_timeout, retries)
         s3_bucket = s3.Bucket(bucket)
 
         # Download the file
@@ -118,10 +124,13 @@ def main():
     parser.add_argument("-r", "--remote_path", help="Remote path of the file to download.", required=True, type=str)
     parser.add_argument("-c", "--credentials_path", help="Path to the json configuration file.", required=True, type=str)
     parser.add_argument("-b", "--bucket", help="Name of the bucket to download from.", required=True, type=str)
+    parser.add_argument("--connect_timeout", help="Time (s) to establish connection.", required=False, type=int, default=10)
+    parser.add_argument("--read_timeout", help="Time (s) to wait for a response.", required=False, type=int, default=30)
+    parser.add_argument("--retries", help="Number of retries.", required=False, type=int, default=20)
     args = parser.parse_args()
 
     try:
-        download_file(args.local_path, args.remote_path, args.credentials_path, args.bucket)
+        download_file(args.local_path, args.remote_path, args.credentials_path, args.bucket, args.connect_timeout, args.read_timeout, args.retries)
     except Exception as e:
         print(f"An error occurred: {e}")
         raise

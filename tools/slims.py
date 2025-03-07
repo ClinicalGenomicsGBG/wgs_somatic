@@ -143,6 +143,9 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     credentials_file = config['hcp']['credentials_file']
     if not bucket:
         bucket = config['hcp']['bucket']
+    connect_timeout = config["hcp"]["connect_timeout"]
+    read_timeout = config["hcp"]["read_timeout"]
+    retries = config["hcp"]["retries"]
 
     hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
     hcp_path = f'{hcp_download_runpath}/{os.path.basename(remote_key)}' # This is the complete path of the downloaded file
@@ -161,8 +164,12 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
             "-cwd", "-V"
         ]
 
-        # The download script takes the local path, remote key, and config file (path) as arguments
-        cmd = qrsh + ["python", download_script, "-l", hcp_path, "-r", remote_key, "-c", credentials_file, "-b", bucket]
+        # The download script takes the local path, remote key, and credentials_file (path) and bucket as arguments
+        main_args = ["python", download_script, "-l", hcp_path, "-r", remote_key, "-c", credentials_file, "-b", bucket]
+        optional_args = ["--connect_timeout", str(connect_timeout), "--read_timeout", str(read_timeout), "--retries", str(retries)]
+
+        # stitch and submit the command
+        cmd = qrsh + main_args + optional_args
         logger.info(f'Downloading {os.path.basename(remote_key)} from HCP')
         subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
