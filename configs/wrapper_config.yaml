@@ -27,6 +27,6 @@ hcp:
   queue: 'routine.q'
   threads: 20
   credentials_file: '/clinical/exec/wgs_somatic/dependencies/credentials/gmc-legacy_credentials.json'
-  bucket: 'data'
+  bucket: 'data'  # bucket to default to if not found in slims
   peta_script: 'tools/run_petasuite.sh'
   spring_script: 'tools/run_spring.sh' 

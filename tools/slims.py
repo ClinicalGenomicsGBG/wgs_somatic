@@ -140,7 +140,9 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     queue = config["hcp"]["queue"]
     download_script = os.path.abspath(config["hcp"]["download_script"])
     hcp_downloads = config["hcp_download_dir"]
-    credentials_file =  config['hcp']['credentials_file']
+    credentials_file = config['hcp']['credentials_file']
+    if not bucket:
+        bucket = config['hcp']['bucket']
 
     hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
     hcp_path = f'{hcp_download_runpath}/{os.path.basename(remote_key)}' # This is the complete path of the downloaded file
