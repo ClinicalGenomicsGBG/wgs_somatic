@@ -134,33 +134,66 @@ def get_sample_slims_info(Sctx, run_tag):
     return translate_slims_info(SSample.dna)
 
 def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
-    '''Find and download fqs from HCP to fastqdir on seqstore for run'''
+    """Find and download fqs from HCP to fastqdir on seqstore for run"""
     config = read_config(WRAPPER_CONFIG_PATH)
 
     queue = config["hcp"]["queue"]
-    qsub_script = os.path.abspath(config["hcp"]["qsub_script"])
-    credentials = config["hcp"]["credentials"]
+    download_script = os.path.abspath(config["hcp"]["download_script"])
     hcp_downloads = config["hcp_download_dir"]
-    wrapper_log_path = config["wrapper_log_path"]
+    credentials_file = config['hcp']['credentials_file']
+    if not bucket:
+        bucket = config['hcp']['bucket']
+    connect_timeout = config["hcp"]["connect_timeout"]
+    read_timeout = config["hcp"]["read_timeout"]
+    retries = config["hcp"]["retries"]
 
     hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
-
     hcp_path = f'{hcp_download_runpath}/{os.path.basename(remote_key)}' # This is the complete path of the downloaded file
-    if not os.path.exists(hcp_path):
 
-        standardout = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(remote_key)}.stdout")
-        standarderr = os.path.join(wrapper_log_path, f"hcp_download_{os.path.basename(remote_key)}.stderr")
+    if not os.path.exists(hcp_path):
 
         os.makedirs(hcp_download_runpath, exist_ok=True)
 
-        qsub_args = ["qsub", "-N", f"hcp_download_{os.path.basename(remote_key)}", "-q", queue, "-sync", "y", "-o", standardout, "-e", standarderr, qsub_script, credentials, bucket, remote_key, hcp_path] 
-        logger.info(f'Downloading {os.path.basename(remote_key)} from HCP')
-        subprocess.call(qsub_args)
+        # -cwd and -V make sure the script runs in the current directory and inherits the environment variables
+        qrsh = [
+            "qrsh",
+            "-q", queue,
+            "-N", f"hcp_download_{os.path.basename(remote_key)}",
+            "-pe", "mpi", "1",
+            "-now", "no",
+            "-cwd", "-V"
+        ]
 
-        # Poll for the existence of the downloaded file
+        # The download script takes the local path, remote key, and credentials_file (path) and bucket as arguments
+        main_args = ["python", download_script, "-l", hcp_path, "-r", remote_key, "-c", credentials_file, "-b", bucket]
+        optional_args = ["--connect_timeout", str(connect_timeout), "--read_timeout", str(read_timeout), "--retries", str(retries)]
+
+        # stitch and submit the command
+        cmd = qrsh + main_args + optional_args
+        logger.info(f'Downloading {os.path.basename(remote_key)} from HCP')
+        logger.info(f"Running hcp_download.py with args: {cmd}")
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        if stdout:
+            logger.info(stdout.decode('utf-8'))
+        if stderr:
+            logger.error(stderr.decode('utf-8'))
+
+        if process.returncode != 0:
+            logger.error(f"hcp_download.py failed with return code {process.returncode}")
+            raise RuntimeError(f"hcp_download.py failed with return code {process.returncode}")
+
+        # In rare cases, there may be a delay post-download before the file appears in the directory
+        start_time = time.time()
         while not os.path.exists(hcp_path):
             logger.info(f'Waiting for {hcp_path} to be downloaded...')
             time.sleep(10)  # Wait for 10 seconds before checking again
+
+            # The delay should not be more than a minute
+            elapsed_time = time.time() - start_time
+            if elapsed_time > 60:
+                logger.error(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
+                raise RuntimeError(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
 
     else:
         logger.info(f'{os.path.basename(remote_key)} already exists in {hcp_download_runpath}')
@@ -262,8 +295,10 @@ def find_or_download_fastqs(sample_name, logger):
                 fqSSample = SlimsSample(sample_name, tag)
                 json_info = json.loads(fqSSample.fastq.cntn_cstm_demuxerSampleResult.value)
                 fq_paths = json_info['fastq_paths']
+                fq_matched = False
                 for fq_path in fq_paths:
                     if os.path.exists(fq_path):
+                        fq_matched = True
                         logger.info(f'Found fastq {fq_path}')
                         if f'{sample_name}_{tag}' in fastq_dict:
                             fastq_dict[f'{sample_name}_{tag}'].append(fq_path)
@@ -278,10 +313,17 @@ def find_or_download_fastqs(sample_name, logger):
                         fq_basename_spring = os.path.basename(fq_path).replace('.fastq.gz', '.spring')
                         matching_key = [key for key in remote_keys if fq_basename_fasterq in key or fq_basename_spring in key]
                         if matching_key:
+                            fq_matched = True
                             future = executor.submit(download_and_decompress, bucket, matching_key[0], logger, tag)
                             future_to_fq[future] = f'{sample_name}_{tag}'
                         else:
                             logger.info(f'No matching remote keys found for {fq_basename_fasterq} or {fq_basename_spring}')
+                if not fq_matched:
+                    logger.info(f"None of the remote fastqs for {sample_name}_{tag} were matched")
+                    logger.info(f"Downloading all remote fastqs for {sample_name}_{tag}")
+                    for remote_key in remote_keys:
+                        future = executor.submit(download_and_decompress, bucket, remote_key, logger, tag)
+                        future_to_fq[future] = f'{sample_name}_{tag}'
             for future in as_completed(future_to_fq):
                 samplename_tag = future_to_fq[future]
                 try:

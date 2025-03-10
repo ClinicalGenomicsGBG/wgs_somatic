@@ -24,17 +24,37 @@ For paired tumor and normal FASTQs, the results contain:
 - Breakpoints from large deletions and SVs ([Pindel](https://github.com/genome/pindel))
 - Tumor mutation burden (in-house script; see [Wadensten et al., (2023)](https://doi.org/10.1200/PO.23.00039))
 
-## Usage
+## Manual Usage
 
-### How to run manually
+### Installation
 
-1. Clone the repository and submodules:
+- Clone the repository and submodules:
 
-   `git clone --recurse-submodules https://github.com/ClinicalGenomicsGBG/wgs_somatic`
+    `git clone --recurse-submodules https://github.com/ClinicalGenomicsGBG/wgs_somatic`
 
-2. Make sure the FASTQ file names follow the [FASTQ requirements](#fastq-requirements).
-3. Change the log and commandlog paths in launcher_config.json (or they will end up in `/clinical/exec/wgs/logs`)
-4. Adjust and run the qsub script below:
+- The logs will end up in `/clinical/exec/wgs_somatic/logs`, unless changed in the launcher_config.json (and wrapper_config.yaml)
+- If your samples are in slims you can perform a [standalone wrapper run](#standalone-wrapper-run); otherwise continue to [standalone-snakemake-run](#standalone-snakemake-run)
+
+### Standalone wrapper run
+
+```{bash}
+#!/bin/bash -l
+#$ -cwd
+#$ -pe mpi 1
+#$ -N wgs_somatic_standalone
+#$ -q development.q
+
+module load micromamba
+micromamba activate /clinical/exec/wgs_somatic/env/wgs_somatic_env/
+
+python wgs_somatic-run-wrapper.py --tumorsample DNAtumor [--normalsample DNAnormal] [-o outpath] [--copyresults]
+```
+
+- The wrapper will automatically download and decompress fastqs where necessary
+- The output will be in `/clinical/data/wgs_somatic/manual/` unless specified with `-o`
+- The output is not copied to webstore, unless `--copyresults` is added to the command
+
+### Standalone snakemake run
 
 ```{bash}
 #!/bin/bash -l
@@ -57,24 +77,17 @@ python launch_snakemake.py \
     --development <save intermediate files; allows for resuming of crashed runs>
 ```
 
+- Make sure the FASTQ file names follow the [FASTQ requirements](#fastq-requirements).
 - For normal-only analysis (run only germline steps of pipeline), simply don't use arguments tumorsample and tumorfastqs.
 - For tumor-only analysis, omit the `--normalsample` and `--normalfastqs` arguments.
+- If you include `--development` the pipeline will keep intermediate files, allows rerunning / continuing crashed runs
+- If the pipeline was run without `--copyresults`, but you want to copy the results afterwards you can run the command below:
 
-#### Optional arguments
-
-##### --copyresults
-
-When including the `--copyresults` flag, results will automatically be copied to the result directory on webstore. If the pipeline was run without, but you want to copy the results afterwards you can run the command below:
-
-```{bash}
-python launch_snakemake.py \
-    --outputdir <Same directory as specified when running the pipeline> \
-    --onlycopyresults
-```
-
-##### --development
-
-Used for running the pipeline while developing new features. Runs the pipeline without creating a timestamp, without removing temporary files (`--notemp`) and rerunning uncompleted files (`--rerun-incomplete`).
+    ```{bash}
+    python launch_snakemake.py \
+      --outputdir <Same directory as specified when running the pipeline> \
+      --onlycopyresults
+    ```
 
 ### Dependencies
 
@@ -100,7 +113,7 @@ For the pipeline to be able to run the following is required for the naming of t
   - e.g, `DNA123456_250101_CHIPCHIP_S12_R{1|2}_001.fastq.gz` becomes `DNA123456_250101_CHIPCHIP`
 - The FASTQ filenames cannot contain non-ASCII characters (å, ä, ö, etc.)
 
-### Automatic start of pipeline
+## Automatic start of pipeline
 
 The pipeline is started automatically when new runs with GMS-BT/AL samples appear in novaseq_687_gc or novaseq_A01736 Demultiplexdirs.
 
@@ -108,11 +121,11 @@ Cron runs every 30 minutes (in crontab of cronuser)
 
 Wrapper script `wgs_somatic-run-wrapper.py` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file `/clinical/exec/wgs_somatic/runlists/novaseq_runlist.txt` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory `/clinical/data/wgs_somatic/cron/` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
 
-### Yearly statistics
+## Yearly statistics
 
 After running the pipeline for the first time, a yearly\_statistics text file is created in the repo. Every time the pipeline is run, sample name and date/time is added to this text file.
 
-### Simplified DAG
+## Simplified DAG
 
 <img src="assets/wgs_somatic_simplified_DAG.png" alt="Simplified DAG" width="1000">
 
