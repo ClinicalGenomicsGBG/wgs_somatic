@@ -400,7 +400,8 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "--jobs", "999",
             "--latency-wait", "60",
             "--directory", outputdir,
-            "--shadow-prefix", shadow_dir
+            "--shadow-prefix", shadow_dir,
+            "--stats", f"{samplelogs}/stats_{current_date}.json"
         ] + dev_args
 
         # Execute Snakemake command with outputdir redirection
