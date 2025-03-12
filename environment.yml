@@ -13,6 +13,8 @@ dependencies:
 - samtools=1.18
 - bcftools=1.17
 - vcftools=0.1.16
+- msisensor-pro=1.2.0
+- bedtools=2.31.1
 - igvtools=2.3.75
 - svdb=2.8.2
 - pyvcf=0.6.8

@@ -153,6 +153,15 @@
         {
             "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools",
             "effective_genome_size": 3049315783
+        },
+        "msi":
+        {
+            "msisensor-pro": "/medstore/Development/wgs_somatic_dev/wgs_env2/bin/msisensor-pro",
+            "msi_list": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.list",
+            "msi_bed": "/medstore/Development/wgs_somatic_dev/hglft_genome_1d8a27_d9f430.bed",
+            "bedtools": "/medstore/Development/wgs_somatic_dev/wgs_env2/bin/bedtools",
+            "samtools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/samtools",
+            "threads": 64
         }
     }
 }
