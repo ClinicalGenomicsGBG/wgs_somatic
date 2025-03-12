@@ -30,8 +30,6 @@ if tumorid:
                 expand("{stype}/reports/{sname}_REALIGNED.bam.tdf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
                 expand("{stype}/reports/{sname}_baf.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/reports/{sname}_baf.igv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                expand("tumor/msi/{sname}_msi_reduced.txt", sname=tumorid),
-                expand("tumor/msi/{sname}_msi.txt", sname=tumorid),
                 expand("{stype}/manta/{sname}_somatic_MantaBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 #expand("{stype}/manta/{sname}_somatic_MantaBNDs.vcf.gzi.csi", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/manta/{sname}_somatic_MantaNOBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
