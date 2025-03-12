@@ -13,11 +13,10 @@ from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
 
 class slims_credentials:
     def __init__(self, slims_credentials_path):
-        with open(slims_credentials_path, 'r') as file:
-            config = read_config(file)
-            self.url = config['slims']['url']
-            self.user = config['slims']['user']
-            self.password = config['slims']['password']
+        config = read_config(slims_credentials_path)
+        self.url = config['slims']['url']
+        self.user = config['slims']['user']
+        self.password = config['slims']['password']
 
 
 config = read_config(WRAPPER_CONFIG_PATH)
