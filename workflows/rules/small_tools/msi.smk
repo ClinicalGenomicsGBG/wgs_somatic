@@ -8,7 +8,6 @@ rule msi:
         normal_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         normal_bai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
     params:
-        msisensor = pipeconfig["rules"]["msi"]["msisensor-pro"],
         reference_list = pipeconfig["rules"]["msi"]["msi_list"],
         threads = clusterconf["msi"]["threads"],
     singularity:
@@ -34,6 +33,8 @@ rule msi_filter_bam:
         bam = "{stype}/realign/{sname}_REALIGNED.bam",
     params:
         bed = pipeconfig["rules"]["msi"]["msi_bed"],
+    singularity:
+        pipeconfig["singularities"]["msi"]["sing"]
     output:
         filtered_bam = temp("{stype}/msi/{sname}_filtered.bam"),
         filtered_bam_bai = temp("{stype}/msi/{sname}_filtered.bam.bai")
@@ -50,9 +51,10 @@ rule msi_reduced:
         normal_bam = expand("{stype}/msi/{sname}_filtered.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         normal_bai = expand("{stype}/msi/{sname}_filtered.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
     params:
-        msisensor = pipeconfig["rules"]["msi"]["msisensor-pro"],
         reference_list = pipeconfig["rules"]["msi"]["msi_list"],
         threads = clusterconf["msi"]["threads"],
+    singularity:
+        pipeconfig["singularities"]["msi"]["sing"]
     output:
         msi_out = temp("{stype}/msi/{sname}_msi_reduced.txt"),
         msi_out_dis = temp("{stype}/msi/{sname}_msi_reduced.txt_dis"),
