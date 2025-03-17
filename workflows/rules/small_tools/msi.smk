@@ -11,6 +11,8 @@ rule msi:
         msisensor = pipeconfig["rules"]["msi"]["msisensor-pro"],
         reference_list = pipeconfig["rules"]["msi"]["msi_list"],
         threads = clusterconf["msi"]["threads"],
+    singularity:
+        pipeconfig["singularities"]["msi"]["sing"]
     output:
         msi_out = temp("{stype}/msi/{sname}_msi.txt"),
         msi_out_dis = temp("{stype}/msi/{sname}_msi.txt_dis"),
@@ -18,7 +20,7 @@ rule msi:
         msi_out_somatic = temp("{stype}/msi/{sname}_msi.txt_somatic"),
     shell:
         """
-        {params.msisensor} msi \
+        msisensor-pro msi \
             -d {params.reference_list} \
             -n {input.normal_bam} \
             -t {input.tumor_bam} \
@@ -32,15 +34,13 @@ rule msi_filter_bam:
         bam = "{stype}/realign/{sname}_REALIGNED.bam",
     params:
         bed = pipeconfig["rules"]["msi"]["msi_bed"],
-        bedtools = pipeconfig["rules"]["msi"]["bedtools"],
-        samtools = pipeconfig["rules"]["msi"]["samtools"],
     output:
         filtered_bam = temp("{stype}/msi/{sname}_filtered.bam"),
         filtered_bam_bai = temp("{stype}/msi/{sname}_filtered.bam.bai")
     shell:
         """
-        {params.bedtools} intersect -wa -abam {input.bam} -b {params.bed} > {output.filtered_bam}
-        {params.samtools} index {output.filtered_bam}
+        bedtools intersect -wa -abam {input.bam} -b {params.bed} > {output.filtered_bam}
+        samtools index {output.filtered_bam}
         """
 
 rule msi_reduced:
@@ -60,7 +60,7 @@ rule msi_reduced:
         msi_out_somatic = temp("{stype}/msi/{sname}_msi_reduced.txt_somatic"),
     shell:
         """
-        {params.msisensor} msi \
+        msisensor-pro msi \
             -d {params.reference_list} \
             -n {input.normal_bam} \
             -t {input.tumor_bam} \
