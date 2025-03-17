@@ -117,13 +117,26 @@ def get_msi_info(msi, msi_red):
             headers = file.readline().strip().split('\t')
             values = file.readline().strip().split('\t')
             for header, value in zip(headers, values):
-                msi_dict[f"msi_{header}"] = value
+                try:
+                    if '.' in value:
+                        msi_dict[f"msi_{header}"] = float(value)
+                    else:
+                        msi_dict[f"msi_{header}"] = int(value)
+                except ValueError:
+                    msi_dict[f"msi_{header}"] = value
 
         with open(msi_red, 'r') as file:
             headers = file.readline().strip().split('\t')
             values = file.readline().strip().split('\t')
             for header, value in zip(headers, values):
-                msi_dict[f"msi_red_{header}"] = value
+                try:
+                    if '.' in value:
+                        msi_dict[f"msi_filtered_{header}"] = float(value)
+                    else:
+                        msi_dict[f"msi_filtered_{header}"] = int(value)
+                except ValueError:
+                    msi_dict[f"msi_filtered_{header}"] = value
+            
     except FileNotFoundError:
         print(f"No file found at {msi} or {msi_red}")
     except Exception as e:
