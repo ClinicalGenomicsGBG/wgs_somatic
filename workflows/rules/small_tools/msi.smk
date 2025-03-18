@@ -15,8 +15,8 @@ rule msi:
     output:
         msi_out = temp("{stype}/msi/{sname}_msi.txt"),
         msi_out_dis = temp("{stype}/msi/{sname}_msi.txt_dis"),
-        msi_out_germline = temp("{stype}/msi/{sname}_msi.txt_germline"),
-        msi_out_somatic = temp("{stype}/msi/{sname}_msi.txt_somatic"),
+        msi_out_all = temp("{stype}/msi/{sname}_msi.txt_all"),
+        msi_out_unstable = temp("{stype}/msi/{sname}_msi.txt_unstable"),
     shell:
         """
         msisensor-pro msi \
@@ -58,8 +58,8 @@ rule msi_reduced:
     output:
         msi_out = temp("{stype}/msi/{sname}_msi_reduced.txt"),
         msi_out_dis = temp("{stype}/msi/{sname}_msi_reduced.txt_dis"),
-        msi_out_germline = temp("{stype}/msi/{sname}_msi_reduced.txt_germline"),
-        msi_out_somatic = temp("{stype}/msi/{sname}_msi_reduced.txt_somatic"),
+        msi_out_all = temp("{stype}/msi/{sname}_msi_reduced.txt_all"),
+        msi_out_unstable = temp("{stype}/msi/{sname}_msi_reduced.txt_unstable"),
     shell:
         """
         msisensor-pro msi \

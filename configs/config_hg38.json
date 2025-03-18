@@ -161,8 +161,7 @@
         "msi":
         {
             "msi_list": "/clinical/exec/wgs_somatic/dependencies/msi/GCA_000001405.15_GRCh38_no_alt_analysis_set.list",
-            "msi_bed": "/clinical/exec/wgs_somatic/dependencies/msi/SelectedMSIloci2019Sorted_hg38lift.bed",
-            "threads": 64
+            "msi_bed": "/clinical/exec/wgs_somatic/dependencies/msi/SelectedMSIloci2019Sorted_hg38lift.bed"
         }
     }
 }
