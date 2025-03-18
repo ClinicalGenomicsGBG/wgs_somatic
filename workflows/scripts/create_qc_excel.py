@@ -109,7 +109,42 @@ def read_tmb_file(filepath):
         print(f"An error occurred: {e}")
     return tmb_dict
 
-def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdict, sex, tmb_dict):
+
+def get_msi_info(msi, msi_red):
+    msi_dict = {}
+    try:
+        with open(msi, 'r') as file:
+            headers = file.readline().strip().split('\t')
+            values = file.readline().strip().split('\t')
+            for header, value in zip(headers, values):
+                try:
+                    if '.' in value:
+                        msi_dict[f"msi_{header}"] = float(value)
+                    else:
+                        msi_dict[f"msi_{header}"] = int(value)
+                except ValueError:
+                    msi_dict[f"msi_{header}"] = value
+
+        with open(msi_red, 'r') as file:
+            headers = file.readline().strip().split('\t')
+            values = file.readline().strip().split('\t')
+            for header, value in zip(headers, values):
+                try:
+                    if '.' in value:
+                        msi_dict[f"msi_filtered_{header}"] = float(value)
+                    else:
+                        msi_dict[f"msi_filtered_{header}"] = int(value)
+                except ValueError:
+                    msi_dict[f"msi_filtered_{header}"] = value
+            
+    except FileNotFoundError:
+        print(f"No file found at {msi} or {msi_red}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return msi_dict
+
+
+def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdict, sex, tmb_dict, msi_dict):
     current_date = time.strftime("%Y-%m-%d")
     excelfile = xlsxwriter.Workbook(output)
     worksheet = excelfile.add_worksheet("qc_stats")
@@ -134,7 +169,6 @@ def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdic
     
     print(f"STATSDICT: {statsdict}")
 
-
     # Input calculated sex
     if sex.lower() == "male":
         worksheet.merge_range('D3:E3', f"Computed sex of patient: {sex}", cellformat["malesex"])
@@ -149,7 +183,7 @@ def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdic
     else:
         worksheet.merge_range('D4:G4', f"Warning: tumour sample {tumorname} used for sex calculation", cellformat["warning"])
     row += 2
- 
+
     # Coverage stats
     for statstype in statsdict:
         header = False
@@ -224,11 +258,20 @@ def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdic
             worksheet.write(row, 1, tmb_dict[key])
             row += 1
 
+    row += 2
+    worksheet.write(row, 0, "MSI-STATS", cellformat["section"])
+    worksheet.write(row, 1, tumorname, cellformat["tumorname"])
+    row += 1
+    if msi_dict:
+        for key in msi_dict:
+            worksheet.write(row, 0, key, cellformat["header"])
+            worksheet.write(row, 1, msi_dict[key])
+            row += 1
 
     excelfile.close()
 
 
-def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', output='', insilicodir=''):
+def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', msi='', msi_red='', output='', insilicodir=''):
     print(f"insilicodir: {insilicodir}")
     statsdict = {}
     if tumorcov:
@@ -243,12 +286,9 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         statsdict = extract_stats(normalcov, "coverage", "normal", statsdict)
         statsdict = extract_stats(normaldedup, "dedup", "normal", statsdict)
     if tumorcov and normalcov:
-        #if canvasvcf:
-        #    canvas_dict = get_canvas_tumorinfo(canvasvcf)
         match_dict = determine_match(normalvcf, tumorvcf, 400000)
         canvas_dict = get_canvas_tumorinfo(canvasvcf)
-
-    
+        msi_dict = get_msi_info(msi, msi_red)
 
     if not output.endswith(".xlsx"):
         output = f"{output}.xlsx"
@@ -258,18 +298,19 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         if normalcov:
             # Tumour + Normal
             calculated_sex = calc_sex(normalcov, ycov)
-            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict)
+            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict)
             add_insilico_stats(insilicodir, output)
         else:
             # Tumour only
             calculated_sex = calc_sex(tumorcov, ycov)
-            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', sex=calculated_sex, tmb_dict=tmb_dict)
+            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict)
             add_insilico_stats(insilicodir, output) # Maybe this can be commented out if not needed for tumour only
     else:
         # Normal only
         calculated_sex = calc_sex(normalcov, ycov)
-        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', sex=calculated_sex, tmb_dict='')
+        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', sex=calculated_sex, tmb_dict='', msi_dict=msi_dict)
         add_insilico_stats(insilicodir, output)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -283,6 +324,8 @@ if __name__ == '__main__':
     parser.add_argument('-cv', '--canvasvcf', nargs='?', help='Somatic Canvas VCF', required=False)
     parser.add_argument('-is', '--insilicodir', nargs='?', help='Full path to insilico directory (which contains excel files)', required=False)
     parser.add_argument('--tmb', nargs='?', help='TMB file', required=False)
+    parser.add_argument('--msi', nargs='?', help='MSI result file', required=False)
+    parser.add_argument('--msi_red', nargs='?', help='MSI filtered to bed file result file', required=False)
     parser.add_argument('-o', '--output', nargs='?', help='fullpath to file to be created (xlsx will be appended if not written)', required=True)
     args = parser.parse_args()
-    create_excel_main(args.tumorcov, args.ycov, args.normalcov, args.tumordedup, args.normaldedup, args.tumorvcf, args.normalvcf, args.canvasvcf, args.output, args.insilicodir)
+    create_excel_main(args.tumorcov, args.ycov, args.normalcov, args.tumordedup, args.normaldedup, args.tumorvcf, args.normalvcf, args.canvasvcf, args.tmb, args.msi, args.msi_red, args.output, args.insilicodir)

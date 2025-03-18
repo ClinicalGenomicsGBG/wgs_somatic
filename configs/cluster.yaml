@@ -69,6 +69,12 @@ manta_summary:
 pindel:
     threads: 4
 
+msi:
+    threads: 64
+
+msi_reduced:
+    threads: 64
+
 cutadapt:
     threads:  1
     excl: excl=1
