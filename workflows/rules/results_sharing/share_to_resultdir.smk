@@ -37,8 +37,11 @@ if tumorid:
                 #expand("{stype}/manta/{sname}_somatic_MantaNOBNDs.vcf.gzi.csi", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/manta/{sname}_germline_MantaBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
                 #expand("{stype}/manta/{sname}_germline_MantaBNDs.vcf.gzi.csi", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                expand("{stype}/manta/{sname}_germline_MantaNOBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"])
+                expand("{stype}/manta/{sname}_germline_MantaNOBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
                 #expand("{stype}/manta/{sname}_germline_MantaNOBNDs.vcf.gz.csi", sname=normalid, stype=sampleconfig[normalname]["stype"])
+                expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["control-freec"]["ploidy"]),
+                expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["control-freec"]["ploidy"]),
+                expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["control-freec"]["ploidy"]),
             output:
                 "reporting/shared_result_files.txt"
             run:
