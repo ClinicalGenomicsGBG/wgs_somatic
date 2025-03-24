@@ -44,7 +44,7 @@ rule msi_filter_bam:
         samtools index {output.filtered_bam}
         """
 
-rule msi_reduced:
+rule msi_filtered:
     input:
         tumor_bam = expand("{stype}/msi/{sname}_filtered.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         tumor_bai = expand("{stype}/msi/{sname}_filtered.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
@@ -56,10 +56,10 @@ rule msi_reduced:
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
-        msi_out = temp("{stype}/msi/{sname}_msi_reduced.txt"),
-        msi_out_dis = temp("{stype}/msi/{sname}_msi_reduced.txt_dis"),
-        msi_out_all = temp("{stype}/msi/{sname}_msi_reduced.txt_all"),
-        msi_out_unstable = temp("{stype}/msi/{sname}_msi_reduced.txt_unstable"),
+        msi_out = temp("{stype}/msi/{sname}_msi_filtered.txt"),
+        msi_out_dis = temp("{stype}/msi/{sname}_msi_filtered.txt_dis"),
+        msi_out_all = temp("{stype}/msi/{sname}_msi_filtered.txt_all"),
+        msi_out_unstable = temp("{stype}/msi/{sname}_msi_filtered.txt_unstable"),
     shell:
         """
         msisensor-pro msi \

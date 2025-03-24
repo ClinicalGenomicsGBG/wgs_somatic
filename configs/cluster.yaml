@@ -72,7 +72,7 @@ pindel:
 msi:
     threads: 64
 
-msi_reduced:
+msi_filtered:
     threads: 64
 
 cutadapt:
