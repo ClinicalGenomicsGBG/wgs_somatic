@@ -12,6 +12,10 @@
             "kmerfile": "/canvasfiles/canvasfiles/kmer.fa",
             "filter13": "/canvasfiles/canvasfiles/filter13.bed"
         },
+        "control-freec":
+        {
+            "sing": "/medstore/Development/wgs_somatic_freec/singularities/control-freec-11.6/control-freec-11.6.sif"
+        },
         "msi":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/msisensor-pro-1.3.0.sif"
@@ -33,10 +37,6 @@
             "dbsnp": "/ncbi/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
             "dnascope_m": "/sentieon/SentieonDNAscopeModelBeta0.5.model",
             "tnscope_m": "/sentieon/Sentieon_GiAB_201711.model"
-        },
-        "control-freec":
-        {
-            "sing": "/medstore/Development/wgs_somatic_freec/singularities/control-freec-11.6/control-freec-11.6.sif"
         }
     },
     "shadow": "copy-minimal",
@@ -108,6 +108,7 @@
         },
         "control-freec":
         {
+            "ploidy": ["free","2"],
             "chrLenFile": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai",
             "chrFiles": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/"
         },
