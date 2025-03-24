@@ -3,7 +3,7 @@ import os
 import sys
 
 
-def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, threads, output_config):
+def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, threads, output_config):
     
     outdir = os.path.dirname(output_config)
     os.makedirs(outdir, exist_ok=True)
@@ -17,10 +17,12 @@ def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, threads, o
     config_data = re.sub(r'^outputDir =.*', f'outputDir = {outdir}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'(\[sample\]\n\nmateFile =).*', f'\\1 {tumor_pileup}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'(\[control\]\n\nmateFile =).*', f'\\1 {normal_pileup}', config_data, flags=re.MULTILINE)
+    config_data = re.sub(r'^chrLenFile =.*', f'chrLenFile = {chrLenFile}', config_data, flags=re.MULTILINE)
+    config_data = re.sub(r'^chrFiles =.*', f'chrFiles = {chrFiles}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^maxThreads =.*', f'maxThreads = {threads}', config_data, flags=re.MULTILINE)
     with open(output_config, 'w') as file:
         file.write(config_data)
-    
+
     return output_config
 
 
@@ -29,7 +31,9 @@ if __name__ == "__main__":
     ploidy = sys.argv[2]
     tumor_pileup = sys.argv[3]
     normal_pileup = sys.argv[4]
-    threads = sys.argv[5]
-    output_config = sys.argv[6]
+    chrLenFile = sys.argv[5]
+    chrFiles = sys.argv[6]
+    threads = sys.argv[7]
+    output_config = sys.argv[8]
 
-    edit_config(config_template, ploidy, tumor_pileup, normal_pileup, threads, output_config)
+    edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, threads, output_config)
