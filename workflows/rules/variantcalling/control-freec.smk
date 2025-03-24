@@ -22,7 +22,9 @@ if normalid:
             normal_pileup = expand("{stype}/realign/{sname}.pileup", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         params:
             config_template = pipeconfig["rules"]["control-freec"].get("config_template", f"{ROOT_DIR}/workflows/scripts/control_freec_config.txt"),
-            edit_config = pipeconfig["rules"]["control-freec"].get("edit_config", f"{ROOT_DIR}/workflows/scripts/control_freec_edit_config.py")
+            edit_config = pipeconfig["rules"]["control-freec"].get("edit_config", f"{ROOT_DIR}/workflows/scripts/control_freec_edit_config.py"),
+            chrLenFile = pipeconfig["rules"]["control-freec"]["chrLenFile"],
+            chrFiles = pipeconfig["rules"]["control-freec"]["chrFiles"],
         singularity:
             pipeconfig["singularities"]["control-freec"]["sing"]
         threads:

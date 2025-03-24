@@ -108,6 +108,8 @@
         },
         "control-freec":
         {
+            "chrLenFile": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai",
+            "chrFiles": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/"
         },
         "share_to_resultdir":
         {
