@@ -9,7 +9,8 @@ rule msi:
         normal_bai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
     params:
         reference_list = pipeconfig["rules"]["msi"]["msi_list"],
-        threads = clusterconf["msi"]["threads"],
+    threads:
+        clusterconf["msi"]["threads"]
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
@@ -23,7 +24,7 @@ rule msi:
             -d {params.reference_list} \
             -n {input.normal_bam} \
             -t {input.tumor_bam} \
-            -b {params.threads} \
+            -b {threads} \
             -z 1 \
             -o {output.msi_out}
         """
@@ -52,7 +53,8 @@ rule msi_filtered:
         normal_bai = expand("{stype}/msi/{sname}_filtered.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
     params:
         reference_list = pipeconfig["rules"]["msi"]["msi_list"],
-        threads = clusterconf["msi"]["threads"],
+    threads:
+        clusterconf["msi"]["threads"]
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
@@ -66,7 +68,7 @@ rule msi_filtered:
             -d {params.reference_list} \
             -n {input.normal_bam} \
             -t {input.tumor_bam} \
-            -b {params.threads} \
+            -b {threads} \
             -z 1 \
             -o {output.msi_out}
         """
