@@ -50,9 +50,9 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["control-freec"]["sing"]
         output:
-            ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_ratio.png"),
-            ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_ratio.seg"),
-            BAF_seg = temp("{stype}/control-freec_{ploidy}/{sname}_BAF.seg"),
+            ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png"),
+            ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg"),
+            BAF_seg = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.seg"),
         shell:
             """
             Rscript {params.plot_script} {input.ratio} {input.BAF} {params.fai} {output.ratio_plot} {output.ratio_seg} {output.BAF_seg}

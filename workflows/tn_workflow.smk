@@ -64,9 +64,9 @@ rule tn_workflow:
         expand("{stype}/realign/{sname}_REALIGNED.{fmt}", fmt=["cram", "cram.crai"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         expand("{stype}/realign/{sname}_REALIGNED.{fmt}", fmt=["cram", "cram.crai"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
         expand("{stype}/pindel/{sname}_pindel.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-        expand("{stype}/control-freec_{ploidy}/{sname}_ratio.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy="free"),
-        expand("{stype}/control-freec_{ploidy}/{sname}_ratio.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy="free"),
-        expand("{stype}/control-freec_{ploidy}/{sname}_BAF.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy="free"),
+        expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["control-freec"]["ploidy"]),
+        expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["control-freec"]["ploidy"]),
+        expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["control-freec"]["ploidy"]),
         "reporting/shared_result_files.txt",
         insilico_files = get_insilico
     output:
