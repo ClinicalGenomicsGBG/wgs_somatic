@@ -96,3 +96,12 @@ index_vcf:
     name: "WGSsomatic_{rule}_{wildcards.file}"
     output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
     error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
+
+control_freec_pileup:
+    threads: 64
+
+control_freec_run:
+    threads: 64
+
+control_freec_plot:
+    threads: 4

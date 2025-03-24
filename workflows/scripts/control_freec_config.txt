@@ -1,0 +1,91 @@
+###For more options see: http://boevalab.com/FREEC/tutorial.html#CONFIG ###
+
+
+[general]
+
+##parameters chrLenFile and ploidy are required.
+
+chrLenFile = /medstore/Development/wgs_somatic_freec/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai
+ploidy = 1,2,3,4
+#sambamba = /home/xedeba/micromamba/envs/control-freec/bin/sambamba
+contaminationAdjustment = TRUE
+outputDir = ./DNA105848/
+
+##Parameter "breakPointThreshold" specifies the maximal slope of the slope of residual sum of squares. 
+##This should be a positive value. The closer it is to Zero, the more breakpoints will be called. Its recommended value is between 0.01 and 0.08.
+
+breakPointThreshold = .8
+
+
+##Either coefficientOfVariation or window must be specified for whole genome sequencing data. Set window=0 for exome sequencing data.
+
+#coefficientOfVariation = 0.01
+window = 50000
+#step=10000
+
+##Either chrFiles or GCcontentProfile must be specified too if no control dataset is available. 
+##If you provide a path to chromosome files, Control-FREEC will look for the following fasta files in your directory (in this order): 
+##1, 1.fa, 1.fasta, chr1.fa, chr1.fasta; 2, 2.fa, etc.
+## Please ensure that you don't have other files but sequences having the listed names in this directory. 
+chrFiles = /medstore/Development/wgs_somatic_freec/hg38_chrs
+#GCcontentProfile = test/GC_profile_50kb.cnp
+
+
+##if you are working with something non-human, we may need to modify these parameters:
+#minExpectedGC = 0.35
+#maxExpectedGC = 0.55
+
+
+#readCountThreshold=10
+
+#numberOfProcesses = 4
+#contaminationAdjustment = TRUE
+#contamination = 0.4
+#minMappabilityPerWindow = 0.95
+
+
+##If the parameter gemMappabilityFile is not specified, then the fraction of non-N nucleotides per window is used as Mappability.
+
+#gemMappabilityFile = /GEM_mappability/out76.gem
+
+
+#breakPointType = 4
+#forceGCcontentNormalization = 0
+sex = XY
+
+maxThreads = 64
+
+##set BedGraphOutput=TRUE if you want to create a BedGraph track for visualization in the UCSC genome browser:
+BedGraphOutput=TRUE
+
+[sample]
+
+mateFile = DNA105848/DNA105848_241218_DNA105848_REALIGNED.pileup
+#mateCopyNumberFile = test/sample.cpn
+inputFormat = pileup
+mateOrientation = FR
+
+##use "mateOrientation=0" for sorted .SAM and .BAM
+
+[control]
+
+mateFile = DNA105848/DNA104194_241218_DNA104194_REALIGNED.pileup
+#mateCopyNumberFile = path/control.cpn
+inputFormat = pileup
+mateOrientation = FR
+
+[BAF]
+
+##use the following options to calculate B allele frequency profiles and genotype status. This option can only be used if "inputFormat=pileup"
+
+#makePileup = /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
+#fastaFile = /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+SNPfile = /clinical/exec/wgs_somatic/dependencies/ncbi/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz
+#minimalCoveragePerPosition = 5
+#shiftInQuality = 33
+
+[target]
+
+##use a tab-delimited .BED file to specify capture regions (control dataset is needed to use this option):
+
+#captureRegions = /bioinfo/users/vboeva/Desktop/testChr19/capture.bed

@@ -33,6 +33,10 @@
             "dbsnp": "/ncbi/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
             "dnascope_m": "/sentieon/SentieonDNAscopeModelBeta0.5.model",
             "tnscope_m": "/sentieon/Sentieon_GiAB_201711.model"
+        },
+        "control-freec":
+        {
+            "sing": "/medstore/Development/wgs_somatic_freec/singularities/control-freec-11.6/control-freec-11.6.sif"
         }
     },
     "shadow": "copy-minimal",
@@ -101,6 +105,9 @@
         "canvas":
         {
             "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
+        },
+        "control-freec":
+        {
         },
         "share_to_resultdir":
         {
