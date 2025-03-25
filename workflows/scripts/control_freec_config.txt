@@ -8,7 +8,7 @@ chrLenFile = /clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai
 chrFiles = /clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/
 ploidy = 1,2,3,4
 outputDir = ./
-maxThreads = 64
+maxThreads = 4
 
 
 ##Parameter "breakPointThreshold" specifies the maximal slope of the slope of residual sum of squares. The closer it is to Zero, the more breakpoints will be called.
@@ -24,7 +24,7 @@ window = 50000
 #readCountThreshold=10
 
 #numberOfProcesses = 4
-#contaminationAdjustment = TRUE
+contaminationAdjustment = TRUE
 #contamination = 0.4
 #minMappabilityPerWindow = 0.95
 
