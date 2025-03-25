@@ -109,11 +109,13 @@ dev.off()
 
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,220 altColor=220,0,0", con = output_ratio_seg)
 ratio_adjusted %>%
+  mutate(Chromosome = paste0("chr", Chromosome)) %>%
   select(Chromosome, Start, End, corr_ratio) %>%
   write.table(output_ratio_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
 
 
 writeLines('#type=GENE_EXPRESSION\n#track graphtype=points name="DNA116526" color=0,0,255 altColor=255,0,0 maxHeightPixels=80:80:80 viewLimits=-1:1', con = output_BAF_seg)
 BAF_adjusted %>%
+  mutate(Chromosome = paste0("chr", Chromosome)) %>%
   select(Chromosome, Position, Position, BAF) %>%
   write.table(output_BAF_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
