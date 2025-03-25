@@ -20,12 +20,13 @@ show_points = 5E5
 max_cutoff = 3  # Maximum ratio to plot
 
 args <- commandArgs(trailingOnly = TRUE)
-ratio_file <- args[1]
-BAF_file <- args[2]
-fai_file <- args[3]
-output_ratio_plot <- args[4]
-output_ratio_seg <- args[5]
-output_BAF_seg <- args[6]
+tumor_id <- args[1]
+ratio_file <- args[2]
+BAF_file <- args[3]
+fai_file <- args[4]
+output_ratio_plot <- args[5]
+output_ratio_seg <- args[6]
+output_BAF_igv <- args[7]
 
 # Check if the fai file exists
 if (!file.exists(fai_file)) {
@@ -51,7 +52,7 @@ increment <- calculate_increment(ratio$Start)
 
 ratio_adjusted <- ratio %>%
   left_join(fai, by = c("Chromosome" = "chr")) %>%
-  mutate(Start = Start + start,
+  mutate(adjStart = Start + start,
          End = Start + increment,
          corr_ratio = case_when(
             Ratio * ploidy > max_cutoff * ploidy ~ Ratio * ploidy - (round(Ratio * ploidy) - max_cutoff * ploidy),
@@ -65,7 +66,7 @@ ratio_adjusted <- ratio %>%
             Ratio > 1.1 ~ "above 1.1",
             TRUE ~ "other"
          ))%>%
-         filter(Ratio > 0, BAF > 0)
+  filter(Ratio > 0, BAF > 0)
 
 # Calculate breaks and labels
 max_corr_ratio <- max(ratio_adjusted$corr_ratio, na.rm = TRUE)
@@ -74,8 +75,8 @@ labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max(breaks) - 1))
 
 Ratio_plot <- ggplot(fai) +                                              
   geom_vline(aes(xintercept = start), col = "grey") +
-  geom_point(data = ratio_adjusted, aes(Start, corr_ratio, color = color), shape = '.') +
-  geom_point(data = ratio_adjusted, aes(Start, CopyNumber_adj), shape = '.', col = "#00000050") +
+  geom_point(data = ratio_adjusted, aes(adjStart, corr_ratio, color = color), shape = '.') +
+  geom_point(data = ratio_adjusted, aes(adjStart, CopyNumber_adj), shape = '.', col = "#00000050") +
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3) +
   scale_y_continuous("Copy number",
                      breaks = breaks,
@@ -86,17 +87,18 @@ Ratio_plot <- ggplot(fai) +
 
 BAF_adjusted <- BAF %>%
   left_join(fai, by = c("Chromosome" = "chr")) %>%
-  mutate(Position = Position + start) %>%
-  select(Chromosome, Position, BAF, FittedA, FittedB, A, B, uncertainty)
+  mutate(adjPosition = Position + start) %>%
+  filter(BAF > 0, uncertainty < 1) %>%
+  select(Chromosome, Position, adjPosition, BAF, FittedA, FittedB, A, B, uncertainty)
 
 
 BAF_adjusted_red <- BAF_adjusted%>%
   slice(which(row_number() %% floor(n()/show_points) == 1))
 BAF_plot <-  ggplot(fai)+                                              
   geom_vline(aes(xintercept = start), col = "grey")+
-  geom_point(data = BAF_adjusted_red, aes(Position,BAF),shape='.', col = "#00000010")+
-  geom_point(data = BAF_adjusted_red[BAF_adjusted_red$uncertainty > 0 & BAF_adjusted_red$uncertainty < 1,], aes(Position,FittedA),shape=15, size = 0.2, col = "#0090FF")+
-  geom_point(data = BAF_adjusted_red[BAF_adjusted_red$uncertainty > 0 & BAF_adjusted_red$uncertainty < 1,], aes(Position,FittedB),shape=15, size = 0.2, col = "#FF5050")+
+  geom_point(data = BAF_adjusted_red, aes(adjPosition,BAF),shape='.', col = "#00000010")+
+  geom_point(data = BAF_adjusted_red[BAF_adjusted_red$uncertainty > 0 & BAF_adjusted_red$uncertainty < 1,], aes(adjPosition,FittedA),shape=15, size = 0.2, col = "#0090FF")+
+  geom_point(data = BAF_adjusted_red[BAF_adjusted_red$uncertainty > 0 & BAF_adjusted_red$uncertainty < 1,], aes(adjPosition,FittedB),shape=15, size = 0.2, col = "#FF5050")+
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3) +
   scale_y_continuous("B-allele frequency", limits = c(0, 1), expand = expansion(mult = 0.1))+
   theme(axis.title.x=element_blank())
@@ -107,15 +109,24 @@ plot_grid(Ratio_plot, BAF_plot, ncol = 1, align = "v", rel_heights = c(2, 1))
 dev.off()
 
 
-writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,220 altColor=220,0,0", con = output_ratio_seg)
+writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_ratio_seg)
 ratio_adjusted %>%
-  mutate(Chromosome = paste0("chr", Chromosome)) %>%
-  select(Chromosome, Start, End, corr_ratio) %>%
+  mutate(Sample = tumor_id,
+         Chromosome = paste0("chr", Chromosome)) %>%
+  select(Sample, Chromosome, Start, End, corr_ratio) %>%
   write.table(output_ratio_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
 
 
-writeLines('#type=GENE_EXPRESSION\n#track graphtype=points name="DNA116526" color=0,0,255 altColor=255,0,0 maxHeightPixels=80:80:80 viewLimits=-1:1', con = output_BAF_seg)
+writeLines(paste0(
+  '#type=GENE_EXPRESSION\n#track graphtype=points name="',
+  tumor_id,
+  '" color=0,0,255 altColor=255,0,0 maxHeightPixels=160:160:160 viewLimits=0:1',
+  "\n#Chromosome\tStart\tEnd\tFeatures\tvalues"
+), con = output_BAF_igv)
 BAF_adjusted %>%
-  mutate(Chromosome = paste0("chr", Chromosome)) %>%
-  select(Chromosome, Position, Position, BAF) %>%
-  write.table(output_BAF_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
+  mutate(Chromosome = paste0("chr", Chromosome),
+         Start = Position,
+         End = Position,
+         Features = "") %>%
+  select(Chromosome, Start, End, Features, BAF) %>%
+  write.table(output_BAF_igv, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE, append = TRUE)

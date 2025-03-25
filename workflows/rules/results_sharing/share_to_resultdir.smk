@@ -41,7 +41,7 @@ if tumorid:
                 #expand("{stype}/manta/{sname}_germline_MantaNOBNDs.vcf.gz.csi", sname=normalid, stype=sampleconfig[normalname]["stype"])
                 expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
-                expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
+                expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
             output:
                 "reporting/shared_result_files.txt"
             run:
