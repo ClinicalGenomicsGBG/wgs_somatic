@@ -25,6 +25,7 @@ if normalid:
             edit_config = pipeconfig["rules"]["control-freec"].get("edit_config", f"{ROOT_DIR}/workflows/scripts/control_freec_edit_config.py"),
             chrLenFile = pipeconfig["rules"]["control-freec"]["chrLenFile"],
             chrFiles = pipeconfig["rules"]["control-freec"]["chrFiles"],
+            SNPfile = pipeconfig["rules"]["control-freec"]["SNPfile"],
         singularity:
             pipeconfig["singularities"]["control-freec"]["sing"]
         threads:
@@ -35,15 +36,14 @@ if normalid:
             tumor_BAF = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_BAF.txt"),
         shell:
             """
-            python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_pileup} {input.normal_pileup} {threads} {output.config}
+            python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_pileup} {input.normal_pileup} {params.chrLenFile} {params.chrFiles} {params.SNPfile} {threads} {output.config}
             freec -conf {output.config}
             """
 
-
     rule control_freec_plot:
         input:
-            ratio = expand("{stype}/control-freec_{ploidy}/{sname}.pileup_ratio.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy="free"),
-            BAF = expand("{stype}/control-freec_{ploidy}/{sname}.pileup_BAF.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy="free"),
+            ratio = "{stype}/control-freec_{ploidy}/{sname}.pileup_ratio.txt",
+            BAF = "{stype}/control-freec_{ploidy}/{sname}.pileup_BAF.txt"
         params:
             plot_script = pipeconfig["rules"]["control-freec"].get("plot_script", f"{ROOT_DIR}/workflows/scripts/control_freec_makeGraph3.0.R"),
             fai =  pipeconfig["referencefai"],

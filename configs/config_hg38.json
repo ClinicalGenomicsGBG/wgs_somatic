@@ -110,7 +110,8 @@
         {
             "ploidy": ["free","2"],
             "chrLenFile": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai",
-            "chrFiles": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/"
+            "chrFiles": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/",
+            "SNPfile": "/clinical/exec/wgs_somatic/dependencies/control_freec/common_dnSNP156_hg38.vcf.gz"
         },
         "share_to_resultdir":
         {
