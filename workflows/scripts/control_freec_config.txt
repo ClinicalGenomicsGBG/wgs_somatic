@@ -35,7 +35,7 @@ sex = XY
 
 
 ##set BedGraphOutput=TRUE if you want to create a BedGraph track for visualization in the UCSC genome browser:
-BedGraphOutput=TRUE
+BedGraphOutput=FALSE
 
 [sample]
 
@@ -50,6 +50,8 @@ inputFormat = pileup
 mateOrientation = FR
 
 [BAF]
+
+SNPfile = /clinical/exec/wgs_somatic/dependencies/control_freec/common_dnSNP156_hg38.vcf.gz
 
 [target]
 
