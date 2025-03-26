@@ -16,7 +16,10 @@ def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile
         config_data = re.sub(r'^ploidy =.*', f'ploidy = {ploidy}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^outputDir =.*', f'outputDir = {outdir}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'(\[sample\]\n\nmateFile =).*', f'\\1 {tumor_pileup}', config_data, flags=re.MULTILINE)
-    config_data = re.sub(r'(\[control\]\n\nmateFile =).*', f'\\1 {normal_pileup}', config_data, flags=re.MULTILINE)
+    if normal_pileup.lower() == "none":
+        config_data = re.sub(r'(\[control\]\n\n)mateFile =.*', r'\1#mateFile =', config_data, flags=re.MULTILINE)
+    else:
+        config_data = re.sub(r'(\[control\]\n\nmateFile =).*', f'\\1 {normal_pileup}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^chrLenFile =.*', f'chrLenFile = {chrLenFile}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^chrFiles =.*', f'chrFiles = {chrFiles}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^maxThreads =.*', f'maxThreads = {threads}', config_data, flags=re.MULTILINE)
