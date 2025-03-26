@@ -24,9 +24,10 @@ tumor_id <- args[1]
 ratio_file <- args[2]
 BAF_file <- args[3]
 fai_file <- args[4]
-output_ratio_plot <- args[5]
-output_ratio_seg <- args[6]
-output_BAF_igv <- args[7]
+cytoband <- args[5]
+output_ratio_plot <- args[6]
+output_ratio_seg <- args[7]
+output_BAF_igv <- args[8]
 
 # Check if the fai file exists
 if (!file.exists(fai_file)) {
@@ -44,6 +45,23 @@ fai <- read.table(fai_file, header = FALSE, sep = "\t",
   mutate(chr = substr(chr,4,30))%>%
   mutate(middle = start + (length / 2))
 fai <- fai[1:24,]
+
+cytoband <- data.frame(read.table(cytoband, header = TRUE)) %>%
+  mutate(chrom = substr(chrom,4,30)) %>%
+  left_join(fai, by = c("chrom" = "chr")) %>%
+  mutate(adjStart = start + chromStart,
+         adjEnd = start + chromEnd,
+         color = case_when(
+            gieStain == "acen" ~ "#C00000",
+            gieStain == "gneg" ~ "#E0E0E0",
+            gieStain == "gpos25" ~ "#C0C0C0",
+            gieStain == "gpos50" ~ "#808080",
+            gieStain == "gpos75" ~ "#404040",
+            gieStain == "gpos100" ~ "#000000",
+            gieStain == "stalk" ~ "#000000",
+            gieStain == "gvar" ~ "#799FC7",
+            TRUE ~ "#FFFFFF"
+         ))
 
 ploidy = median(ratio$CopyNumber[which(ratio$MedianRatio>0.8 & ratio$MedianRatio<1.2)], na.rm = T)
 cat (c("INFO: Selected ploidy:", ploidy, "\n"))
@@ -74,23 +92,23 @@ breaks <- seq(0, max_corr_ratio, by = 1)
 labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max(breaks) - 1))
 
 Ratio_plot <- ggplot(fai) +                                              
-  geom_vline(aes(xintercept = start), col = "grey") +
+  geom_rect(data = cytoband, aes(xmin = adjStart, xmax = adjEnd, ymin = -(max_cutoff*ploidy*0.035), ymax = -(max_cutoff*ploidy*0.01), fill = color)) +
   geom_point(data = ratio_adjusted, aes(adjStart, corr_ratio, color = color), shape = '.') +
   geom_point(data = ratio_adjusted, aes(adjStart, CopyNumber_adj), shape = '.', col = "#00000050") +
+  geom_vline(aes(xintercept = start), col = "grey") +
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3) +
   scale_y_continuous("Copy number",
                      breaks = breaks,
                      labels = labels,
                      expand = expansion(mult = 0.1)) +
-  theme(legend.position = "none", axis.title.x = element_blank())
-
+  scale_fill_identity() +
+  theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
 
 BAF_adjusted <- BAF %>%
   left_join(fai, by = c("Chromosome" = "chr")) %>%
   mutate(adjPosition = Position + start) %>%
   filter(BAF > 0, uncertainty < 1) %>%
   select(Chromosome, Position, adjPosition, BAF, FittedA, FittedB, A, B, uncertainty)
-
 
 BAF_adjusted_red <- BAF_adjusted%>%
   slice(which(row_number() %% floor(n()/show_points) == 1))
@@ -100,12 +118,12 @@ BAF_plot <-  ggplot(fai)+
   geom_point(data = BAF_adjusted_red[BAF_adjusted_red$uncertainty > 0 & BAF_adjusted_red$uncertainty < 1,], aes(adjPosition,FittedA),shape=15, size = 0.2, col = "#0090FF")+
   geom_point(data = BAF_adjusted_red[BAF_adjusted_red$uncertainty > 0 & BAF_adjusted_red$uncertainty < 1,], aes(adjPosition,FittedB),shape=15, size = 0.2, col = "#FF5050")+
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3) +
-  scale_y_continuous("B-allele frequency", limits = c(0, 1), expand = expansion(mult = 0.1))+
-  theme(axis.title.x=element_blank())
+  scale_y_continuous("BAF", limits = c(0, 1), expand = expansion(mult = 0.1))+
+  theme(axis.title.x=element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
 
 
 png(output_ratio_plot, width = 24, height = 12, units = "cm", pointsize = 20, res = 1200)
-plot_grid(Ratio_plot, BAF_plot, ncol = 1, align = "v", rel_heights = c(2, 1))
+plot_grid(Ratio_plot, BAF_plot, ncol = 1, align = "v", rel_heights = c(5, 2))
 dev.off()
 
 
