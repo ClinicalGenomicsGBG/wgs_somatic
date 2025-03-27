@@ -63,7 +63,6 @@ else:
                 {{ echo 'TNscope failed'; exit 1; }}
             """
 
-# Why dont we use the modelfilter for tumor-only runs?
 if normalid:
     rule tnscope_modelfilter:
         input:
@@ -101,8 +100,8 @@ if normalid:
             somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
             somatic = "{stype}/tnscope/{sname}_somatic.vcf",
             tnscope_filterstats = "{stype}/tnscope/{sname}_tnscope_filterstats.txt",
-        shadow:
-            pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
+        #shadow:
+        #    pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
             vcfname = os.path.basename(f"{input.tnscopevcf_ml}")
             vcfname = vcfname.replace(".vcf", "")
