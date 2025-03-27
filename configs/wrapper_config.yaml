@@ -34,4 +34,7 @@ hcp:
   read_timeout: 30
   retries: 20
 
+qci:
+  api_key_file: '/clinical/exec/wgs_somatic/dependencies/credentials/qci_api_key.txt'
+
 slims_credentials_path: '/clinical/exec/wgs_somatic/dependencies/credentials/slims_credentials.yaml'

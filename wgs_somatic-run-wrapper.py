@@ -114,7 +114,7 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None):
         pass
 
 
-def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads):
+def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads, uploadqci):
     hg38ref = config['hg38ref']['GMS-BT']
     timestamp = get_timestamp()
     if tumorsample and normalsample:
@@ -131,7 +131,8 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'hg38ref': f'{hg38ref}',
+                         'uploadqci': uploadqci}
 
     elif tumorsample:
         logger.info(f'Preparing run: Tumor-only {tumorsample}')
@@ -145,7 +146,8 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'hg38ref': f'{hg38ref}',
+                         'uploadqci': uploadqci}
 
     elif normalsample:
         logger.info(f'Preparing run: Normal-only {normalsample}')
@@ -159,14 +161,15 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'hg38ref': f'{hg38ref}',
+                         'uploadqci': uploadqci}
 
     threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
     logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
     return outputdir
 
 
-def wrapper(instrument=None, outpath=None):
+def wrapper(instrument=None, outpath=None, uploadqci=False):
     '''Automatic wrapper function'''
 
     config = read_config(WRAPPER_CONFIG_PATH)
@@ -182,7 +185,8 @@ def wrapper(instrument=None, outpath=None):
         try:
             os.makedirs(hcptmp)
         except Exception as e:
-            error_list.append(f"outputdirectory: {hcptmp} does not exist and could not be created")
+            # error_list.append(f"outputdirectory: {hcptmp} does not exist and could not be created\n{e}")
+            raise Exception(f"Failed to create output directory: {hcptmp} does not exist and could not be created. Error: {e}")
 
     # If outputpath is not specified, get from config
     if not outpath:
@@ -261,21 +265,21 @@ def wrapper(instrument=None, outpath=None):
                 if t_ID == n_ID or t_ID == n_key.split("DNA")[1] or n_ID == t_key.split("DNA")[1]:
                     paired_samples.append((t_key, n_key))
                     paired = True
-                    outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads)
+                    outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads, uploadqci)
                     outputdirs.append(outputdir)
                     end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, n_key)))
                     final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
                     break
 
             if not paired:
-                outputdir = submit_pipeline(t_key, None, outpath, config, logger, threads)
+                outputdir = submit_pipeline(t_key, None, outpath, config, logger, threads, uploadqci)
                 outputdirs.append(outputdir)
                 end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, None)))
                 final_pairs.append(f'{t_key} (T), {t_value[2]} {["prio" if t_value[3] else ""][0]}')
 
         for n_key in normal_samples:
             if not any(n_key == pair[1] for pair in paired_samples):
-                outputdir = submit_pipeline(None, n_key, outpath, config, logger, threads)
+                outputdir = submit_pipeline(None, n_key, outpath, config, logger, threads, uploadqci)
                 outputdirs.append(outputdir)
                 end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, None, n_key)))
                 final_pairs.append(f'{n_key} (N), {n_value[2]} {["prio" if n_value[3] else ""][0]}')
@@ -323,7 +327,7 @@ def wrapper(instrument=None, outpath=None):
     # only considers barncancer hg38 (GMS-AL + GMS-BT samples) right now.
 
 
-def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False):
+def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, uploadqci=False):
     '''Manual pipeline submission'''
     config = read_config(WRAPPER_CONFIG_PATH)
     wrapper_log_path = config["wrapper_log_path"]
@@ -338,7 +342,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False)
             raise ValueError('Output path for manual submission not specified in the configuration.')
 
     threads = []
-    outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
+    outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads, uploadqci)
     threads[0].start()  # For manual runs we only have one thread
 
     if copyresults and os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
@@ -353,14 +357,15 @@ def main():
     parser.add_argument('--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-cr', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
+    parser.add_argument('-uq', '--uploadqci', action="store_true", help='Upload sample to QCI after workflow completion', required=False)
     args = parser.parse_args()
 
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
-        wrapper(args.instrument, args.outpath)
+        wrapper(args.instrument, args.outpath, args.uploadqci)
     elif args.tumorsample or args.normalsample:
-        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults)
+        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.uploadqci)
     else:
         parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
 
