@@ -65,8 +65,8 @@ if normalid:
             normal_BAF_igv = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_normal_BAF.igv"),
         shell:
             """
-            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {output.ratio_plot} {output.ratio_seg} {output.BAF_igv}
-            Rscript {params.plot_script} {wildcards.sname} {input.normal_ratio} {input.normal_BAF} {params.fai} {output.normal_ratio_plot} {output.normal_ratio_seg} {output.normal_BAF_igv}
+            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg} {output.BAF_igv}
+            Rscript {params.plot_script} {wildcards.sname} {input.normal_ratio} {input.normal_BAF} {params.fai} {params.cytoBandIdeo} {output.normal_ratio_plot} {output.normal_ratio_seg} {output.normal_BAF_igv}
             """
 
 
@@ -111,5 +111,5 @@ else:
             BAF_igv = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.igv"),
         shell:
             """
-            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {output.ratio_plot} {output.ratio_seg} {output.BAF_igv}
+            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg} {output.BAF_igv}
             """
