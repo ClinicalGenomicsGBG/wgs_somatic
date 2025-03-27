@@ -144,7 +144,35 @@ def get_msi_info(msi, msi_red):
     return msi_dict
 
 
-def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdict, sex, tmb_dict, msi_dict):
+def read_sample_purities(info_files):
+    """
+    Reads Sample_Purity values from multiple pileup_info.txt files.
+    """
+    purities = {}
+    for info_file in info_files:
+        try:
+            with open(info_file, 'r') as file:
+                ploidy = None
+                purity = None
+                for line in file:
+                    line = line.strip()
+                    if line.startswith("Output_Ploidy"):
+                        ploidy = int(line.split("\t")[1])
+                    elif line.startswith("Sample_Purity"):
+                        purity = float(line.split("\t")[1])
+                    # Add to dictionary when both ploidy and purity are found
+                    if ploidy is not None and purity is not None:
+                        purities[ploidy] = purity
+                        ploidy = None  # Reset for the next entry
+                        purity = None
+        except FileNotFoundError:
+            print(f"No file found at {info_file}")
+        except Exception as e:
+            print(f"An error occurred while reading {info_file}: {e}")
+    return purities
+
+
+def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, canvasdict={}, sex='', tmb_dict={}, msi_dict={}, freec_purities={}):
     current_date = time.strftime("%Y-%m-%d")
     excelfile = xlsxwriter.Workbook(output)
     worksheet = excelfile.add_worksheet("qc_stats")
@@ -267,11 +295,21 @@ def create_excel(statsdict, output, normalname, tumorname, match_dict, canvasdic
             worksheet.write(row, 0, key, cellformat["header"])
             worksheet.write(row, 1, msi_dict[key])
             row += 1
+    
+    row += 2
+    worksheet.write(row, 0, "FREEC-PURITIES", cellformat["section"])
+    worksheet.write(row, 1, tumorname, cellformat["tumorname"])
+    row += 1
+    if freec_purities:
+        for ploidy, purity in freec_purities.items():
+            worksheet.write(row, 0, f"Ploidy {ploidy}", cellformat["header"])
+            worksheet.write(row, 1, purity)
+            row += 1
 
     excelfile.close()
 
 
-def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', msi='', msi_red='', output='', insilicodir=''):
+def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', msi='', msi_red='', tumor_info_files=[], output='', insilicodir=''):
     print(f"insilicodir: {insilicodir}")
     statsdict = {}
     if tumorcov:
@@ -280,6 +318,7 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         statsdict = extract_stats(tumorcov, "coverage",  "tumor", statsdict)
         statsdict = extract_stats(tumordedup, "dedup",  "tumor", statsdict)
         tmb_dict = read_tmb_file(tmb)
+        freec_purities = read_sample_purities(tumor_info_files)
     if normalcov:
         normalcovfile = os.path.basename(normalcov)
         normalname = normalcovfile.replace("_WGScov.tsv", "")
@@ -298,17 +337,17 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         if normalcov:
             # Tumour + Normal
             calculated_sex = calc_sex(normalcov, ycov)
-            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict)
+            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict, freec_purities=freec_purities)
             add_insilico_stats(insilicodir, output)
         else:
             # Tumour only
             calculated_sex = calc_sex(tumorcov, ycov)
-            create_excel(statsdict, output, normalname='', tumorname=tumorname, match_dict='', canvasdict='', sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict)
+            create_excel(statsdict, output, tumorname=tumorname, sex=calculated_sex, tmb_dict=tmb_dict, freec_purities=freec_purities)
             add_insilico_stats(insilicodir, output) # Maybe this can be commented out if not needed for tumour only
     else:
         # Normal only
         calculated_sex = calc_sex(normalcov, ycov)
-        create_excel(statsdict, output, normalname, tumorname='', match_dict='', canvasdict='', sex=calculated_sex, tmb_dict='', msi_dict=msi_dict)
+        create_excel(statsdict, output, normalname, sex=calculated_sex)
         add_insilico_stats(insilicodir, output)
 
 def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', output='', tmb = ''):
@@ -390,6 +429,11 @@ if __name__ == '__main__':
     parser.add_argument('--tmb', nargs='?', help='TMB file', required=False)
     parser.add_argument('--msi', nargs='?', help='MSI result file', required=False)
     parser.add_argument('--msi_red', nargs='?', help='MSI filtered to bed file result file', required=False)
+    parser.add_argument('--tumor_info_files', nargs='*', help='List of tumor pileup_info.txt files for different ploidies', required=False)
     parser.add_argument('-o', '--output', nargs='?', help='fullpath to file to be created (xlsx will be appended if not written)', required=True)
     args = parser.parse_args()
-    create_excel_main(args.tumorcov, args.ycov, args.normalcov, args.tumordedup, args.normaldedup, args.tumorvcf, args.normalvcf, args.canvasvcf, args.tmb, args.msi, args.msi_red, args.output, args.insilicodir)
+    create_excel_main(
+        args.tumorcov, args.ycov, args.normalcov, args.tumordedup, args.normaldedup,
+        args.tumorvcf, args.normalvcf, args.canvasvcf, args.tmb, args.msi, args.msi_red,
+        args.tumor_info_files, args.output, args.insilicodir
+    )
