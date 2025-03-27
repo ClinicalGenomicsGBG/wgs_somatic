@@ -37,6 +37,7 @@ if normalid:
             tumor_BAF = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_BAF.txt"),
             normal_ratio = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_normal_ratio.txt"),
             normal_BAF = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_normal_BAF.txt"),
+            info = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_info.txt"),
         shell:
             """
             python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_pileup} {input.normal_pileup} {params.chrLenFile} {params.chrFiles} {params.SNPfile} {threads} {output.config}
@@ -89,6 +90,7 @@ else:
             config = temp("{stype}/control-freec_{ploidy}/{sname}.config"),
             tumor_ratio = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_ratio.txt"),
             tumor_BAF = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_BAF.txt"),
+            info = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_info.txt"),
         shell:
             """
             python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_pileup} {params.normal_pileup} {params.chrLenFile} {params.chrFiles} {params.SNPfile} {threads} {output.config}
