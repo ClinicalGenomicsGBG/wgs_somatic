@@ -125,6 +125,24 @@ def send_qci_api_fun(zip_file, api_key_file):
     except Exception as e:
         print(f"An error occurred: {e}")
     
+def complete_qci_submission_fun(template, output_xml, vcf_files, zip_file, api_key_file):
+    """
+    Core logic for creating XML, zipping files, and submitting to QCI.
+    """
+    try:
+        create_xml_fun(template, output_xml, vcf_files)
+    except Exception as e:
+        raise RuntimeError(f"Error during XML creation: {e}")
+
+    try:
+        create_zip_fun(output_xml, vcf_files, zip_file)
+    except Exception as e:
+        raise RuntimeError(f"Error during ZIP creation: {e}")
+
+    try:
+        send_qci_api_fun(zip_file, api_key_file)
+    except Exception as e:
+        raise RuntimeError(f"Error during API submission: {e}")
 
 @click.group(help="Create the QCI XML file for a sample. Submit the API command to QCI to upload the zip with xml and vcf files.")
 def cli():
@@ -157,10 +175,11 @@ def submit_sample_qci(zip_file, api_key_file):
 @click.option('--zip_file',type=click.Path(), required=True, help='Path to the output zip file.', show_default=True)
 @click.option('--api_key_file', type=click.Path(exists=True), required=True, help='File with QCI API key.', default = "/clinical/exec/wgs_somatic/dependencies/credentials/qci_api_key.txt", show_default=True)
 def complete_qci_submission(template, output_xml, vcf_files, zip_file, api_key_file):
-    create_xml_fun(template, output_xml, vcf_files)
-    create_zip_fun(output_xml, vcf_files, zip_file)
-    send_qci_api_fun(zip_file, api_key_file)
-    
+    try:
+        complete_qci_submission_fun(template, output_xml, vcf_files, zip_file, api_key_file)
+    except RuntimeError as e:
+        print(e)
+        
 if __name__ == "__main__":
     cli()
     
