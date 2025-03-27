@@ -147,7 +147,7 @@ def copy_results(outputdir, resultdir=None):
                         logger(f"Error occurred while copying {f}")
 
 
-def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, development=False):
+def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, development=False, uploadqci=False):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -405,8 +405,8 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         ] + dev_args
 
         # Execute Snakemake command with outputdir redirection
-        with open(samplelog, "a") as log_file:
-            subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
+        # with open(samplelog, "a") as log_file:
+            # subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
 
     except subprocess.CalledProcessError as e:
         tb = traceback.format_exc()
@@ -417,6 +417,44 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         tb = traceback.format_exc()
         logger(f"An error occurred: {e}\n{tb}")
         sys.exit(1)
+        
+    ### QCI sample upload ###
+    if uploadqci:
+        # the xml template should be in the tools directory 
+        launch_snakemake_path = os.path.dirname(__file__)
+        template_file = os.path.join(launch_snakemake_path, "tools", "sampleOnlyUpload.xml") 
+        
+        # Extract the API key file path from the WRAPPER_CONFIG_PATH YAML file
+        wrapper_config = read_config(WRAPPER_CONFIG_PATH)
+        api_key_file = wrapper_config.get('qci', {}).get('api_key_file', None)
+        if not api_key_file:
+            logger("API key file path not found in WRAPPER_CONFIG_PATH")
+            sys.exit(1)
+        
+        # files_match = ['CNV_SNV_germline.vcf.gz', 'somatic.vcf.gz', 'refseq3kfilt.vcf.gz']
+        files_match = ['somatic.vcf.gz'] #other files can be added to the list and will be uploaded to QCI
+        files_to_upload = []
+        for files in files_match:
+            # adapt if we want to submit CNV files in the future
+            files_to_upload += [f for f in glob.glob(os.path.join(outputdir, f'*{files}')) if 'CNV' not in f]
+        # the function has a default api key file set, which is defined in the function
+        logger("Creating the following files for QCI upload:")
+        logger(f"{outputdir}sampleOnlyUpload_{tumorname}.xml")
+        logger(f"{outputdir}sampleOnlyUpload_{tumorname}.zip")
+        logger(f"Uploading {files_to_upload} to QCI")
+        try:
+            complete_qci_submission_fun(
+                template = template_file,
+                output_xml = f"{outputdir}sampleOnlyUpload_{tumorname}.xml",
+                vcf_files = files_to_upload,
+                zip_file = f"{outputdir}sampleOnlyUpload_{tumorname}.zip",
+                api_key_file = api_key_file
+            )
+            logger("QCI submission completed successfully")
+        except Exception as e:
+            logger(f"Error during QCI submission: {e}")
+    
+        ##########
 
 
 if __name__ == '__main__':
@@ -431,6 +469,8 @@ if __name__ == '__main__':
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
     parser.add_argument('-dev', '--development', action="store_true", help='Run the pipeline in development mode (no temp, no timestamp, rerun incomplete)', required=False)
     parser.add_argument('-onlycopy', '--onlycopyresults', action="store_true", help='Only run the copy_results function', required=False)
+    parser.add_argument('-qci', '--uploadqci', action="store_true", help='Upload results to QCI', required=False)
+    
     args = parser.parse_args()
 
     if not args.outputdir.startswith("/"):
@@ -450,7 +490,7 @@ if __name__ == '__main__':
             if not args.normalfastqs.startswith("/"):
                 args.normalfastqs = os.path.abspath(args.normalfastqs)
                 logger(f"Adjusted normalfastqs to {args.normalfastqs}")
-        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
+        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development, args.uploadqci)
 
         if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
             if args.tumorsample:
@@ -468,39 +508,3 @@ if __name__ == '__main__':
                 if args.copyresults:
                     copy_results(args.outputdir)
 
-            ### QCI sample upload ###
-            # the xml template should be in the tools directory 
-            launch_snakemake_path = os.path.dirname(__file__)
-            template_file = os.path.join(launch_snakemake_path, "tools", "sampleOnlyUpload.xml") 
-            
-            # Extract the API key file path from the WRAPPER_CONFIG_PATH YAML file
-            wrapper_config = read_config(WRAPPER_CONFIG_PATH)
-            api_key_file = wrapper_config.get('qci', {}).get('api_key_file', None)
-            if not api_key_file:
-                logger("API key file path not found in WRAPPER_CONFIG_PATH")
-                sys.exit(1)
-            
-            # files_match = ['CNV_SNV_germline.vcf.gz', 'somatic.vcf.gz', 'refseq3kfilt.vcf.gz']
-            files_match = ['somatic.vcf.gz'] #other files can be added to the list and will be uploaded to QCI
-            files_to_upload = []
-            for files in files_match:
-                # adapt if we want to submit CNV files in the future
-                files_to_upload += [f for f in glob.glob(os.path.join(args.outputdir, f'*{files}')) if 'CNV' not in f]
-            # the function has a default api key file set, which is defined in the function
-            logger("Creating the following files for QCI upload:")
-            logger(f"{args.outputdir}sampleOnlyUpload_{args.tumorsample}.xml")
-            logger(f"{args.outputdir}sampleOnlyUpload_{args.tumorsample}.zip")
-            logger(f"Uploading {files_to_upload} to QCI")
-            try:
-                complete_qci_submission_fun(
-                    template = template_file,
-                    output_xml = f"{args.outputdir}sampleOnlyUpload_{args.tumorsample}.xml",
-                    vcf_files = files_to_upload,
-                    zip_file = f"{args.outputdir}sampleOnlyUpload_{args.tumorsample}.zip",
-                    api_key_file = api_key_file
-                )
-                logger("QCI submission completed successfully")
-            except Exception as e:
-                logger(f"Error during QCI submission: {e}")
-            
-            ##########
