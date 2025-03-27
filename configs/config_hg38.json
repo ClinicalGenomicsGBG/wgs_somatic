@@ -111,7 +111,8 @@
             "ploidy": ["free","2"],
             "chrLenFile": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai",
             "chrFiles": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/",
-            "SNPfile": "/clinical/exec/wgs_somatic/dependencies/control_freec/common_dnSNP156_hg38.vcf.gz"
+            "SNPfile": "/clinical/exec/wgs_somatic/dependencies/control_freec/common_dnSNP156_hg38.vcf.gz",
+            "cytoBandIdeo": "/clinical/exec/wgs_somatic/dependencies/control_freec/cytoBandIdeo.txt"
         },
         "share_to_resultdir":
         {
