@@ -14,7 +14,8 @@ import stat
 import requests
 import random
 import string
-from definitions import LAUNCHER_CONFIG_PATH
+from definitions import LAUNCHER_CONFIG_PATH, WRAPPER_CONFIG_PATH
+from tools.submit_sample_qci_api import complete_qci_submission_fun
 
 
 def get_time():
@@ -467,3 +468,40 @@ if __name__ == '__main__':
                 yearly_stats('None', args.normalsample)
                 if args.copyresults:
                     copy_results(args.outputdir)
+
+            ### QCI sample upload ###
+            # the xml template should be in the tools directory 
+            launch_snakemake_path = os.path.dirname(__file__)
+            template_file = os.path.join(launch_snakemake_path, "tools", "sampleOnlyUpload.xml") 
+            
+            # Extract the API key file path from the WRAPPER_CONFIG_PATH YAML file
+            wrapper_config = read_config(WRAPPER_CONFIG_PATH)
+            api_key_file = wrapper_config.get('qci', {}).get('api_key_file', None)
+            if not api_key_file:
+                logger("API key file path not found in WRAPPER_CONFIG_PATH")
+                sys.exit(1)
+            
+            # files_match = ['CNV_SNV_germline.vcf.gz', 'somatic.vcf.gz', 'refseq3kfilt.vcf.gz']
+            files_match = ['somatic.vcf.gz'] #other files can be added to the list and will be uploaded to QCI
+            files_to_upload = []
+            for files in files_match:
+                # adapt if we want to submit CNV files in the future
+                files_to_upload += [f for f in glob.glob(os.path.join(args.outputdir, f'*{files}')) if 'CNV' not in f]
+            # the function has a default api key file set, which is defined in the function
+            logger("Creating the following files for QCI upload:")
+            logger(f"{args.outputdir}sampleOnlyUpload_{args.tumorsample}.xml")
+            logger(f"{args.outputdir}sampleOnlyUpload_{args.tumorsample}.zip")
+            logger(f"Uploading {files_to_upload} to QCI")
+            try:
+                complete_qci_submission_fun(
+                    template = template_file,
+                    output_xml = f"{args.outputdir}sampleOnlyUpload_{args.tumorsample}.xml",
+                    vcf_files = files_to_upload,
+                    zip_file = f"{args.outputdir}sampleOnlyUpload_{args.tumorsample}.zip",
+                    api_key_file = api_key_file
+                )
+                logger("QCI submission completed successfully")
+            except Exception as e:
+                logger(f"Error during QCI submission: {e}")
+            
+            ##########
