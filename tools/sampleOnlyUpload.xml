@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QCISampleOnlyUpload
+        xmlns="http://qci.qiagen.com/xsd/interpret"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://qci.qiagen.com/xsd/interpret ../schema/QCISampleOnlyUpload.xsd "
+        version="1.21.0">
+    <Sample>
+        <Name>minimumFields</Name>
+        <VariantsFilenames>
+            <VariantsFilename>ColonCancerSecondaryDemo.vcf</VariantsFilename>
+        </VariantsFilenames>
+    </Sample>
+</QCISampleOnlyUpload>
