@@ -15,7 +15,6 @@ import glob
 def add_insilico_stats(insilicofolder, main_excel):
     from workflows.scripts.insilico_coverage import insilico_overall_coverage
 
-
     # generate overall insilico coverage dataframe & append to main excel
     ocov_file_list = glob.glob(f"{insilicofolder}/**/*_cov.tsv")
     for ocov in ocov_file_list:
@@ -88,6 +87,7 @@ def get_canvas_tumorinfo(canvasvcf):
                     canvasdict[canvasfield] = canvasfield_value
     return canvasdict
 
+
 def read_tmb_file(filepath):
     tmb_dict = {}
     try:
@@ -136,7 +136,7 @@ def get_msi_info(msi, msi_red):
                         msi_dict[f"msi_filtered_{header}"] = int(value)
                 except ValueError:
                     msi_dict[f"msi_filtered_{header}"] = value
-            
+
     except FileNotFoundError:
         print(f"No file found at {msi} or {msi_red}")
     except Exception as e:
@@ -194,7 +194,7 @@ def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, 
 
     # Version numbers & tag
     worksheet.merge_range('A3:C3', f"{get_git_reponame()} tag: {get_git_tag()}, commit: {get_git_commit()}")
-    
+
     print(f"STATSDICT: {statsdict}")
 
     # Input calculated sex
@@ -264,7 +264,7 @@ def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, 
                     worksheet.write(statrow, column_num, match_dict[stat], cellformat[style])
                 else:
                     worksheet.write(statrow, column_num, match_dict[stat])
-                
+
                 column_num += 1
     row += 4
     worksheet.write(row, 0, "CANVAS-STATS", cellformat["section"])
@@ -295,7 +295,7 @@ def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, 
             worksheet.write(row, 0, key, cellformat["header"])
             worksheet.write(row, 1, msi_dict[key])
             row += 1
-    
+
     row += 2
     worksheet.write(row, 0, "FREEC-PURITIES", cellformat["section"])
     worksheet.write(row, 1, tumorname, cellformat["tumorname"])
