@@ -341,6 +341,8 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False)
     outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
     threads[0].start()  # For manual runs we only have one thread
 
+    threads[0].join()  # Wait for the thread to finish
+
     if copyresults and os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
         copy_results(outputdir)
     return
