@@ -123,6 +123,7 @@ if tumorid:
     include:        "workflows/rules/variantcalling/pindel.smk"
     include:        "workflows/rules/small_tools/tmb_calculation.smk"
     include:        "workflows/rules/small_tools/msi.smk"
+    include:        "workflows/rules/variantcalling/control-freec.smk"
 include:        "workflows/rules/variantcalling/dnascope.smk"
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"

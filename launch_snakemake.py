@@ -111,7 +111,7 @@ def copy_results(outputdir, resultdir=None):
 
     # Find resultfiles to copy to resultdir on webstore
     copy_files = []
-    files_match = ['.xlsx', 'CNV_SNV_germline.vcf.gz', 'somatic.vcf.gz', 'refseq3kfilt.vcf.gz']
+    files_match = ['.xlsx', 'CNV_SNV_germline.vcf.gz', 'somatic.vcf.gz', 'refseq3kfilt.vcf.gz', '.png']
     for files in files_match:
         copy_files = copy_files + glob.glob(os.path.join(outputdir, f'*{files}*'))
     copy_files = set(copy_files)
