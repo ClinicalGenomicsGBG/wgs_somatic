@@ -406,8 +406,8 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         ] + dev_args
 
         # Execute Snakemake command with outputdir redirection
-        # with open(samplelog, "a") as log_file:
-            # subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
+        with open(samplelog, "a") as log_file:
+            subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
 
     except subprocess.CalledProcessError as e:
         tb = traceback.format_exc()
@@ -438,17 +438,24 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         for files in files_match:
             # adapt if we want to submit CNV files in the future
             files_to_upload += [f for f in glob.glob(os.path.join(outputdir, f'*{files}')) if 'CNV' not in f]
+
+        if not files_to_upload:
+            logger("Error: No files found to upload to QCI. Ensure the output directory contains the required files.")
+            sys.exit(1)
+            
         # the function has a default api key file set, which is defined in the function
         logger("Creating the following files for QCI upload:")
-        logger(f"{outputdir}sampleOnlyUpload_{tumorname}.xml")
-        logger(f"{outputdir}sampleOnlyUpload_{tumorname}.zip")
+        logger(f"{outputdir}/sampleOnlyUpload_{tumorname}.xml")
+        logger(f"{outputdir}/sampleOnlyUpload_{tumorname}.zip")
         logger(f"Uploading {files_to_upload} to QCI")
+        
+
         try:
             complete_qci_submission_fun(
                 template = template_file,
-                output_xml = f"{outputdir}sampleOnlyUpload_{tumorname}.xml",
+                output_xml = f"{outputdir}/sampleOnlyUpload_{tumorname}.xml",
                 vcf_files = files_to_upload,
-                zip_file = f"{outputdir}sampleOnlyUpload_{tumorname}.zip",
+                zip_file = f"{outputdir}/sampleOnlyUpload_{tumorname}.zip",
                 api_key_file = api_key_file
             )
             logger("QCI submission completed successfully")
