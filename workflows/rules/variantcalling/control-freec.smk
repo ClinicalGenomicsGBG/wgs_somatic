@@ -9,6 +9,8 @@ rule control_freec_pileup:
         clusterconf["control_freec_pileup"]["threads"]
     output:
         pileup = temp("{stype}/realign/{sname}.pileup")
+    shadow:
+        pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
         """
         mkdir -p {wildcards.stype}/control-freec/
@@ -38,6 +40,8 @@ if normalid:
             normal_ratio = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_normal_ratio.txt"),
             normal_BAF = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_normal_BAF.txt"),
             info = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_info.txt"),
+        shadow:
+            pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
             python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_pileup} {input.normal_pileup} {params.chrLenFile} {params.chrFiles} {params.SNPfile} {threads} {output.config}
@@ -64,6 +68,8 @@ if normalid:
             normal_ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_normal_ratio.png"),
             normal_ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_normal_ratio.seg"),
             normal_BAF_igv = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_normal_BAF.igv"),
+        shadow:
+            pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
             Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg} {output.BAF_igv}
@@ -91,6 +97,8 @@ else:
             tumor_ratio = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_ratio.txt"),
             tumor_BAF = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_BAF.txt"),
             info = temp("{stype}/control-freec_{ploidy}/{sname}.pileup_info.txt"),
+        shadow:
+            pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
             python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_pileup} {params.normal_pileup} {params.chrLenFile} {params.chrFiles} {params.SNPfile} {threads} {output.config}
@@ -111,6 +119,8 @@ else:
             ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png"),
             ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg"),
             BAF_igv = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.igv"),
+        shadow:
+            pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
             Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg} {output.BAF_igv}
