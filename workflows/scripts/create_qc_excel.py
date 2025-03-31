@@ -162,7 +162,9 @@ def read_sample_purities(info_files):
                         purity = float(line.split("\t")[1])
                     # Add to dictionary when both ploidy and purity are found
                     if ploidy is not None and purity is not None:
-                        purities[ploidy] = purity
+                        if ploidy not in purities:
+                            purities[ploidy] = []
+                        purities[ploidy].append(purity)
                         ploidy = None  # Reset for the next entry
                         purity = None
         except FileNotFoundError:
@@ -301,10 +303,11 @@ def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, 
     worksheet.write(row, 1, tumorname, cellformat["tumorname"])
     row += 1
     if freec_purities:
-        for ploidy, purity in freec_purities.items():
-            worksheet.write(row, 0, f"Ploidy {ploidy}", cellformat["header"])
-            worksheet.write(row, 1, purity)
-            row += 1
+        for ploidy, purities in freec_purities.items():
+            for purity in purities:  # Iterate over the list of purities for each ploidy
+                worksheet.write(row, 0, f"Ploidy {ploidy}", cellformat["header"])
+                worksheet.write(row, 1, purity)
+                row += 1
 
     excelfile.close()
 
