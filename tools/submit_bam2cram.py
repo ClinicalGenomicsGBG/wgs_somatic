@@ -18,7 +18,7 @@ logging.basicConfig(
 
 @click.command(help="Replace BAM files with CRAM files in webstore")
 @click.option('--webstore_dir', type=click.Path(exists=True), required=True, default="/oldseqstore/workspace/carolina/wgs_somatic/test_delete_data/webstore/current", help='Base webstore directory', show_default=True)
-@click.option('--workdir', type=click.Path(), required=True, default="", help='Base execution directory where snakemake will create cram, crai and tdf', show_default=True)
+@click.option('--workdir', type=click.Path(), required=True, default="", help='Base execution directory where snakemake will create cram and crai', show_default=True)
 @click.option('--age_threshold', type=int, default=5, help='Age threshold in days', show_default=True)
 @click.option('--altered_dirs', type=click.Path(), required=True, default="/oldseqstore/workspace/carolina/wgs_somatic/test_delete_data/altered_dirs.txt", help='File to store altered directories', show_default=True)
 @click.option('--dry_run', is_flag=True, help='Perform a dry run without making any changes', show_default=True)
@@ -59,29 +59,18 @@ def setup_snakemake(dir_to_process, workdir, launcher_config, snakemake_config, 
         "/oldseqstore"
     ]
     singularity_args = construct_singularity_args(binddirs, additional_binds)
-
-    # Construct Snakemake command
-# singularity_args = [
-#         "-e",
-#         f"--bind {singularity_binds}",
-#         "--bind /medstore",
-#         "--bind /seqstore",
-#         "--bind /apps",
-#         "--bind /clinical",
-#     ]
-    
+  
     cluster_args = [
         "qsub",
         "-S", "/bin/bash",
         "-pe", "mpi", "{cluster.threads}",
         "-q", "{cluster.queue}",
         "-N", "{cluster.name}",
-        "-o", f"{workdir}/logs/{{cluster.output}}", #TODO change
+        "-o", f"{workdir}/logs/{{cluster.output}}",
         "-e", f"{workdir}/logs/{{cluster.error}}",
         "-l", "{cluster.excl}"
     ]
     cluster_args_str = " ".join(cluster_args)
-    # singularity_args_str = " ".join(singularity_args)
 
     snakemake_command = (
         "snakemake -s tools/convert_bam_to_cram.smk"
@@ -120,22 +109,16 @@ def main(webstore_dir, workdir, age_threshold, altered_dirs, dry_run, extra_snak
                 logging.info(f"Found BAM files in directory: {subdir}")
                 directories_to_process.append(subdir)
     directories_to_process = list(set(directories_to_process))  # Remove duplicates
-    # Check if webstore_dir is already in the altered_dirs file
-    if os.path.exists(altered_dirs):
-        with open(altered_dirs, "r") as f:
-            altered_dirs_content = f.read().split()
-            directories_to_process = [
-                d for d in directories_to_process if d not in altered_dirs_content
-            ]
 
-    # Filter directories based on age_threshold
     directories_to_process = [
         d for d in directories_to_process if is_older_than(d, age_threshold)
     ]
     if not directories_to_process:
         logging.info("No new directories to process.")
         return
-    logging.info(f"Directories to process: {directories_to_process}")
+    logging.info("Directories to process:")
+    for directory in directories_to_process:
+        logging.info(f"- {directory}")
 
     processes = []
     for directory in directories_to_process:
@@ -160,16 +143,28 @@ def main(webstore_dir, workdir, age_threshold, altered_dirs, dry_run, extra_snak
     for directory, process in processes:
         process.wait()
         if process.returncode == 0:
-            logging.info(f"Snakemake run for directory {complete_workdir} completed successfully.")
+            logging.info(f"Pipeline for directory {directory} completed successfully.")
+            # Transfer created files from complete_workdir to webstore_dir
+            for file_name in os.listdir(complete_workdir):
+                if ".cram" in file_name:
+                    source_file = os.path.join(complete_workdir, file_name)
+                    shutil.copy(source_file, directory)
+                    logging.info(f"Moved {source_file} to {directory}.")
+            
+            # Delete BAM files from the webstore directory
+            for file_name in os.listdir(directory):
+                if file_name.endswith(".bam"):
+                    bam_file = os.path.join(directory, file_name)
+                    # os.remove(bam_file)
+                    logging.info(f"Deleted BAM file: {bam_file}.")
+            # Delete the complete_workdir if the transfer and deletion are successful
+            try:
+                shutil.rmtree(complete_workdir)
+                logging.info(f"Deleted working directory: {complete_workdir}.")
+            except Exception as e:
+                logging.error(f"Failed to delete working directory {complete_workdir}: {e}")
         else:
-            logging.error(f"Snakemake run for directory {complete_workdir} failed with return code {process.returncode}.")
-
-    # Append the altered directories to a running file
-    # if not dry_run:
-    #     with open(altered_dirs, "a") as f:
-    #         for directory in directories_to_process:
-    #             logging.info(f"Appending {directory} to {altered_dirs} file.")
-    #             f.write(f"{time.strftime('%Y-%m-%d')} {directory}\n")
+            logging.error(f"Pipeline for directory {directory} failed. Skipping file transfer and BAM deletion.")
 
     logging.info("##### Processing completed. #####")
 
