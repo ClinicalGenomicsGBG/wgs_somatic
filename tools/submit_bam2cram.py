@@ -8,11 +8,14 @@ from helpers import read_config
 import uuid
 
 # Configure logging to write to a file
+log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
+os.makedirs(log_dir, exist_ok=True)  # Ensure the logs directory exists
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs/replace_bam_w_cram.log")),  # Log file name
+        logging.FileHandler(os.path.join(log_dir, "replace_bam_w_cram.log")),  # Log file name
         logging.StreamHandler()  # Also log to console
     ]
 )
@@ -159,7 +162,14 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
         )
         if dry_run:
             logging.info(f"Dry run: {snakemake_command}")
-            os.system(snakemake_command)
+            # os.system(snakemake_command)
+            try:
+                result = subprocess.run(snakemake_command, shell=True, check=True, capture_output=True, text=True)
+                logging.info(f"Command output: {result.stdout}")
+                if result.stderr:
+                    logging.error(f"Command error output: {result.stderr}")
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Dry run command failed with exit code {e.returncode}: {e.stderr}")
         else:
             logging.info(f"Executing Snakemake command: {snakemake_command}")
             process = subprocess.Popen(snakemake_command, shell=True)
