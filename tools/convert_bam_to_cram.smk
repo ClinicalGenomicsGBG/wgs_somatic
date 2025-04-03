@@ -17,7 +17,6 @@ launcher_config = read_config(config_path)
 # print(launcher_config)
 pipeconfig = read_config(os.path.join(ROOT_DIR, "configs",launcher_config["hg38conf"]))  # In launch_snakemake.py the pipeconfig is adjusted to the genome (hg19/hg38)
 clusterconf = read_config(os.path.join(ROOT_DIR, "configs",launcher_config["clusterconf"]))
-filterconfig = read_config(os.path.join(ROOT_DIR, "configs",launcher_config["filterconf"]))
 
 dir_with_bams = config.get("dir_to_process")
 
