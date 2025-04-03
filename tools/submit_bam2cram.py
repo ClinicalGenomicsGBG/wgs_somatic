@@ -12,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), "replace_bam_w_cram.log")),  # Log file name
+        logging.FileHandler(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs/replace_bam_w_cram.log")),  # Log file name
         logging.StreamHandler()  # Also log to console
     ]
 )
