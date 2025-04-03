@@ -20,7 +20,7 @@ logging.basicConfig(
 @click.command(help="Replace BAM files with CRAM files in webstore")
 @click.option('--webstore_dir', type=click.Path(exists=True), required=True, default="/oldseqstore/workspace/carolina/wgs_somatic/test_delete_data/webstore/current", help='Base webstore directory', show_default=True)
 @click.option('--workdir', type=click.Path(), required=True, default="", help='Base execution directory where snakemake will create cram and crai', show_default=True)
-@click.option('--age_threshold', type=int, default=5, help='Age threshold in days', show_default=True)
+@click.option('--age_threshold', type=int, default=50, help='Age threshold in days', show_default=True)
 @click.option('--dry_run', is_flag=True, help='Perform a dry run without making any changes', show_default=True)
 @click.option('--extra_snakemake_args', type=str, default="", help='Extra arguments for snakemake command', show_default=True)
 @click.option('--launcher_config', type=click.Path(exists=True), required=True, default=os.path.join(os.path.dirname(__file__), "../configs/launcher_config.json"), help='Path to the launcher config file', show_default=True)
@@ -109,7 +109,8 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
                 logging.info(f"Found BAM files in directory: {subdir}")
                 directories_to_process.append(subdir)
     directories_to_process = list(set(directories_to_process))  # Remove duplicates
-
+    
+    # Filter directories based on age threshold
     directories_to_process = [
         d for d in directories_to_process if is_older_than(d, age_threshold)
     ]
@@ -124,6 +125,23 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
     dry_run_directories = []  # Track directories created during dry run
 
     for directory in directories_to_process:
+        # Skip lock file creation during dry run
+        if not dry_run:
+            # Create a hidden lock file in the directory
+            lock_file = os.path.join(directory, ".bam2cram.processing.lock")
+            if os.path.exists(lock_file):
+                lock_age = time.time() - os.path.getmtime(lock_file)
+                if lock_age > 24 * 60 * 60:  # 24 hours
+                    logging.warning(f"Stale lock file found for {directory}. Removing it.")
+                    os.remove(lock_file)
+                else:
+                    logging.info(f"Skipping directory {directory} because it is already being processed.")
+                    continue
+
+            # Create the lock file
+            with open(lock_file, "w") as f:
+                f.write(f"Processing started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+
         random_id = uuid.uuid4().hex[:8]
         complete_workdir = os.path.join(workdir, random_id)
 
@@ -145,7 +163,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
         else:
             logging.info(f"Executing Snakemake command: {snakemake_command}")
             process = subprocess.Popen(snakemake_command, shell=True)
-            processes.append((directory, complete_workdir, process))
+            processes.append((directory, complete_workdir, process, lock_file))
             time.sleep(1)
 
     # Clean up directories created during dry run
@@ -161,7 +179,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
         return
 
     # Process results after actual execution
-    for processed_directory, processed_complete_workdir, process in processes:
+    for processed_directory, processed_complete_workdir, process, lock_file in processes:
         process.wait()
         if process.returncode == 0:
             logging.info(f"Pipeline for directory {processed_directory} completed successfully.")
@@ -179,6 +197,11 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
                         bam_file = os.path.join(processed_directory, file_name)
                         os.remove(bam_file)
                         logging.info(f"Deleted BAM file: {bam_file}.")
+                        
+                    if file_name.endswith(".bai"):
+                        bai_file = os.path.join(processed_directory, file_name)
+                        os.remove(bai_file)
+                        logging.info(f"Deleted BAI file: {bai_file}.")
             else:
                 logging.info(f"Keeping BAM files in directory: {processed_directory}.")
             
@@ -190,6 +213,11 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
                 logging.error(f"Failed to delete working directory {processed_complete_workdir}: {e}")
         else:
             logging.error(f"Pipeline for directory {processed_directory} failed. Skipping file transfer and BAM deletion.")
+
+        # Remove the lock file
+        if not dry_run and os.path.exists(lock_file):
+            os.remove(lock_file)
+            logging.info(f"Removed lock file for directory {processed_directory}.")
 
     logging.info("##### Processing completed. #####")
 
