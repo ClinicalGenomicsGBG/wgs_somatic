@@ -24,7 +24,8 @@ dir_with_bams = config.get("dir_to_process")
 sname, = glob_wildcards(f"{dir_with_bams}/{{sname}}.bam") # variable is called sname and not something more descriptive so that the default settings in cluster.yaml apply
 rule all:
     input:
-        expand("{sname}.cram.tdf", sname=sname),
+        expand("{sname}.cram", sname=sname),
+        expand("{sname}.cram.crai", sname=sname),
 
 rule cram_crai:
     input:
@@ -35,25 +36,9 @@ rule cram_crai:
     params:
         threads = clusterconf["cram"]["threads"],
         referencegenome = pipeconfig["referencegenome"]
-    shadow:
-        pipeconfig["rules"].get("cram", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
         cram = "{sname}.cram",
         crai = "{sname}.cram.crai"
     shell:
         "samtools view -C --threads {params.threads} -T {params.referencegenome} -o {output.cram} {input.bam} ; "
         "samtools index {output.cram}"
-
-rule generate_tdf_hg38:
-    input:
-        cram = rules.cram_crai.output.cram,
-        crai = rules.cram_crai.output.crai
-    params:
-        igvtools_jar_path = pipeconfig["rules"]["generate_tdf"]["igvtools_jar_path"],
-        igvtools_memory_limit = pipeconfig["rules"]["generate_tdf"]["igvtools_memory_limit"]
-    shadow:
-        pipeconfig["rules"].get("generate_tdf", {}).get("shadow", pipeconfig.get("shadow", False))
-    output:
-        tdf = "{sname}.cram.tdf"
-    run:
-        shell("nohup java -Xmx{params.igvtools_memory_limit} -jar {params.igvtools_jar_path} count {input.cram} {output} hg38")
