@@ -103,12 +103,23 @@ def postprocess_directory(processed_directory, processed_complete_workdir, proce
     if process.returncode == 0:
         logging.info(f"Pipeline for directory {processed_directory} completed successfully.")
         # Transfer created files from complete_workdir to webstore_dir
-        for file_name in os.listdir(processed_complete_workdir):
-            if ".cram" in file_name:
-                source_file = os.path.join(processed_complete_workdir, file_name)  # cram or crai that has been created
-                shutil.copy(source_file, processed_directory)  # copy cram/crai to webstore location (where the bams are)
-                logging.info(f"Moved {source_file} to {processed_directory}.")
-        
+        with ThreadPoolExecutor() as executor:
+            futures = [
+            executor.submit(
+                shutil.copy,
+                os.path.join(processed_complete_workdir, file_name),
+                processed_directory
+            )
+            for file_name in os.listdir(processed_complete_workdir)
+            if ".cram" in file_name
+            ]
+
+            for future in as_completed(futures):
+                try:
+                    source_file = future.result()  # shutil.copy returns the destination path
+                    logging.info(f"Moved {source_file} to {processed_directory}.")
+                except Exception as e:
+                    logging.error(f"Error moving file: {e}")
         # Delete BAM files from the webstore processed_directory
         if not keep_bam:
             for file_name in os.listdir(processed_directory):
