@@ -6,6 +6,7 @@ import subprocess
 import click
 from helpers import read_config
 import uuid
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Configure logging to write to a file
 log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
@@ -94,6 +95,56 @@ def setup_snakemake(dir_to_process, workdir, launcher_config, snakemake_config, 
     
     return(snakemake_command)
 
+def postprocess_directory(processed_directory, processed_complete_workdir, process, lock_file, keep_bam):
+    """
+    Perform postprocessing for a single directory after Snakemake execution.
+    """
+    process.wait()
+    if process.returncode == 0:
+        logging.info(f"Pipeline for directory {processed_directory} completed successfully.")
+        # Transfer created files from complete_workdir to webstore_dir
+        for file_name in os.listdir(processed_complete_workdir):
+            if ".cram" in file_name:
+                source_file = os.path.join(processed_complete_workdir, file_name)  # cram or crai that has been created
+                shutil.copy(source_file, processed_directory)  # copy cram/crai to webstore location (where the bams are)
+                logging.info(f"Moved {source_file} to {processed_directory}.")
+        
+        # Delete BAM files from the webstore processed_directory
+        if not keep_bam:
+            for file_name in os.listdir(processed_directory):
+                if file_name.endswith(".bam"):
+                    bam_file = os.path.join(processed_directory, file_name)
+                    corresponding_cram = bam_file.replace(".bam", ".cram")
+                    if os.path.exists(corresponding_cram):
+                        os.remove(bam_file)
+                        logging.info(f"Deleted BAM file: {bam_file}.")
+                    else:
+                        logging.warning(f"CRAM file not found for BAM file: {bam_file}. Skipping deletion.")
+
+                if file_name.endswith(".bai"):
+                    bai_file = os.path.join(processed_directory, file_name)
+                    corresponding_crai = bai_file.replace(".bam.bai", ".cram.crai")
+                    if os.path.exists(corresponding_crai):
+                        os.remove(bai_file)
+                        logging.info(f"Deleted BAI file: {bai_file}.")
+                    else:
+                        logging.warning(f"CRAM file not found for BAI file: {bai_file}. Skipping deletion.")
+        else:
+            logging.info(f"Keeping BAM files in directory: {processed_directory}.")
+        
+        # Delete the complete_workdir if the transfer and deletion are successful
+        try:
+            shutil.rmtree(processed_complete_workdir)
+            logging.info(f"Deleted working directory: {processed_complete_workdir}.")
+        except Exception as e:
+            logging.error(f"Failed to delete working directory {processed_complete_workdir}: {e}")
+    else:
+        logging.error(f"Pipeline for directory {processed_directory} failed. Skipping file transfer and BAM deletion.")
+
+    # Remove the lock file from the webstore directory
+    if os.path.exists(lock_file):
+        os.remove(lock_file)
+        logging.info(f"Removed lock file for directory {processed_directory}.")
 
 def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, launcher_config, snakemake_config, keep_bam):
     """Scan directories and process specific subdirectories."""
@@ -108,7 +159,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
     for root_webstore, _, _ in os.walk(webstore_dir):
         logging.info(f"Scanning directory: {root_webstore}")
         for subdir, _, files in os.walk(root_webstore):
-            if any(file.endswith(".bam") for file in files):
+            if any(file.endswith(".bam") for file in files): # if a bam file is found in the directory, add it to the list of directories to process
                 logging.info(f"Found BAM files in directory: {subdir}")
                 directories_to_process.append(subdir)
     directories_to_process = list(set(directories_to_process))  # Remove duplicates
@@ -124,9 +175,10 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
     for directory in directories_to_process:
         logging.info(f"- {directory}")
 
-    processes = []
+    processes = [] # List to track processes
     dry_run_directories = []  # Track directories created during dry run
 
+    # submit snakemake jobs for each directory
     for directory in directories_to_process:
         # Skip lock file creation during dry run
         if not dry_run:
@@ -146,15 +198,15 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
                 f.write(f"Processing started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         random_id = uuid.uuid4().hex[:8]
-        complete_workdir = os.path.join(workdir, random_id)
+        complete_workdir = os.path.join(workdir, random_id) # Create a unique workdir for each snakemake run/webstore directory to be processed
 
         # Track directories created during dry run
         if dry_run:
             dry_run_directories.append(complete_workdir)
 
         snakemake_command = setup_snakemake(
-            dir_to_process=directory,
-            workdir=complete_workdir,
+            dir_to_process=directory, # webstore directory to process. The bam files are in this directory and the cram/crai will be copied to here
+            workdir=complete_workdir, # directory where snakemake will create cram and crai
             launcher_config=launcher_config,
             snakemake_config=snakemake_config,
             extra_snakemake_args=extra_snakemake_args,
@@ -176,7 +228,8 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
             processes.append((directory, complete_workdir, process, lock_file))
             time.sleep(1)
 
-    # Clean up directories created during dry run
+    # Clean up directories created during dry run (the dry run is only used to print out which directories will be processed)
+    # and to check if the snakemake command is set up correctly
     if dry_run:
         for dry_run_dir in dry_run_directories:
             if os.path.exists(dry_run_dir):
@@ -188,46 +241,25 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
         logging.info("##### Dry run completed. #####")
         return
 
-    # Process results after actual execution
-    for processed_directory, processed_complete_workdir, process, lock_file in processes:
-        process.wait()
-        if process.returncode == 0:
-            logging.info(f"Pipeline for directory {processed_directory} completed successfully.")
-            # Transfer created files from complete_workdir to webstore_dir
-            for file_name in os.listdir(processed_complete_workdir):
-                if ".cram" in file_name:
-                    source_file = os.path.join(processed_complete_workdir, file_name)
-                    shutil.copy(source_file, processed_directory)
-                    logging.info(f"Moved {source_file} to {processed_directory}.")
-            
-            # Delete BAM files from the webstore processed_directory
-            if not keep_bam:
-                for file_name in os.listdir(processed_directory):
-                    if file_name.endswith(".bam"):
-                        bam_file = os.path.join(processed_directory, file_name)
-                        os.remove(bam_file)
-                        logging.info(f"Deleted BAM file: {bam_file}.")
-                        
-                    if file_name.endswith(".bai"):
-                        bai_file = os.path.join(processed_directory, file_name)
-                        os.remove(bai_file)
-                        logging.info(f"Deleted BAI file: {bai_file}.")
-            else:
-                logging.info(f"Keeping BAM files in directory: {processed_directory}.")
-            
-            # Delete the complete_workdir if the transfer and deletion are successful
-            try:
-                shutil.rmtree(processed_complete_workdir)
-                logging.info(f"Deleted working directory: {processed_complete_workdir}.")
-            except Exception as e:
-                logging.error(f"Failed to delete working directory {processed_complete_workdir}: {e}")
-        else:
-            logging.error(f"Pipeline for directory {processed_directory} failed. Skipping file transfer and BAM deletion.")
+    # Process results after actual execution in parallel
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                postprocess_directory,
+                processed_directory,
+                processed_complete_workdir,
+                process,
+                lock_file,
+                keep_bam
+            )
+            for processed_directory, processed_complete_workdir, process, lock_file in processes
+        ]
 
-        # Remove the lock file
-        if not dry_run and os.path.exists(lock_file):
-            os.remove(lock_file)
-            logging.info(f"Removed lock file for directory {processed_directory}.")
+        for future in as_completed(futures):
+            try:
+                future.result()  # This will raise any exception that occurred during execution
+            except Exception as e:
+                logging.error(f"Error during postprocessing: {e}")
 
     logging.info("##### Processing completed. #####")
 
