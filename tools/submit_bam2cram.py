@@ -102,7 +102,7 @@ def postprocess_directory(processed_directory, processed_complete_workdir, proce
     process.wait()
     if process.returncode == 0:
         logging.info(f"Pipeline for directory {processed_directory} completed successfully.")
-        # Transfer created files from complete_workdir to webstore_dir
+        # Transfer created files from complete_workdir to webstore_dir in parallel
         with ThreadPoolExecutor() as executor:
             futures = [
             executor.submit(
@@ -122,11 +122,11 @@ def postprocess_directory(processed_directory, processed_complete_workdir, proce
                     logging.error(f"Error moving file: {e}")
         # Delete BAM files from the webstore processed_directory
         if not keep_bam:
-            for file_name in os.listdir(processed_directory):
+            for file_name in os.listdir(processed_directory): #get bam files in the webstore directory
                 if file_name.endswith(".bam"):
                     bam_file = os.path.join(processed_directory, file_name)
                     corresponding_cram = bam_file.replace(".bam", ".cram")
-                    if os.path.exists(corresponding_cram):
+                    if os.path.exists(corresponding_cram): # if the corresponding cram file exists, delete the bam file
                         os.remove(bam_file)
                         logging.info(f"Deleted BAM file: {bam_file}.")
                     else:
@@ -135,7 +135,7 @@ def postprocess_directory(processed_directory, processed_complete_workdir, proce
                 if file_name.endswith(".bai"):
                     bai_file = os.path.join(processed_directory, file_name)
                     corresponding_crai = bai_file.replace(".bam.bai", ".cram.crai")
-                    if os.path.exists(corresponding_crai):
+                    if os.path.exists(corresponding_crai): # if the corresponding crai file exists, delete the bai file
                         os.remove(bai_file)
                         logging.info(f"Deleted BAI file: {bai_file}.")
                     else:
@@ -193,7 +193,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
     for directory in directories_to_process:
         # Skip lock file creation during dry run
         if not dry_run:
-            # Create a hidden lock file in the directory
+            # Create a hidden lock file in the directory to avoid that two runs of the script process the same directory at the same time
             lock_file = os.path.join(directory, ".bam2cram.processing.lock")
             if os.path.exists(lock_file):
                 lock_age = time.time() - os.path.getmtime(lock_file)
@@ -225,7 +225,6 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
         )
         if dry_run:
             logging.info(f"Dry run: {snakemake_command}")
-            # os.system(snakemake_command)
             try:
                 result = subprocess.run(snakemake_command, shell=True, check=True, capture_output=True, text=True)
                 logging.info(f"Command output: {result.stdout}")
@@ -235,7 +234,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
                 logging.error(f"Dry run command failed with exit code {e.returncode}: {e.stderr}")
         else:
             logging.info(f"Executing Snakemake command: {snakemake_command}")
-            process = subprocess.Popen(snakemake_command, shell=True)
+            process = subprocess.Popen(snakemake_command, shell=True) # the snakemake pipeline for each directory is run in parallel and submitted as a job
             processes.append((directory, complete_workdir, process, lock_file))
             time.sleep(1)
 
@@ -252,7 +251,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
         logging.info("##### Dry run completed. #####")
         return
 
-    # Process results after actual execution in parallel
+    # Process results after snakemake execution in parallel
     with ThreadPoolExecutor() as executor:
         futures = [
             executor.submit(
