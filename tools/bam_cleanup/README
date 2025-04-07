@@ -8,11 +8,12 @@ Lock File Management: Prevents multiple instances of the script from processing 
 Dry Run Mode: Simulates the execution without making any changes to the filesystem.
 Customizable Options: Allows users to configure the webstore directory, working directory, age threshold, and more.
 Postprocessing: Automatically transfers CRAM/CRAI files to the webstore directory and optionally deletes BAM/BAI files.
+If cram files already exist, the script will skip the conversion for that directory, as well as skipping deleting the bam files.
 
 ### Usage
 
 ```bash
-> python tools/submit_bam2cram.py --help
+> python tools/bam_cleanup/submit_bam2cram.py --help
 Usage: submit_bam2cram.py [OPTIONS]
 
   Replace BAM files with CRAM files in webstore
@@ -38,7 +39,7 @@ Options:
 The defaults are already set, so it can be run like this:
 
 ```bash
-python submit_bam2cram.py
+python tools/bam_cleanup/submit_bam2cram.py
 ```
 
 ### Workflow
@@ -68,5 +69,5 @@ Logs are written to a file in the logs directory (replace_bam_w_cram.log) and al
 
 ### Output 
 
-Converted CRAM and CRAI files are saved in the same directory as the original BAM files.
+Converted CRAM and CRAI files are saved in the same directory as the original BAM files. Bam files are deleted if the --keep_bam option is not specified.  
 Logs are saved in the logs directory at the root of the repository.
