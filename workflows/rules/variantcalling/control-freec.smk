@@ -13,7 +13,6 @@ rule control_freec_pileup:
         pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
         """
-        mkdir -p {wildcards.stype}/control-freec/
         sambamba mpileup -t {threads} -o {output.pileup} {input.bam} --samtools -f {params.ref} -d 8000 -Q 0
         """
 

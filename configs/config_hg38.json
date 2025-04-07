@@ -14,7 +14,7 @@
         },
         "control-freec":
         {
-            "sing": "/medstore/Development/wgs_somatic_freec/singularities/control-freec-11.6/control-freec-11.6.sif"
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/control-freec-11.6.sif"
         },
         "msi":
         {
