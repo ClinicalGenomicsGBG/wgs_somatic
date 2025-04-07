@@ -1,32 +1,32 @@
 import os
-import re
 import json
 import subprocess
-import glob
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from slims.slims import Slims
 from slims.criteria import is_one_of, equals, conjunction, not_equals
-from slims.content import Status
 
 from tools.helpers import read_config
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
 
-# TODO: Change to point to a credentials file in the config
-# These are currently set in env/wgs_somatic_env/etc/conda/activate.d/set_slims_env.sh
+
 class slims_credentials:
-    url = os.environ.get('SLIMS_URL')
-    user = os.environ.get('SLIMS_USER')
-    password = os.environ.get('SLIMS_PASSWORD')
+    def __init__(self, slims_credentials_path):
+        config = read_config(slims_credentials_path)
+        self.url = config['slims']['url']
+        self.user = config['slims']['user']
+        self.password = config['slims']['password']
 
 
-instance = 'wgs-somatic_query'
-url = slims_credentials.url
-user = slims_credentials.user
-password = slims_credentials.password
-slims_connection = Slims(instance, url, user, password)
+config = read_config(WRAPPER_CONFIG_PATH)
+slims_credentials_path = config['slims_credentials_path']
+credentials = slims_credentials(slims_credentials_path)
 
+slims_connection = Slims('wgs-somatic_query',
+                         credentials.url,
+                         credentials.user,
+                         credentials.password)
 
 
 class SlimsSample:
@@ -70,8 +70,6 @@ class SlimsSample:
                 self._fastq = records[0]
 
         return self._fastq
-
-
 
 
 def translate_slims_info(record):
@@ -132,6 +130,7 @@ def get_sample_slims_info(Sctx, run_tag):
         Sctx.slims_info = {}
         return
     return translate_slims_info(SSample.dna)
+
 
 def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     """Find and download fqs from HCP to fastqdir on seqstore for run"""
@@ -337,6 +336,7 @@ def find_or_download_fastqs(sample_name, logger):
             logger.info(f'Found fastqs for {sample_name}_{tag}')
     return fastq_dict
 
+
 def get_pair_dict(Sctx, Rctx, logger):
     """
     If tumor and normal are sequenced in different runs - find the pairs. 
@@ -382,10 +382,3 @@ def get_pair_dict(Sctx, Rctx, logger):
             logger.warning(f'The sample {pair_slims_sample["content_id"]} does not have any assigned tumorNormalType, will not be used in pairing')
         pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
     return pair_dict
-
-
-# Need to do:
-# Paired T+N comes from different runs. Do nothing with the first sample - wait for its pair to run pipeline.
-# Tumor only. Flag in samplesheet? Info about this in slims?
-# Normal only. Flag in samplesheet? Info about this in slims?
-# Tumor has run as tumor only in a previous run. Normal comes in a later run and needs to be paired with its tumor and run as paired.

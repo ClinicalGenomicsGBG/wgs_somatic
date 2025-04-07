@@ -3,6 +3,31 @@
     "referencefai": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai",
     "singularities":
     {
+        "canvas":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/canvas_hg38_v1.40.0.1613.sif",
+            "dll": "/Canvas-1.40.0.1613+master_x64/Canvas.dll",
+            "tool_path": "/canvas/run_canvas.py",
+            "reference": "/canvasfiles/canvasfiles/",
+            "kmerfile": "/canvasfiles/canvasfiles/kmer.fa",
+            "filter13": "/canvasfiles/canvasfiles/filter13.bed"
+        },
+        "control-freec":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/control-freec-11.6.sif"
+        },
+        "msi":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/msisensor-pro-1.3.0.sif"
+        },
+        "pindel":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/pindel-0.2.5b8.simg"
+        },
+        "samtools":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/samtools-1.20.img"
+        },
         "sentieon":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v201911_250128.sif",
@@ -12,23 +37,6 @@
             "dbsnp": "/ncbi/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
             "dnascope_m": "/sentieon/SentieonDNAscopeModelBeta0.5.model",
             "tnscope_m": "/sentieon/Sentieon_GiAB_201711.model"
-        },
-        "canvas":
-        {
-            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/canvas_hg38_v1.40.0.1613.sif",
-            "dll": "/Canvas-1.40.0.1613+master_x64/Canvas.dll",
-            "tool_path": "/canvas/run_canvas.py",
-            "reference": "/canvasfiles/canvasfiles/",
-            "kmerfile": "/canvasfiles/canvasfiles/kmer.fa",
-            "filter13": "/canvasfiles/canvasfiles/filter13.bed"
-        }, 
-        "pindel":
-        {
-            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/pindel-0.2.5b8.simg"
-        },
-        "samtools":
-        {
-            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/samtools-1.20.img"
         }
     },
     "shadow": "copy-minimal",
@@ -98,6 +106,14 @@
         {
             "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
         },
+        "control-freec":
+        {
+            "ploidy": ["free","2"],
+            "chrLenFile": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai",
+            "chrFiles": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/",
+            "SNPfile": "/clinical/exec/wgs_somatic/dependencies/control_freec/common_dnSNP156_hg38.vcf.gz",
+            "cytoBandIdeo": "/clinical/exec/wgs_somatic/dependencies/control_freec/cytoBandIdeo.txt"
+        },
         "share_to_resultdir":
         {
         },
@@ -153,6 +169,11 @@
         {
             "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools",
             "effective_genome_size": 3049315783
+        },
+        "msi":
+        {
+            "msi_list": "/clinical/exec/wgs_somatic/dependencies/msi/GCA_000001405.15_GRCh38_no_alt_analysis_set.list",
+            "msi_bed": "/clinical/exec/wgs_somatic/dependencies/msi/SelectedMSIloci2019Sorted_hg38lift.bed"
         }
     }
 }

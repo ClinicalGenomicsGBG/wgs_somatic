@@ -69,6 +69,12 @@ manta_summary:
 pindel:
     threads: 4
 
+msi:
+    threads: 64
+
+msi_filtered:
+    threads: 64
+
 cutadapt:
     threads:  1
     excl: excl=1
@@ -90,3 +96,18 @@ index_vcf:
     name: "WGSsomatic_{rule}_{wildcards.file}"
     output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
     error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
+
+control_freec_pileup:
+    threads: 64
+
+control_freec_run:
+    threads: 4
+    name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
+    output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
+    error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
+
+control_freec_plot:
+    threads: 4
+    name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
+    output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
+    error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
