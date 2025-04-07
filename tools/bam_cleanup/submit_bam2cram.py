@@ -213,10 +213,11 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
 
         # Check if CRAM files already exist for all BAM files in the directory
         bam_files = [f for f in os.listdir(directory) if f.endswith(".bam")]
-        crams_exist = all(os.path.exists(os.path.join(directory, bam_file.replace(".bam", ".cram"))) for bam_file in bam_files)
+        crams_exist = any(os.path.exists(os.path.join(directory, bam_file.replace(".bam", ".cram"))) for bam_file in bam_files) # if there's at least one bam file with a corresponding cram file, set crams_exist to True
 
+        # if at least one bam file has a corresponding cram file, skip the directory and don't delete the bam files
         if crams_exist:
-            logging.info(f"CRAM files already exist for all BAM files in {directory}. Skipping processing. The existing bams will not be deleted.")
+            logging.info(f"CRAM files already exist for at least one of the BAM files in {directory}. Skipping processing. The existing bams will not be deleted.")
             continue  # Skip Snakemake execution for this directory
 
         random_id = uuid.uuid4().hex[:8]
@@ -245,7 +246,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
                 logging.error(f"Dry run command failed with exit code {e.returncode}: {e.stderr}")
         else:
             logging.info(f"Executing Snakemake command: {snakemake_command}")
-            process = subprocess.Popen(snakemake_command, shell=True) # the nakemake pipeline for each directory is run in parallel and submitted as a job
+            process = subprocess.Popen(snakemake_command, shell=True) # the snakemake pipeline for each directory is run in parallel and submitted as a job
             processes.append((directory, complete_workdir, process, lock_file))
             time.sleep(1)
 

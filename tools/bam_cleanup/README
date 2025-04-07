@@ -8,7 +8,7 @@ Lock File Management: Prevents multiple instances of the script from processing 
 Dry Run Mode: Simulates the execution without making any changes to the filesystem.
 Customizable Options: Allows users to configure the webstore directory, working directory, age threshold, and more.
 Postprocessing: Automatically transfers CRAM/CRAI files to the webstore directory and optionally deletes BAM/BAI files.
-If cram files already exist, the script will skip the conversion for that directory, as well as skipping deleting the bam files.
+If at least one cram file already exists, the script will skip the conversion for that directory, as well as skipping deleting the bam files.
 
 ### Usage
 
