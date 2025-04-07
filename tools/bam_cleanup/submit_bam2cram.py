@@ -1,9 +1,11 @@
 import os
+import sys
 import time
 import shutil
 import logging
 import subprocess
 import click
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from helpers import read_config
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -27,8 +29,8 @@ logging.basicConfig(
 @click.option('--age_threshold', type=int, default=50, help='Age threshold in days', show_default=True)
 @click.option('--dry_run', is_flag=True, help='Perform a dry run without making any changes', show_default=True)
 @click.option('--extra_snakemake_args', type=str, default="", help='Extra arguments for snakemake command', show_default=True)
-@click.option('--launcher_config', type=click.Path(exists=True), required=True, default=os.path.join(os.path.dirname(__file__), "../configs/launcher_config.json"), help='Path to the launcher config file', show_default=True)
-@click.option('--snakemake_config', type=click.Path(exists=True), required=True, default=os.path.join(os.path.dirname(__file__), "../configs/cluster.yaml"), help='Path to the snakemake config file', show_default=True)
+@click.option('--launcher_config', type=click.Path(exists=True), required=True, default=os.path.join(os.path.dirname(__file__), "../../configs/launcher_config.json"), help='Path to the launcher config file', show_default=True)
+@click.option('--snakemake_config', type=click.Path(exists=True), required=True, default=os.path.join(os.path.dirname(__file__), "../../configs/cluster.yaml"), help='Path to the snakemake config file', show_default=True)
 @click.option('--keep_bam', is_flag=True, help='Do not delete BAM files after conversion', show_default=True)
 def cli(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, launcher_config, snakemake_config, keep_bam):
     main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, launcher_config, snakemake_config, keep_bam)
@@ -78,14 +80,14 @@ def setup_snakemake(dir_to_process, workdir, launcher_config, snakemake_config, 
     cluster_args_str = " ".join(cluster_args)
 
     snakemake_command = (
-        "snakemake -s tools/convert_bam_to_cram.smk"
+        "snakemake -s tools/bam_cleanup/convert_bam_to_cram.smk"
         f" --configfile {snakemake_config}"
         f" --use-singularity --singularity-args \"{singularity_args}\" "
         " --cluster-config configs/cluster.yaml"
         f" --cluster \"{cluster_args_str}\""
         " --jobs 999"
         " --latency-wait 60"
-        f" --config dir_to_process={dir_to_process}"
+        f" --config dir_to_process={dir_to_process} launcher_config_path={launcher_config}"
         f" --directory {workdir} "
         f"{extra_snakemake_args if extra_snakemake_args else ''}"
     )
@@ -208,6 +210,14 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
             with open(lock_file, "w") as f:
                 f.write(f"Processing started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
+        # Check if CRAM files already exist for all BAM files in the directory
+        bam_files = [f for f in os.listdir(directory) if f.endswith(".bam")]
+        crams_exist = all(os.path.exists(os.path.join(directory, bam_file.replace(".bam", ".cram"))) for bam_file in bam_files)
+
+        if crams_exist:
+            logging.info(f"CRAM files already exist for all BAM files in {directory}. Skipping processing. The existing bams will not be deleted.")
+            continue  # Skip Snakemake execution for this directory
+
         random_id = uuid.uuid4().hex[:8]
         complete_workdir = os.path.join(workdir, random_id) # Create a unique workdir for each snakemake run/webstore directory to be processed
 
@@ -234,7 +244,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
                 logging.error(f"Dry run command failed with exit code {e.returncode}: {e.stderr}")
         else:
             logging.info(f"Executing Snakemake command: {snakemake_command}")
-            process = subprocess.Popen(snakemake_command, shell=True) # the snakemake pipeline for each directory is run in parallel and submitted as a job
+            process = subprocess.Popen(snakemake_command, shell=True) # the nakemake pipeline for each directory is run in parallel and submitted as a job
             processes.append((directory, complete_workdir, process, lock_file))
             time.sleep(1)
 

@@ -1,24 +1,25 @@
 import sys
-sys.path.append("..") 
+# print(sys.path)
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from os.path import join
 import glob
 import time
 from pathlib import Path
 import yaml
+ROOT_DIR = os.path.join(workflow.basedir, "..")
+sys.path.append(ROOT_DIR)
 from helpers import read_config
 import os
-# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# from definitions import ROOT_DIR
-# ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ROOT_DIR = os.path.join(workflow.basedir, "..")
-config_path = os.path.join(ROOT_DIR, 'configs', 'launcher_config.json')
-launcher_config = read_config(config_path)
-# print(launcher_config)
-pipeconfig = read_config(os.path.join(ROOT_DIR, "configs",launcher_config["hg38conf"]))  # In launch_snakemake.py the pipeconfig is adjusted to the genome (hg19/hg38)
-clusterconf = read_config(os.path.join(ROOT_DIR, "configs",launcher_config["clusterconf"]))
+# config_path = os.path.join(ROOT_DIR, 'configs', 'launcher_config.json')
+launcher_config = read_config(config.get("launcher_config_path"))
+launcher_config_parentdir = os.path.dirname(config.get("launcher_config_path"))
+
+pipeconfig = read_config(os.path.join(launcher_config_parentdir, launcher_config["hg38conf"]))  # In launch_snakemake.py the pipeconfig is adjusted to the genome (hg19/hg38)
+# clusterconf = read_config(os.path.join(launcher_config_parentdir, launcher_config["clusterconf"]))
 
 dir_with_bams = config.get("dir_to_process")
+print(dir_with_bams)
 
 sname, = glob_wildcards(f"{dir_with_bams}/{{sname}}.bam") # variable is called sname and not something more descriptive so that the default settings in cluster.yaml apply
 rule all:
@@ -33,7 +34,7 @@ rule cram_crai:
     singularity:
         pipeconfig["singularities"]["samtools"]["sing"]
     params:
-        threads = clusterconf["cram"]["threads"],
+        threads = config["cram"]["threads"], # config is passed as snakemake argument
         referencegenome = pipeconfig["referencegenome"]
     output:
         cram = "{sname}.cram",
