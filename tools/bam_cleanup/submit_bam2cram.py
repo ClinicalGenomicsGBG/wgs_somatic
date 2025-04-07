@@ -209,6 +209,7 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
             # Create the lock file
             with open(lock_file, "w") as f:
                 f.write(f"Processing started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+            os.chmod(lock_file, 0o666)  # Set permissions so that everyone can read and remove the file
 
         # Check if CRAM files already exist for all BAM files in the directory
         bam_files = [f for f in os.listdir(directory) if f.endswith(".bam")]
