@@ -12,6 +12,10 @@
             "kmerfile": "/canvasfiles/canvasfiles/kmer.fa",
             "filter13": "/canvasfiles/canvasfiles/filter13.bed"
         },
+        "control-freec":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/control-freec-11.6.sif"
+        },
         "msi":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/msisensor-pro-1.3.0.sif"
@@ -101,6 +105,14 @@
         "canvas":
         {
             "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
+        },
+        "control-freec":
+        {
+            "ploidy": ["free","2"],
+            "chrLenFile": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai",
+            "chrFiles": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/",
+            "SNPfile": "/clinical/exec/wgs_somatic/dependencies/control_freec/common_dnSNP156_hg38.vcf.gz",
+            "cytoBandIdeo": "/clinical/exec/wgs_somatic/dependencies/control_freec/cytoBandIdeo.txt"
         },
         "share_to_resultdir":
         {
