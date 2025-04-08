@@ -63,7 +63,8 @@ def setup_snakemake(dir_to_process, workdir, launcher_config, snakemake_config, 
         "/seqstore",
         "/apps",
         "/clinical",
-        "/oldseqstore"
+        "/oldseqstore",
+        "/webstore"
     ]
     singularity_args = construct_singularity_args(binddirs, additional_binds)
   
@@ -172,15 +173,14 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
     for root_webstore, _, _ in os.walk(webstore_dir):
         logging.info(f"Scanning directory: {root_webstore}")
         for subdir, _, files in os.walk(root_webstore):
-            if any(file.endswith(".bam") for file in files): # if a bam file is found in the directory, add it to the list of directories to process
-                logging.info(f"Found BAM files in directory: {subdir}")
-                directories_to_process.append(subdir)
+            bam_files = [os.path.join(subdir, file) for file in files if file.endswith(".bam")]
+            if bam_files:  # If BAM files are found in the directory
+                # Check if all BAM files are older than the age threshold, if yes, this directory will be processed
+                if all(is_older_than(bam_file, age_threshold) for bam_file in bam_files):
+                    directories_to_process.append(subdir)
+
     directories_to_process = list(set(directories_to_process))  # Remove duplicates
-    
-    # Filter directories based on age threshold
-    directories_to_process = [
-        d for d in directories_to_process if is_older_than(d, age_threshold)
-    ]
+
     if not directories_to_process:
         logging.info("No new directories to process.")
         return
