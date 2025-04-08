@@ -19,7 +19,6 @@ pipeconfig = read_config(os.path.join(launcher_config_parentdir, launcher_config
 # clusterconf = read_config(os.path.join(launcher_config_parentdir, launcher_config["clusterconf"]))
 
 dir_with_bams = config.get("dir_to_process")
-print(dir_with_bams)
 
 sname, = glob_wildcards(f"{dir_with_bams}/{{sname}}.bam") # variable is called sname and not something more descriptive so that the default settings in cluster.yaml apply
 rule all:
