@@ -175,7 +175,28 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
         for subdir, _, files in os.walk(root_webstore):
             bam_files = [os.path.join(subdir, file) for file in files if file.endswith(".bam")]
             if bam_files:  # If BAM files are found in the directory
-                # Check if all BAM files are older than the age threshold, if yes, this directory will be processed
+                lock_file = os.path.join(subdir, ".bam2cram.processing.lock")
+                
+                # Check if the lock file exists and is not stale
+                if os.path.exists(lock_file):
+                    lock_age = time.time() - os.path.getmtime(lock_file)
+                    if lock_age > 24 * 60 * 60:  # 24 hours
+                        logging.warning(f"Stale lock file found for {subdir}. Removing it.")
+                        os.remove(lock_file)
+                    else:
+                        logging.info(f"Skipping directory {subdir} because it is already being processed.")
+                        continue
+                
+                # Check if CRAM files already exist for all BAM files in the directory
+                crams_exist = any(
+                    os.path.exists(os.path.join(subdir, bam_file.replace(".bam", ".cram")))
+                    for bam_file in bam_files
+                )
+                if crams_exist:
+                    logging.info(f"CRAM files already exist for at least one of the BAM files in {subdir}. Skipping processing. The existing BAMs will not be deleted.")
+                    continue  # Skip processing for this directory
+                
+                # Check if all BAM files are older than the age threshold
                 if all(is_older_than(bam_file, age_threshold) for bam_file in bam_files):
                     directories_to_process.append(subdir)
 
@@ -197,28 +218,11 @@ def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, la
         if not dry_run:
             # Create a hidden lock file in the directory to avoid that two runs of the script process the same directory at the same time
             lock_file = os.path.join(directory, ".bam2cram.processing.lock")
-            if os.path.exists(lock_file):
-                lock_age = time.time() - os.path.getmtime(lock_file)
-                if lock_age > 24 * 60 * 60:  # 24 hours
-                    logging.warning(f"Stale lock file found for {directory}. Removing it.")
-                    os.remove(lock_file)
-                else:
-                    logging.info(f"Skipping directory {directory} because it is already being processed.")
-                    continue
 
             # Create the lock file
             with open(lock_file, "w") as f:
                 f.write(f"Processing started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
             os.chmod(lock_file, 0o666)  # Set permissions so that everyone can read and remove the file
-
-        # Check if CRAM files already exist for all BAM files in the directory
-        bam_files = [f for f in os.listdir(directory) if f.endswith(".bam")]
-        crams_exist = any(os.path.exists(os.path.join(directory, bam_file.replace(".bam", ".cram"))) for bam_file in bam_files) # if there's at least one bam file with a corresponding cram file, set crams_exist to True
-
-        # if at least one bam file has a corresponding cram file, skip the directory and don't delete the bam files
-        if crams_exist:
-            logging.info(f"CRAM files already exist for at least one of the BAM files in {directory}. Skipping processing. The existing bams will not be deleted.")
-            continue  # Skip Snakemake execution for this directory
 
         random_id = uuid.uuid4().hex[:8]
         complete_workdir = os.path.join(workdir, random_id) # Create a unique workdir for each snakemake run/webstore directory to be processed
