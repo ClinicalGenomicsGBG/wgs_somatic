@@ -1,0 +1,73 @@
+# Complimentary scripts to wgs_somatic pipeline
+## Clean up webstore directory - replace bams with crams
+The `submit_bam2cram.py` script automates the process of replacing BAM files with CRAM files in a webstore directory. It uses Snakemake (`convert_bam_to_cram.smk`) to perform the conversion of bam to cram and create the index .crai files. It includes features like parallel processing, lock file management, and optional BAM file retention.  
+
+### Features
+Parallel Processing: The script processes multiple directories in parallel, improving efficiency.
+Lock File Management: Prevents multiple instances of the script from processing the same directory simultaneously.
+Dry Run Mode: Simulates the execution without making any changes to the filesystem.
+Customizable Options: Allows users to configure the webstore directory, working directory, age threshold, and more.
+Postprocessing: Automatically transfers CRAM/CRAI files to the webstore directory and optionally deletes BAM/BAI files.
+If at least one cram file already exists, the script will skip the conversion for that directory, as well as skipping deleting the bam files.
+
+### Usage
+
+```bash
+> python tools/bam_cleanup/submit_bam2cram.py --help
+Usage: submit_bam2cram.py [OPTIONS]
+
+  Replace BAM files with CRAM files in webstore
+
+Options:
+  --webstore_dir PATH          Base webstore directory  [default:
+                               /webstore/clinical/routine/wgs_somatic/current;
+                               required]
+  --workdir PATH               Base execution directory where snakemake will
+                               create cram and crai  [default:
+                               /clinical/data/wgs_somatic/bam_cleanup_workdir;
+                               required]
+  --age_threshold INTEGER      Age threshold in days  [default: 50]
+  --dry_run                    Perform a dry run without making any changes
+  --extra_snakemake_args TEXT  Extra arguments for snakemake command
+  --launcher_config PATH       Path to the launcher config file  [default: <automatically detected path based on wgs_somatic repo location>/wgs_somatic/tools/
+                               ../configs/launcher_config.json; required]
+  --snakemake_config PATH      Path to the snakemake config file  [default: <automatically detected path based on wgs_somatic repo location>/wgs_somatic/tools
+                               /../configs/cluster.yaml; required]
+  --keep_bam                   Do not delete BAM files after conv
+```
+
+The defaults are already set, so it can be run like this:
+
+```bash
+python tools/bam_cleanup/submit_bam2cram.py
+```
+
+### Workflow
+1. Directory Scanning:
+
+The script scans the specified webstore_dir for directories containing BAM files.
+Directories are filtered based on the age_threshold.
+
+2. Lock File Creation:
+
+A .bam2cram.processing.lock file is created in each directory to prevent duplicate processing.
+Stale lock files older than 24 hours are automatically removed.
+
+3. Snakemake Execution:
+
+The script submits a Snakemake job for each directory to convert BAM files to CRAM format.
+
+4. Postprocessing:
+
+CRAM/CRAI files are transferred to the webstore directory.
+BAM/BAI files are optionally deleted if --keep_bam is not specified.
+Temporary working directories are cleaned up.
+
+5. Logging:
+
+Logs are written to a file in the logs directory (replace_bam_w_cram.log) and also displayed in the console.
+
+### Output 
+
+Converted CRAM and CRAI files are saved in the same directory as the original BAM files. Bam files are deleted if the --keep_bam option is not specified.  
+Logs are saved in the logs directory at the root of the repository.
