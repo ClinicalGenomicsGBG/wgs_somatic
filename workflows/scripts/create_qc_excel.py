@@ -353,6 +353,70 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         create_excel(statsdict, output, normalname, sex=calculated_sex)
         add_insilico_stats(insilicodir, output)
 
+def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', output='', tmb = ''):
+
+    statsdict = {}
+    if tumorcov:
+        tumorcovfile = os.path.basename(tumorcov)
+        tumorname = tumorcovfile.replace("_WGScov.tsv", "")
+        statsdict = extract_stats(tumorcov, "coverage",  "tumor", statsdict)
+        statsdict = extract_stats(tumordedup, "dedup",  "tumor", statsdict)
+        tmb_dict = read_tmb_file(tmb)
+        if normalcov:
+            calculated_sex = calc_sex(normalcov, ycov)
+            match_dict = determine_match(normalvcf, tumorvcf, 400000)
+        else:
+            calculated_sex = calc_sex(tumorcov, ycov)
+            
+    if normalcov:
+        normalcovfile = os.path.basename(normalcov)
+        normalname = normalcovfile.replace("_WGScov.tsv", "")
+        statsdict = extract_stats(normalcov, "coverage", "normal", statsdict)
+        statsdict = extract_stats(normaldedup, "dedup", "normal", statsdict)
+        if not tumorcov:
+            calculated_sex = calc_sex(normalcov, ycov)
+
+    # Prepare data for tumor and normal rows
+    rows = []
+
+    if tumorcov:
+        tumor_row = {
+            "Type": "Tumor",
+            "SampleID": tumorname,
+            "Sex": calculated_sex if normalcov else "N/A",
+            "Coverage 10x": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "PCT_10X"), "N/A"),
+            "Coverage 30x": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "PCT_30X"), "N/A"),
+            "Mean coverage": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "MEAN_COVERAGE"), "N/A"),
+            "SD coverage": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "SD_COVERAGE"), "N/A"),
+            "Match fraction": match_dict["match_fraction"] if normalcov else "N/A",
+            "Match status": match_dict["match_status"] if normalcov else "N/A",
+            "TMB": tmb_dict.get("TMB", "N/A"),
+        }
+        rows.append(tumor_row)
+
+    if normalcov:
+        normal_row = {
+            "Type": "Normal",
+            "SampleID": normalname,
+            "Sex": calculated_sex,
+            "Coverage 10x": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "PCT_10X"), "N/A"),
+            "Coverage 30x": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "PCT_30X"), "N/A"),
+            "Mean coverage": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "MEAN_COVERAGE"), "N/A"),
+            "SD coverage": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "SD_COVERAGE"), "N/A"),
+            "Match fraction": match_dict["match_fraction"] if tumorcov else "N/A",
+            "Match status": match_dict["match_status"] if tumorcov else "N/A",
+            "TMB": "N/A",
+        }
+        rows.append(normal_row)
+
+    if not output.endswith(".xlsx"):
+        output = f"{output}.xlsx"
+    # Create a DataFrame and save to Excel
+    df = pd.DataFrame(rows, columns=["Type","SampleID", "Sex", "Coverage 10x", "Coverage 30x", "Mean coverage", "SD coverage","Match fraction", "Match status", "TMB"])
+    df.to_excel(output, index=False)
+    # Save to TSV
+    tsv_output = output.replace(".xlsx", ".tsv")
+    df.to_csv(tsv_output, sep="\t", index=False)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
