@@ -27,6 +27,7 @@ rule excel_qc:
         tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid) if tumorid else [],
         msi_filtered = expand("{stype}/msi/{sname}_msi_filtered.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]) if tumorid and normalid else [],
         msi = expand("{stype}/msi/{sname}_msi.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]) if tumorid and normalid else [],
+        tumor_info_files = expand("{stype}/control-freec_{ploidy}/{sname}.pileup_info.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid, ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]) if tumorid else [],
     output:
         # temp("qc_report/{tumorname}_qc_stats.xlsx") if tumorid else temp("qc_report/{normalname}_qc_stats.xlsx")
         excel_qc_output
@@ -50,6 +51,7 @@ rule excel_qc:
             msi_red=f"{input.msi_filtered}" if input.msi_filtered else "",
             output=f"{output}",
             insilicodir=f"{insilicodir}" if insilicodir else "",
+            tumor_info_files=[f"{file}" for file in input.tumor_info_files]
         )
 
 rule qcstats_to_aggregate:
