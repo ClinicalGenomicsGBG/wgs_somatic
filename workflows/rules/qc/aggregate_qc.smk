@@ -14,7 +14,7 @@ else:
 
 
 rule excel_qc:
-    input:
+    input: # the empty input is given as an empty list and not string because snakemake interprets "" as a missing file, instead of "no input"
         tumorcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[tumorname]["stype"], sname=tumorid) if tumorid else [],
         ycov = expand("{stype}/reports/{sname}_Ycov.tsv", stype=sampleconfig[normalname]["stype"], sname=(normalid if normalid else tumorid)),
         normalcov = expand("{stype}/reports/{sname}_WGScov.tsv", stype=sampleconfig[normalname]["stype"], sname=normalid) if normalid else [],
@@ -29,7 +29,6 @@ rule excel_qc:
         msi = expand("{stype}/msi/{sname}_msi.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]) if tumorid and normalid else [],
         tumor_info_files = expand("{stype}/control-freec_{ploidy}/{sname}.pileup_info.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid, ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]) if tumorid else [],
     output:
-        # temp("qc_report/{tumorname}_qc_stats.xlsx") if tumorid else temp("qc_report/{normalname}_qc_stats.xlsx")
         excel_qc_output
     run:
         # Determine the insilico directory if applicable
