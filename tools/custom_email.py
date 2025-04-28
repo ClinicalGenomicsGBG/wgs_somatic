@@ -54,13 +54,13 @@ CGG Cancer
 def error_email(run_name, ok_samples, bad_samples):
     """Send an email about which samples have failed and which samples have succeeded"""
 
-    subject = f'WGS Somatic end mail {run_name}'
+    subject = f'Crashed WGS Somatic {run_name}'
 
-    body = f"""WGS somatic has finished successfully for the following samples in run {run_name}:\n
-{new_line.join(ok_samples)}\n
-The following samples have not finished correctly:\n
+    body = f"""WGS somatic failed for the following samples in run {run_name}:\n
 {new_line.join(bad_samples)}\n
-Errors concerning these samples will be investigated.\n
+The following samples did finish correctly:\n
+{new_line.join(ok_samples)}\n
+Errors concerning the above samples will be investigated.\n
 Best regards,
 CGG Cancer
 """
