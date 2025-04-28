@@ -37,19 +37,19 @@ rule excel_qc:
 
         # Call create_excel_main with all inputs
         create_excel_main(
-            tumorcov=input.tumorcov if input.tumorcov else "",
-            ycov=input.ycov if input.ycov else "",
-            normalcov=input.normalcov if input.normalcov else "",
-            tumordedup=input.tumordedup if input.tumordedup else "",
-            normaldedup=input.normaldedup if input.normaldedup else "",
-            tumorvcf=input.tumorvcf if input.tumorvcf else "",
-            normalvcf=input.normalvcf if input.normalvcf else "",
-            canvasvcf=input.canvasvcf if input.canvasvcf else "",
-            tmb=input.tmb if input.tmb else "",
-            msi=input.msi if input.msi else "",
-            msi_red=input.msi_filtered if input.msi_filtered else "",
-            output=output,
-            insilicodir=insilicodir if insilicodir else "",
+            tumorcov=f"{input.tumorcov}" if input.tumorcov else "",
+            ycov=f"{input.ycov}" if input.ycov else "",
+            normalcov=f"{input.normalcov}" if input.normalcov else "",
+            tumordedup=f"{input.tumordedup}" if input.tumordedup else "",
+            normaldedup=f"{input.normaldedup}" if input.normaldedup else "",
+            tumorvcf=f"{input.tumorvcf}" if input.tumorvcf else "",
+            normalvcf=f"{input.normalvcf}" if input.normalvcf else "",
+            canvasvcf=f"{input.canvasvcf}" if input.canvasvcf else "",
+            tmb=f"{input.tmb}" if input.tmb else "",
+            msi=f"{input.msi}" if input.msi else "",
+            msi_red=f"{input.msi_filtered}" if input.msi_filtered else "",
+            output=f"{output}",
+            insilicodir=f"{insilicodir}" if insilicodir else "",
             tumor_info_files=[file for file in input.tumor_info_files]
         )
 
@@ -69,13 +69,13 @@ rule qcstats_wgs_admin:
         qcstats_wgs_admin_output
     run: 
         create_qc_toaggregate(
-        tumorcov=input.tumorcov if input.tumorcov else "",
-        ycov=input.ycov if input.ycov else "",
-        normalcov=input.normalcov if input.normalcov else "",
-        tumordedup=input.tumordedup if input.tumordedup else "",
-        normaldedup=input.normaldedup if input.normaldedup else "",
-        tumorvcf=input.tumorvcf if input.tumorvcf else "",
-        normalvcf=input.normalvcf if input.normalvcf else "",
-        tmb=input.tmb if input.tmb else "",
-        output=output
+        tumorcov=f"{input.tumorcov}" if input.tumorcov else "",
+        ycov=f"{input.ycov}" if input.ycov else "",
+        normalcov=f"{input.normalcov}" if input.normalcov else "",
+        tumordedup=f"{input.tumordedup}" if input.tumordedup else "",
+        normaldedup=f"{input.normaldedup}" if input.normaldedup else "",
+        tumorvcf=f"{input.tumorvcf}" if input.tumorvcf else "",
+        normalvcf=f"{input.normalvcf}" if input.normalvcf else "",
+        tmb=f"{input.tmb}" if input.tmb else "",
+        output=f"{output}"
         )
