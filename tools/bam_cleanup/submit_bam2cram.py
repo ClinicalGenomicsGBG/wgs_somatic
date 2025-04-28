@@ -10,18 +10,6 @@ from helpers import read_config
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Configure logging to write to a file
-log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs")
-os.makedirs(log_dir, exist_ok=True)  # Ensure the logs directory exists
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(os.path.join(log_dir, "replace_bam_w_cram.log")),  # Log file name
-        logging.StreamHandler()  # Also log to console
-    ]
-)
 
 @click.command(help="Replace BAM files with CRAM files in webstore")
 @click.option('--webstore_dir', type=click.Path(exists=True), required=True, default="/webstore/clinical/routine/wgs_somatic/current", help='Base webstore directory', show_default=True)
@@ -34,6 +22,19 @@ logging.basicConfig(
 @click.option('--keep_bam', is_flag=True, help='Do not delete BAM files after conversion', show_default=True)
 def cli(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, launcher_config, snakemake_config, keep_bam):
     main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, launcher_config, snakemake_config, keep_bam)
+
+
+def setup_logging(log_dir):
+    os.makedirs(log_dir, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.FileHandler(os.path.join(log_dir, "replace_bam_w_cram.log")),
+            logging.StreamHandler()
+        ]
+    )
+
 
 def is_older_than(file_path, age_threshold):
     """Check if a file is older than the specified number of days."""
@@ -162,6 +163,13 @@ def postprocess_directory(processed_directory, processed_complete_workdir, proce
 
 def main(webstore_dir, workdir, age_threshold, dry_run, extra_snakemake_args, launcher_config, snakemake_config, keep_bam):
     """Scan directories and process specific subdirectories."""
+
+    # Load the launcher configuration
+    config = read_config(launcher_config)
+
+    # Set up logging
+    log_dir = config.get("logdir", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs"))
+    setup_logging(log_dir)
 
     if dry_run:
         logging.info("\n##### Dry run mode: No changes will be made. #####")
