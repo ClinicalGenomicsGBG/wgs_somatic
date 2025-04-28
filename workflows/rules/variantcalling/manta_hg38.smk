@@ -62,7 +62,7 @@ else:
             if not os.path.isfile(f"{wildcards.stype}/manta/results/variants/tumorSV.vcf"):
                 shell("gunzip {wildcards.stype}/manta/results/variants/tumorSV.vcf.gz")
             filter_vcf(
-                f"{wildcards.stype}/manta/results/variants/somaticSV.vcf",
+                f"{wildcards.stype}/manta/results/variants/tumorSV.vcf",
                 f"{output.sv_vcf}",
                 tumor_name=tumorname,
                 min_tumor_support=3
