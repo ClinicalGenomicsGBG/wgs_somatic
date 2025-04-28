@@ -109,9 +109,25 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
         s3 = get_sg_s3_connector(credentials_path, logger, connect_timeout, read_timeout, retries)
         s3_bucket = s3.Bucket(bucket)
 
+        # Check if the file exists
+        try:
+            s3.meta.client.head_object(Bucket=bucket, Key=remote_path)
+            logger.info(f"File {remote_path} exists in the bucket.")
+        except Exception as e:
+            logger.error(f"File {remote_path} does not exist in bucket {bucket}: {e}")
+            raise FileNotFoundError(f"File {remote_path} does not exist in bucket {bucket}")
+
         # Download the file
-        s3_bucket.download_file(remote_path, local_path)
-        logger.debug("File downloaded successfully.")
+        try:
+            s3_bucket.download_file(remote_path, local_path)
+            logger.debug("File downloaded successfully.")
+        except Exception as e:
+            logger.error(f"Error downloading file {remote_path} from bucket {bucket}: {e}")
+            raise
+
+    except FileNotFoundError as e:
+        # Propagate the FileNotFoundError explicitly
+        raise e
 
     except Exception as e:
         logger.error(f"An unexpected error occurred while downloading file: {e}")
@@ -131,10 +147,12 @@ def main():
 
     try:
         download_file(args.local_path, args.remote_path, args.credentials_path, args.bucket, args.connect_timeout, args.read_timeout, args.retries)
+    except FileNotFoundError as e:
+        print(f"File not found: {e}")
+        sys.exit(1)  # Exit with a non-zero code for file not found
     except Exception as e:
         print(f"An error occurred: {e}")
-        raise
-
+        sys.exit(2)  # Exit with a different non-zero code for other errors
 
 if __name__ == '__main__':
     try:

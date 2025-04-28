@@ -24,10 +24,18 @@ hcp_download_dir: '/clinical/data/wgs_somatic/hcp_downloads'
 
 hcp:
   download_script: 'tools/hcp_download.py'
+  download_locations:
+    sg1_illumina:
+      bucket: 'illumina'
+      credentials_file: '/clinical/exec/wgs_somatic/dependencies/credentials/sg1.json'
+    sg1_data:
+      bucket: 'data'
+      credentials_file: '/clinical/exec/wgs_somatic/dependencies/credentials/sg1.json'
+    hcp_data:
+      bucket: 'data'
+      credentials_file: '/clinical/exec/wgs_somatic/dependencies/credentials/gmc-legacy_credentials.json'
   queue: 'routine.q'
   threads: 20
-  credentials_file: '/clinical/exec/wgs_somatic/dependencies/credentials/gmc-legacy_credentials.json'
-  bucket: 'data'  # bucket to default to if not found in slims
   peta_script: 'tools/run_petasuite.sh'
   spring_script: 'tools/run_spring.sh' 
   connect_timeout: 10  # Optional arguments for hcp_download.py
