@@ -192,13 +192,21 @@ def download_hcp_fq(remote_key, logger, hcp_runtag):
                 logger.error(stderr.decode('utf-8'))
 
             if process.returncode == 0:
-                # Verify the file exists after download
-                if os.path.exists(hcp_path):
-                    logger.info(f"Successfully downloaded {os.path.basename(remote_key)} from {url}")
-                    return hcp_path
-                else:
-                    logger.error(f"Download succeeded but file not found at {hcp_path}")
-                    raise RuntimeError(f"File not found after download: {hcp_path}")
+                # In rare cases, there may be a delay post-download before the file appears in the directory
+                start_time = time.time()
+                while not os.path.exists(hcp_path):
+                    logger.info(f'Waiting for {hcp_path} to be downloaded...')
+                    time.sleep(10)  # Wait for 10 seconds before checking again
+
+                    # The delay should not be more than a minute
+                    elapsed_time = time.time() - start_time
+                    if elapsed_time > 60:
+                        logger.error(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
+                        raise RuntimeError(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
+
+                logger.info(f"Successfully downloaded {os.path.basename(remote_key)} from {location_name}")
+                return hcp_path
+
             else:
                 logger.warning(f"Failed to download from {location_name}")
 
