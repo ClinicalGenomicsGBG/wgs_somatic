@@ -153,7 +153,7 @@ def download_hcp_fq(remote_key, logger, hcp_runtag):
         try:
             bucket = location_details["bucket"]  # Bucket is specified in the config
 
-            logger.info(f"Trying to download from {location_name})")
+            logger.info(f"Trying to download from {location_name}")
 
             # Construct the download command
             qrsh = [
