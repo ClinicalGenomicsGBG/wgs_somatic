@@ -132,7 +132,7 @@ def get_sample_slims_info(Sctx, run_tag):
     return translate_slims_info(SSample.dna)
 
 
-def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
+def download_hcp_fq(remote_key, logger, hcp_runtag):
     """Find and download fqs from HCP to fastqdir on seqstore for run"""
     config = read_config(WRAPPER_CONFIG_PATH)
 
@@ -279,8 +279,8 @@ def link_fastqs_to_outputdir(fastq_dict, outputdir, logger):
     return fastq_dir
 
 
-def download_and_decompress(bucket, remote_key, logger, hcp_runtag):
-    downloaded_fq = download_hcp_fq(bucket, remote_key, logger, hcp_runtag)
+def download_and_decompress(remote_key, logger, hcp_runtag):
+    downloaded_fq = download_hcp_fq(remote_key, logger, hcp_runtag)
     decompressed_fq = decompress_downloaded_fastq(downloaded_fq, logger)
     return decompressed_fq
 
@@ -317,14 +317,13 @@ def find_or_download_fastqs(sample_name, logger):
                     else:
                         logger.info(f'Fastq {fq_path} does not exist. Need to download from HCP')
                         json_backup = json.loads(fqSSample.fastq.cntn_cstm_demuxerBackupSampleResult.value)
-                        bucket = json_backup['bucket']
                         remote_keys = json_backup['remote_keys']
                         fq_basename_fasterq = os.path.basename(fq_path).replace('.fastq.gz', '.fasterq')
                         fq_basename_spring = os.path.basename(fq_path).replace('.fastq.gz', '.spring')
                         matching_key = [key for key in remote_keys if fq_basename_fasterq in key or fq_basename_spring in key]
                         if matching_key:
                             fq_matched = True
-                            future = executor.submit(download_and_decompress, bucket, matching_key[0], logger, tag)
+                            future = executor.submit(download_and_decompress, matching_key[0], logger, tag)
                             future_to_fq[future] = f'{sample_name}_{tag}'
                         else:
                             logger.info(f'No matching remote keys found for {fq_basename_fasterq} or {fq_basename_spring}')
@@ -332,7 +331,7 @@ def find_or_download_fastqs(sample_name, logger):
                     logger.info(f"None of the remote fastqs for {sample_name}_{tag} were matched")
                     logger.info(f"Downloading all remote fastqs for {sample_name}_{tag}")
                     for remote_key in remote_keys:
-                        future = executor.submit(download_and_decompress, bucket, remote_key, logger, tag)
+                        future = executor.submit(download_and_decompress, remote_key, logger, tag)
                         future_to_fq[future] = f'{sample_name}_{tag}'
             for future in as_completed(future_to_fq):
                 samplename_tag = future_to_fq[future]
