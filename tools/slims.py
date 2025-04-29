@@ -136,67 +136,87 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     """Find and download fqs from HCP to fastqdir on seqstore for run"""
     config = read_config(WRAPPER_CONFIG_PATH)
 
-    queue = config["hcp"]["queue"]
-    download_script = os.path.abspath(config["hcp"]["download_script"])
-    hcp_downloads = config["hcp_download_dir"]
-    credentials_file = config['hcp']['credentials_file']
-    if not bucket:
-        bucket = config['hcp']['bucket']
-    connect_timeout = config["hcp"]["connect_timeout"]
-    read_timeout = config["hcp"]["read_timeout"]
-    retries = config["hcp"]["retries"]
+    # Read all download locations from the config
+    download_locations = config["hcp"]["download_locations"]
 
-    hcp_download_runpath = f'{hcp_downloads}/{hcp_runtag}' # This is the directory where the downloaded files will be stored
-    hcp_path = f'{hcp_download_runpath}/{os.path.basename(remote_key)}' # This is the complete path of the downloaded file
+    hcp_download_runpath = f'{config["hcp_download_dir"]}/{hcp_runtag}'  # Directory for downloaded files
+    hcp_path = f'{hcp_download_runpath}/{os.path.basename(remote_key)}'  # Full path of the downloaded file
 
-    if not os.path.exists(hcp_path):
-
-        os.makedirs(hcp_download_runpath, exist_ok=True)
-
-        # -cwd and -V make sure the script runs in the current directory and inherits the environment variables
-        qrsh = [
-            "qrsh",
-            "-q", queue,
-            "-N", f"hcp_download_{os.path.basename(remote_key)}",
-            "-pe", "mpi", "1",
-            "-now", "no",
-            "-cwd", "-V"
-        ]
-
-        # The download script takes the local path, remote key, and credentials_file (path) and bucket as arguments
-        main_args = ["python", download_script, "-l", hcp_path, "-r", remote_key, "-c", credentials_file, "-b", bucket]
-        optional_args = ["--connect_timeout", str(connect_timeout), "--read_timeout", str(read_timeout), "--retries", str(retries)]
-
-        # stitch and submit the command
-        cmd = qrsh + main_args + optional_args
-        logger.info(f'Downloading {os.path.basename(remote_key)} from HCP')
-        logger.info(f"Running hcp_download.py with args: {cmd}")
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
-        if stdout:
-            logger.info(stdout.decode('utf-8'))
-        if stderr:
-            logger.error(stderr.decode('utf-8'))
-
-        if process.returncode != 0:
-            logger.error(f"hcp_download.py failed with return code {process.returncode}")
-            raise RuntimeError(f"hcp_download.py failed with return code {process.returncode}")
-
-        # In rare cases, there may be a delay post-download before the file appears in the directory
-        start_time = time.time()
-        while not os.path.exists(hcp_path):
-            logger.info(f'Waiting for {hcp_path} to be downloaded...')
-            time.sleep(10)  # Wait for 10 seconds before checking again
-
-            # The delay should not be more than a minute
-            elapsed_time = time.time() - start_time
-            if elapsed_time > 60:
-                logger.error(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
-                raise RuntimeError(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
-
-    else:
+    if os.path.exists(hcp_path):
         logger.info(f'{os.path.basename(remote_key)} already exists in {hcp_download_runpath}')
-    return hcp_path
+        return hcp_path
+
+    os.makedirs(hcp_download_runpath, exist_ok=True)
+
+    # Iterate through the locations in the order specified in the config
+    for location_name, location_details in download_locations.items():
+        try:
+            # Remove getting the bucket from the config if we want to get it from slims
+            bucket = location_details["bucket"]  # Bucket is specified in the config
+
+            logger.info(f"Trying to download from {location_name}")
+
+            # Construct the download command
+            qrsh = [
+                "qrsh",
+                "-q", config["hcp"]["queue"],
+                "-N", f"hcp_download_{os.path.basename(remote_key)}",
+                "-pe", "mpi", "1",
+                "-now", "no",
+                "-cwd", "-V"
+            ]
+
+            main_args = [
+                "python", os.path.abspath(config["hcp"]["download_script"]),
+                "-l", hcp_path,
+                "-r", remote_key,
+                "-c", location_details["credentials_file"],
+                "-b", bucket
+            ]
+
+            optional_args = [
+                "--connect_timeout", str(config["hcp"]["connect_timeout"]),
+                "--read_timeout", str(config["hcp"]["read_timeout"]),
+                "--retries", str(config["hcp"]["retries"])
+            ]
+
+            cmd = qrsh + main_args + optional_args
+            logger.info(f"Running hcp_download.py with args: {cmd}")
+
+            # Run the download command
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+
+            if stdout:
+                logger.info(stdout.decode('utf-8'))
+            if stderr:
+                logger.error(stderr.decode('utf-8'))
+
+            if process.returncode == 0:
+                # In rare cases, there may be a delay post-download before the file appears in the directory
+                start_time = time.time()
+                while not os.path.exists(hcp_path):
+                    logger.info(f'Waiting for {hcp_path} to be downloaded...')
+                    time.sleep(10)  # Wait for 10 seconds before checking again
+
+                    # The delay should not be more than a minute
+                    elapsed_time = time.time() - start_time
+                    if elapsed_time > 60:
+                        logger.error(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
+                        raise RuntimeError(f"The hcp_download finished successfully, but no file was found at {hcp_path}")
+
+                logger.info(f"Successfully downloaded {os.path.basename(remote_key)} from {location_name}")
+                return hcp_path
+
+            else:
+                logger.warning(f"Failed to download from {location_name}")
+
+        except Exception as e:
+            logger.warning(f"Error while trying to download from {location_name}: {e}")
+
+    # If none of the locations worked, raise an error
+    logger.error(f"Failed to download {remote_key} from all locations.")
+    raise RuntimeError(f"Remote key {remote_key} could not be found on any of the specified locations.")
 
 
 def decompress_downloaded_fastq(complete_file_path, logger):
@@ -306,7 +326,10 @@ def find_or_download_fastqs(sample_name, logger):
                     else:
                         logger.info(f'Fastq {fq_path} does not exist. Need to download from HCP')
                         json_backup = json.loads(fqSSample.fastq.cntn_cstm_demuxerBackupSampleResult.value)
-                        bucket = json_backup['bucket']
+                        # Get bucket from slims. May or may not be correct depending on how the data is migrated
+                        # bucket = json_backup['bucket']
+                        # For now we will use the bucket from the config
+                        bucket = None
                         remote_keys = json_backup['remote_keys']
                         fq_basename_fasterq = os.path.basename(fq_path).replace('.fastq.gz', '.fasterq')
                         fq_basename_spring = os.path.basename(fq_path).replace('.fastq.gz', '.spring')
