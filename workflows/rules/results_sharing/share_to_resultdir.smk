@@ -14,6 +14,7 @@ if tumorid:
                 expand("qc_report/{tumorname}_qc_stats.xlsx", tumorname=tumorname),
                 expand("{stype}/canvas/{sname}_CNV_somatic.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/canvas/{sname}_CNV_germline.vcf.xlsx", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+                expand("{stype}/manta/{sname}_somatic_mantaSV.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]), 
                 expand("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/manta/{sname}_somatic_mantaSV_Summary.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/dnascope/{sname}_{hgX}_SNV_CNV_germline.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"], hgX=reference),            
@@ -30,14 +31,6 @@ if tumorid:
                 expand("{stype}/reports/{sname}_REALIGNED.bam.tdf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
                 expand("{stype}/reports/{sname}_baf.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/reports/{sname}_baf.igv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                expand("{stype}/manta/{sname}_somatic_MantaBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                #expand("{stype}/manta/{sname}_somatic_MantaBNDs.vcf.gzi.csi", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                expand("{stype}/manta/{sname}_somatic_MantaNOBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                #expand("{stype}/manta/{sname}_somatic_MantaNOBNDs.vcf.gzi.csi", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                expand("{stype}/manta/{sname}_germline_MantaBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                #expand("{stype}/manta/{sname}_germline_MantaBNDs.vcf.gzi.csi", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                expand("{stype}/manta/{sname}_germline_MantaNOBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                #expand("{stype}/manta/{sname}_germline_MantaNOBNDs.vcf.gz.csi", sname=normalid, stype=sampleconfig[normalname]["stype"])
                 expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
@@ -57,6 +50,7 @@ if tumorid:
                 expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
                 expand("qc_report/{tumorname}_qc_stats.xlsx", tumorname=tumorname),
                 expand("{stype}/canvas/{sname}_CNV_germline.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                expand("{stype}/manta/{sname}_somatic_mantaSV.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]), 
                 expand("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/manta/{sname}_somatic_mantaSV_Summary.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/pindel/{sname}_pindel.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
@@ -66,10 +60,6 @@ if tumorid:
                 expand("{stype}/realign/{sname}_REALIGNED.{fmt}", fmt=["bam", "bam.bai", "cram", "cram.crai"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/reports/{sname}_REALIGNED.bam.tdf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/reports/{sname}_baf.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                expand("{stype}/manta/{sname}_somatic_MantaBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                #expand("{stype}/manta/{sname}_somatic_MantaBNDs.vcf.gz.csi", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                expand("{stype}/manta/{sname}_somatic_MantaNOBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                #expand("{stype}/manta/{sname}_somatic_MantaNOBNDs.vcf.gzi.csi", sname=tumorid, stype=sampleconfig[tumorname]["stype"])
                 expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_BAF.igv", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
@@ -93,10 +83,6 @@ else:
             expand("{stype}/canvas/{sname}_germline_CNV_called.seg", vartype="germline", sname=normalid, stype=sampleconfig[normalname]["stype"]),
             expand("{stype}/realign/{sname}_REALIGNED.{fmt}", fmt=["bam", "bam.bai", "cram", "cram.crai"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
             expand("{stype}/reports/{sname}_REALIGNED.bam.tdf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            expand("{stype}/manta/{sname}_germline_MantaBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            #expand("{stype}/manta/{sname}_germline_MantaBNDs.vcf.gz.csi", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            expand("{stype}/manta/{sname}_germline_MantaNOBNDs.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            #expand("{stype}/manta/{sname}_germline_MantaNOBNDs.vcf.csi", sname=normalid, stype=sampleconfig[normalname]["stype"]),
             expand("{stype}/reports/{sname}_baf.igv", sname=normalid, stype=sampleconfig[normalname]["stype"])
         output:
             "reporting/shared_result_files.txt"
