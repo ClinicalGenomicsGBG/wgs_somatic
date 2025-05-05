@@ -46,6 +46,7 @@ else:
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
             dbsnp = pipeconfig["singularities"]["sentieon"]["dbsnp"],
+            modelpath = pipeconfig["singularities"]["sentieon"]["tnscope_m"],
             pon = pipeconfig["rules"]["tnscope"]["pon"],
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
