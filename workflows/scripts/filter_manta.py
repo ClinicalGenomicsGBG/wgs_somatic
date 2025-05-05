@@ -1,12 +1,13 @@
 import pysam
-import sys
 import argparse
+
 
 def is_reciprocal_pair(bnd_pairs, key, mate_key):
     """
     Check if the given key:value pair already exists as a value:key in the dictionary.
     """
     return mate_key in bnd_pairs and bnd_pairs[mate_key] == key
+
 
 def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tumor_support=3, max_normal_support=2):
     """
@@ -80,21 +81,19 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                     for part in parts:
                         if ":" in part:
                             mate_key = part.strip()
-                            print(f"Mate key: {mate_key}")  # Debugging line
                             break
 
                 # Check if the reciprocal pair already exists
                 if is_reciprocal_pair(bnd_pairs, key, mate_key):
-                    print(f"Skipping duplicate BND: {key} and {mate_key}")  # Debugging line
                     continue  # Skip this variant as its reciprocal pair has already been processed
 
                 # Add the current key and mate key to the dictionary
                 bnd_pairs[key] = mate_key
                 bnd_pairs[mate_key] = key
-                print(f"Adding BND pair: {key} and {mate_key}")  # Debugging line
 
             # Write the record to the output VCF
             vcf_out.write(record)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Filter a VCF file based on tumor and normal sample criteria.")
