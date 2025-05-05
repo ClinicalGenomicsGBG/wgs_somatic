@@ -83,6 +83,11 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                             mate_key = part.strip()
                             break
 
+                # Ensure mate_key is valid before proceeding
+                if mate_key is None:
+                    print(f"Warning: Unable to parse mate key for variant {key}. Skipping.")
+                    continue
+
                 # Check if the reciprocal pair already exists
                 if is_reciprocal_pair(bnd_pairs, key, mate_key):
                     continue  # Skip this variant as its reciprocal pair has already been processed
