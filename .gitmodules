@@ -1,12 +1,13 @@
 [submodule "workflows/scripts/annotate_manta_canvas"]
 	path = workflows/scripts/annotate_manta_canvas
 	url = https://github.com/ClinicalGenomicsGBG/annotate_manta_canvas.git
-        ignore = dirty
+	branch = master
+    ignore = dirty
 [submodule "workflows/scripts/b_allele_igv_plot"]
 	path = workflows/scripts/b_allele_igv_plot
 	url = https://github.com/ClinicalGenomicsGBG/b_allele_igv_plot.git
-        ignore = dirty        
+    ignore = dirty        
 [submodule "workflows/scripts/canvas_to_interpreter"]
 	path = workflows/scripts/canvas_to_interpreter
 	url = https://github.com/ClinicalGenomicsGBG/canvas_to_interpreter.git
-        ignore = dirty
+    ignore = dirty
