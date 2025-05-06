@@ -43,8 +43,10 @@ theme_set(theme_pubclean())
 # Read the ratio data into a data frame
 ratio <- data.frame(read.table(ratio_file, header=TRUE))
 
-# Read the BAF data into a data frame
-BAF <- data.frame(read.table(BAF_file, header=TRUE))
+# Read the BAF data into a data frame, skipping header lines starting with '#'
+BAF <- read.table(BAF_file, header = FALSE, comment.char = "#", sep = "\t",
+                  col.names = c("Chromosome", "Start", "End", "Features", "BAF"))
+
 
 # Read the FAI file and process it
 fai <- read.table(fai_file, header = FALSE, sep = "\t", 
@@ -95,7 +97,7 @@ ratio_adjusted <- ratio %>%
             Ratio > 1.1 ~ "above 1.1",
             TRUE ~ "other"
          )) %>%
-  filter(Ratio > 0, BAF > 0)  # Filter out invalid rows
+  filter(Ratio > 0)  # Filter out invalid rows
 
 # Calculate breaks and labels for the y-axis
 max_corr_ratio <- max(ratio_adjusted$corr_ratio, na.rm = TRUE)
@@ -116,12 +118,12 @@ Ratio_plot <- ggplot(fai) +
   scale_fill_identity() +
   theme(legend.position = "none", axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
 
-# Adjust the BAF data for plotting
+# Process the BAF data for plotting
 BAF_adjusted <- BAF %>%
   left_join(fai, by = c("Chromosome" = "chr")) %>%
-  mutate(adjPosition = Position + start) %>%
-  filter(BAF > 0, uncertainty < 1) %>%
-  select(Chromosome, Position, adjPosition, BAF, FittedA, FittedB, A, B, uncertainty)
+  mutate(adjPosition = Start + start) %>%
+  filter(BAF > 0) %>%  # Keep rows with valid BAF values
+  select(Chromosome, Start, adjPosition, BAF, Features)
 
 # Reduce the number of points for the BAF plot
 BAF_adjusted_red <- BAF_adjusted %>%
@@ -131,8 +133,6 @@ BAF_adjusted_red <- BAF_adjusted %>%
 BAF_plot <- ggplot(fai) +                                              
   geom_vline(aes(xintercept = start), col = "grey") +
   geom_point(data = BAF_adjusted_red, aes(adjPosition, BAF), shape = '.', col = "#00000010") +
-  geom_point(data = BAF_adjusted_red[BAF_adjusted_red$uncertainty > 0 & BAF_adjusted_red$uncertainty < 1,], aes(adjPosition, FittedA), shape = 15, size = 0.2, col = "#0090FF") +
-  geom_point(data = BAF_adjusted_red[BAF_adjusted_red$uncertainty > 0 & BAF_adjusted_red$uncertainty < 1,], aes(adjPosition, FittedB), shape = 15, size = 0.2, col = "#FF5050") +
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3) +
   scale_y_continuous("BAF", limits = c(0, 1), expand = expansion(mult = 0.1)) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
@@ -149,18 +149,3 @@ ratio_adjusted %>%
          Chromosome = paste0("chr", Chromosome)) %>%
   select(Sample, Chromosome, Start, End, corr_ratio) %>%
   write.table(output_ratio_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
-
-# Write the BAF data to an IGV-compatible file
-writeLines(paste0(
-  '#type=GENE_EXPRESSION\n#track graphtype=points name="',
-  tumor_id,
-  '" color=0,0,255 altColor=255,0,0 maxHeightPixels=160:160:160 viewLimits=0:1',
-  "\n#Chromosome\tStart\tEnd\tFeatures\tvalues"
-), con = output_BAF_igv)
-BAF_adjusted %>%
-  mutate(Chromosome = paste0("chr", Chromosome),
-         Start = Position,
-         End = Position,
-         Features = "") %>%
-  select(Chromosome, Start, End, Features, BAF) %>%
-  write.table(output_BAF_igv, sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE, append = TRUE)

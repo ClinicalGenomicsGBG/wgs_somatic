@@ -21,7 +21,7 @@ if tumorid:
                 tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
                 msi_filtered = expand("{stype}/msi/{sname}_msi_filtered.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 msi = expand("{stype}/msi/{sname}_msi.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                tumor_info_files = expand("{stype}/control-freec_{ploidy}/{sname}.pileup_info.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid, ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
+                tumor_info_files = expand("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid, ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
             output:
                 temp("qc_report/{tumorname}_qc_stats.xlsx")
             run:
@@ -38,7 +38,7 @@ if tumorid:
                 tumorvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
                 insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[tumorname]["stype"], insiliconame=sampleconfig["insilico"], sname=tumorid),
                 tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-                tumor_info_files = expand("{stype}/control-freec_{ploidy}/{sname}.pileup_info.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid, ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
+                tumor_info_files = expand("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid, ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
             output:
                 temp("qc_report/{tumorname}_qc_stats.xlsx")
             run:

@@ -6,6 +6,7 @@
 
 chrLenFile = /clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai
 chrFiles = /clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/
+gemMappabilityFile = /clinical/exec/wgs_somatic/dependencies/control_freec/out100m2_hg38.gem
 ploidy = 1,2,3,4
 outputDir = ./
 maxThreads = 4
@@ -40,20 +41,20 @@ BedGraphOutput=FALSE
 [sample]
 
 mateFile = 
-inputFormat = pileup
+inputFormat = BAM
 mateOrientation = FR
 
 [control]
 
 mateFile = 
-inputFormat = pileup
+inputFormat = BAM
 mateOrientation = FR
 
-[BAF]
+#[BAF]
 
-SNPfile = /clinical/exec/wgs_somatic/dependencies/control_freec/common_dnSNP156_hg38.vcf.gz
+#SNPfile = /clinical/exec/wgs_somatic/dependencies/control_freec/common_dnSNP156_hg38.vcf.gz
 
-[target]
+#[target]
 
 ##use a tab-delimited .BED file to specify capture regions (control dataset is needed to use this option):
 
