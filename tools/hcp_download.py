@@ -86,7 +86,7 @@ def setup_logger(name):
     return logger
 
 
-def download_file(local_path, remote_path, credentials_path, bucket, connect_timeout, read_timeout, retries):
+def download_file(local_path, remote_path, credentials_path, bucket, connect_timeout, read_timeout, retries, threads):
     """
     Download a file from an S3 bucket.
 
@@ -121,7 +121,7 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
         # Download the file
         try:
             config = TransferConfig(
-                max_concurrency=4,
+                max_concurrency=threads,
                 use_threads=True
             )
             s3.meta.client.download_file(bucket, remote_path, local_path, Config=config)
@@ -162,10 +162,11 @@ def main():
     parser.add_argument("--connect_timeout", help="Time (s) to establish connection.", required=False, type=int, default=10)
     parser.add_argument("--read_timeout", help="Time (s) to wait for a response.", required=False, type=int, default=30)
     parser.add_argument("--retries", help="Number of retries.", required=False, type=int, default=20)
+    parser.add_argument("--threads", help="Number of threads to use for download.", required=False, type=int, default=4)
     args = parser.parse_args()
 
     try:
-        download_file(args.local_path, args.remote_path, args.credentials_path, args.bucket, args.connect_timeout, args.read_timeout, args.retries)
+        download_file(args.local_path, args.remote_path, args.credentials_path, args.bucket, args.connect_timeout, args.read_timeout, args.retries, args.threads)
     except FileNotFoundError as e:
         print(f"File not found: {e}")
         sys.exit(1)  # Exit with a non-zero code for file not found
