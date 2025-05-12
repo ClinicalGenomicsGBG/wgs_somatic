@@ -30,7 +30,6 @@ fai_file <- args[4]               # FAI file (genome index) used to adjust chrom
 cytoband <- args[5]               # Cytoband file (chromosome banding information)
 output_ratio_plot <- args[6]      # Output file for the ratio plot
 output_ratio_seg <- args[7]       # Output file for the ratio segmentation
-output_BAF_igv <- args[8]         # Output file for the BAF IGV track
 
 # Check if the FAI file exists
 if (!file.exists(fai_file)) {

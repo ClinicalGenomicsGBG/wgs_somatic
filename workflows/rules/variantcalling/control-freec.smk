@@ -48,9 +48,9 @@ if normalid:
             pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
-            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg} {output.BAF_igv}
+            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg}
             """
-            #Rscript {params.plot_script} {wildcards.sname} {input.normal_ratio} {input.normal_BAF} {params.fai} {params.cytoBandIdeo} {output.normal_ratio_plot} {output.normal_ratio_seg} {output.normal_BAF_igv}
+            #Rscript {params.plot_script} {wildcards.sname} {input.normal_ratio} {input.normal_BAF} {params.fai} {params.cytoBandIdeo} {output.normal_ratio_plot} {output.normal_ratio_seg}
             
 
 
@@ -99,5 +99,5 @@ else:
             pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
-            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg} {output.BAF_igv}
+            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg}
             """
