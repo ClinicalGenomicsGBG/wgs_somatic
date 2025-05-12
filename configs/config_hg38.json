@@ -39,7 +39,7 @@
             "reference": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
             "mills": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
             "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156.vcf.gz",
-            "dnascope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model",
+            "dnascope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model",
             "tnscope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonTNscopeModelWGS0.2.model"
         }
     },
@@ -88,11 +88,11 @@
         "dnascope":
         {
             "settings": "--pcr_indel_model NONE",
-            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model"
         },
         "dnascope_modelfilter":
         {
-            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModel1.0.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model"
         },
         "dnascope_vcffilter":
         {
