@@ -125,7 +125,7 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
                 use_threads=True
             )
             s3.meta.client.download_file(bucket, remote_path, local_path, Config=config)
-            logger.debug("File downloaded successfully with threads.")
+            logger.info("File downloaded successfully with threads.")
         except botocore.exceptions.ClientError as e:
             logger.warning(f"Threaded download failed: {e}. Retrying without threads...")
 
@@ -140,6 +140,9 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
             except Exception as e:
                 logger.error(f"Fallback download also failed: {e}")
                 raise
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while performing threaded download: {e}")
+            raise
 
     except FileNotFoundError as e:
         # Propagate the FileNotFoundError explicitly
@@ -169,6 +172,7 @@ def main():
     except Exception as e:
         print(f"An error occurred: {e}")
         sys.exit(2)  # Exit with a different non-zero code for other errors
+
 
 if __name__ == '__main__':
     try:
