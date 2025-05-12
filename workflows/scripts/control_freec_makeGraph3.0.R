@@ -146,6 +146,7 @@ dev.off()
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_ratio_seg)
 ratio_adjusted %>%
   mutate(Sample = tumor_id,
-         Chromosome = paste0("chr", Chromosome)) %>%
-  select(Sample, Chromosome, Start, End, corr_ratio) %>%
+         Chromosome = paste0("chr", Chromosome),
+         Copynumber = Ratio * ploidy) %>%
+  select(Sample, Chromosome, Start, End, Copynumber) %>%
   write.table(output_ratio_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
