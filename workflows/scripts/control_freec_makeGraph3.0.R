@@ -44,7 +44,8 @@ ratio <- data.frame(read.table(ratio_file, header=TRUE))
 
 # Read the BAF data into a data frame, skipping header lines starting with '#'
 BAF <- read.table(BAF_file, header = FALSE, comment.char = "#", sep = "\t",
-                  col.names = c("Chromosome", "Start", "End", "Features", "BAF"))
+                  col.names = c("Chromosome", "Start", "End", "Features", "BAF"))%>%
+  mutate(Chromosome = substr(Chromosome, 4, 30)) # Remove the "chr" prefix from chromosome names
 
 
 # Read the FAI file and process it
