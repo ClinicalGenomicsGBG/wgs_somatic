@@ -1,4 +1,5 @@
 import boto3
+from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from botocore.utils import fix_s3_host
 import urllib3
@@ -6,6 +7,7 @@ import argparse
 import json
 import logging
 import sys
+import botocore.exceptions
 
 # Disable SSL warnings globally as they fill the stderr log otherwise
 # Ok to disable because we usually work with local non-443
@@ -107,7 +109,6 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
 
         # Get the S3 connector
         s3 = get_sg_s3_connector(credentials_path, logger, connect_timeout, read_timeout, retries)
-        s3_bucket = s3.Bucket(bucket)
 
         # Check if the file exists
         try:
@@ -119,11 +120,26 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
 
         # Download the file
         try:
-            s3_bucket.download_file(remote_path, local_path)
-            logger.debug("File downloaded successfully.")
-        except Exception as e:
-            logger.error(f"Error downloading file {remote_path} from bucket {bucket}: {e}")
-            raise
+            config = TransferConfig(
+                max_concurrency=4,
+                use_threads=True
+            )
+            s3.meta.client.download_file(bucket, remote_path, local_path, Config=config)
+            logger.debug("File downloaded successfully with threads.")
+        except botocore.exceptions.ClientError as e:
+            logger.warning(f"Threaded download failed: {e}. Retrying without threads...")
+
+            # Second try: no threads
+            try:
+                config = TransferConfig(
+                    max_concurrency=1,
+                    use_threads=False
+                )
+                s3.meta.client.download_file(bucket, remote_path, local_path, Config=config)
+                logger.info("File downloaded successfully without threads.")
+            except Exception as e:
+                logger.error(f"Fallback download also failed: {e}")
+                raise
 
     except FileNotFoundError as e:
         # Propagate the FileNotFoundError explicitly
