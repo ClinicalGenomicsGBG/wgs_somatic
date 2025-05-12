@@ -17,6 +17,8 @@ if normalid:
             mantaconf = pipeconfig["rules"]["manta"]["mantaconf"],
             annotate = pipeconfig["rules"]["manta"].get("annotate", f"{ROOT_DIR}/workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py"),
             annotate_ref = pipeconfig["rules"]["manta"]["annotate_ref"],
+            min_tumor_support = filterconfig["sv_filter"]["min_tumor_support"],
+            max_normal_support = filterconfig["sv_filter"]["max_normal_support"],
         output:
             sv_vcf = temp("{stype}/manta/{sname}_somatic_mantaSV.vcf"),
             sv_xlsx = temp("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx"),
@@ -34,8 +36,8 @@ if normalid:
                 f"{output.sv_vcf}",
                 tumor_name=tumorname,
                 normal_name=normalname,
-                min_tumor_support=3,
-                max_normal_support=2
+                min_tumor_support={params.min_tumor_support},
+                max_normal_support={params.max_normal_support}
                 )
             shell("{params.annotate} -v {output.sv_vcf} -g {params.annotate_ref} -o {wildcards.stype}/manta")
 else:
@@ -49,6 +51,7 @@ else:
             mantaconf = pipeconfig["rules"]["manta"]["mantaconf"],
             annotate = pipeconfig["rules"]["manta"].get("annotate", f"{ROOT_DIR}/workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py"),
             annotate_ref = pipeconfig["rules"]["manta"]["annotate_ref"],
+            min_tumor_support = filterconfig["sv_filter"]["min_tumor_support"],
         output:
             sv_vcf = temp("{stype}/manta/{sname}_somatic_mantaSV.vcf"),
             sv_xlsx = temp("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx"),
@@ -65,7 +68,7 @@ else:
                 f"{wildcards.stype}/manta/results/variants/tumorSV.vcf",
                 f"{output.sv_vcf}",
                 tumor_name=tumorname,
-                min_tumor_support=3
+                min_tumor_support={params.min_tumor_support},
                 )
             shell("{params.annotate} -v {output.sv_vcf} -g {params.annotate_ref} -o {wildcards.stype}/manta")
 

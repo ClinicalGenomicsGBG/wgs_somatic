@@ -3,3 +3,10 @@ tmb_filter:
   min_mutant_allele_reads: 3
   min_coverage: 10
 
+sv_filter:
+  min_tumor_support: 3
+  max_normal_support: 2
+  # Other filters in filter_manta.py:
+  ## Need both paired and split reads
+  ## Remove duplicate (reciprocal) SVs
+  ## Filter to only keep "PASS"
