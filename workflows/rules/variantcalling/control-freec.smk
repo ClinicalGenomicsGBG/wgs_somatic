@@ -40,8 +40,8 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["control-freec"]["sing"]
         output:
-            ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png"),
-            ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg"),
+            ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png"),
+            ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg"),
             #normal_ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_normal_ratio.png"),
             #normal_ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_normal_ratio.seg"),
         shadow:
@@ -93,8 +93,8 @@ else:
         singularity:
             pipeconfig["singularities"]["control-freec"]["sing"]
         output:
-            ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.png"),
-            ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_ploidy{ploidy}_ratio.seg"),
+            ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png"),
+            ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg"),
         shadow:
             pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
