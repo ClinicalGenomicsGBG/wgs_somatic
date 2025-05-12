@@ -60,6 +60,6 @@ rule dnascope_vcffilter:
     shadow:
         pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
-        shell("{params.bcftools} filter -s 'ML_FAIL' -i 'INFO/ML_PROB <= 0.95' -m x {input.vcf} > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_modelfiltered_0.95.vcf")
-        shell("{params.bcftools} filter -i {params.passfilter} -m x {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_modelfiltered_0.95.vcf > {output.germline_vcf}")
+        shell("{params.bcftools} filter -s 'ML_FAIL' -e 'INFO/ML_PROB > 0.5' -m x {input.vcf} > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_modelfiltered_0.5.vcf")
+        shell("{params.bcftools} filter -i {params.passfilter} -m x {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_modelfiltered_0.5.vcf > {output.germline_vcf}")
         shell("{params.vcftools} --vcf {output.germline_vcf} --remove-indels --recode --stdout > {output.germline_snv_vcf}")
