@@ -108,7 +108,7 @@ labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max(breaks) - 1))
 Ratio_plot <- ggplot(fai) +                                              
   geom_rect(data = cytoband, aes(xmin = adjStart, xmax = adjEnd, ymin = -(max_cutoff * ploidy * 0.035), ymax = -(max_cutoff * ploidy * 0.01), fill = color)) +
   geom_point(data = ratio_adjusted, aes(adjStart, corr_ratio, color = color), shape = '.') +
-  geom_point(data = ratio_adjusted, aes(adjStart, CopyNumber_adj), shape = '.', col = "#00000050") +
+  geom_point(data = ratio_adjusted, aes(adjStart, CopyNumber_adj), shape = '.', col = "#00000070") +
   geom_vline(aes(xintercept = start), col = "grey") +
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3) +
   scale_y_continuous("Copy number",
@@ -132,7 +132,7 @@ BAF_adjusted_red <- BAF_adjusted %>%
 # Create the BAF plot
 BAF_plot <- ggplot(fai) +                                              
   geom_vline(aes(xintercept = start), col = "grey") +
-  geom_point(data = BAF_adjusted_red, aes(adjPosition, BAF), shape = '.', col = "#00000010") +
+  geom_point(data = BAF_adjusted_red, aes(adjPosition, BAF), shape = '.', col = "#00000020") +
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3) +
   scale_y_continuous("BAF", limits = c(0, 1), expand = expansion(mult = 0.1)) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank())
