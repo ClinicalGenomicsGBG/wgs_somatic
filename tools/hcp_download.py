@@ -98,6 +98,7 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
         connect_timeout (int): Time (s) to establish connection.
         read_timeout (int): Time (s) to wait for a response.
         retries (int): Number of retries.
+        threads (int): Number of threads to use for download.
 
     Raises:
         Exception: If an error occurs during the download.
@@ -141,7 +142,7 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
                 logger.error(f"Fallback download also failed: {e}")
                 raise
         except Exception as e:
-            logger.error(f"An unexpected error occurred while performing threaded download: {e}")
+            logger.error(f"An unexpected error occurred during the threaded download attempt: {e}")
             raise
 
     except FileNotFoundError as e:
