@@ -44,7 +44,6 @@ else:
         output:
             config = temp("{stype}/control-freec_{ploidy}/{sname}.config"),
             tumor_ratio = temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_ratio.txt"),
-            tumor_BAF = temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_BAF.txt"),
             info = temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt"),
         shadow:
             pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
