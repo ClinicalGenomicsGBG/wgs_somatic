@@ -1,4 +1,5 @@
 import boto3
+from boto3.s3.transfer import TransferConfig
 from botocore.client import Config
 from botocore.utils import fix_s3_host
 import urllib3
@@ -6,6 +7,7 @@ import argparse
 import json
 import logging
 import sys
+import botocore.exceptions
 
 # Disable SSL warnings globally as they fill the stderr log otherwise
 # Ok to disable because we usually work with local non-443
@@ -84,7 +86,7 @@ def setup_logger(name):
     return logger
 
 
-def download_file(local_path, remote_path, credentials_path, bucket, connect_timeout, read_timeout, retries):
+def download_file(local_path, remote_path, credentials_path, bucket, connect_timeout, read_timeout, retries, threads):
     """
     Download a file from an S3 bucket.
 
@@ -96,6 +98,7 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
         connect_timeout (int): Time (s) to establish connection.
         read_timeout (int): Time (s) to wait for a response.
         retries (int): Number of retries.
+        threads (int): Number of threads to use for download.
 
     Raises:
         Exception: If an error occurs during the download.
@@ -107,7 +110,6 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
 
         # Get the S3 connector
         s3 = get_sg_s3_connector(credentials_path, logger, connect_timeout, read_timeout, retries)
-        s3_bucket = s3.Bucket(bucket)
 
         # Check if the file exists
         try:
@@ -119,10 +121,28 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
 
         # Download the file
         try:
-            s3_bucket.download_file(remote_path, local_path)
-            logger.debug("File downloaded successfully.")
+            config = TransferConfig(
+                max_concurrency=threads,
+                use_threads=True
+            )
+            s3.meta.client.download_file(bucket, remote_path, local_path, Config=config)
+            logger.info("File downloaded successfully with threads.")
+        except botocore.exceptions.ClientError as e:
+            logger.warning(f"Threaded download failed: {e}. Retrying without threads...")
+
+            # Second try: no threads
+            try:
+                config = TransferConfig(
+                    max_concurrency=1,
+                    use_threads=False
+                )
+                s3.meta.client.download_file(bucket, remote_path, local_path, Config=config)
+                logger.info("File downloaded successfully without threads.")
+            except Exception as e:
+                logger.error(f"Fallback download also failed: {e}")
+                raise
         except Exception as e:
-            logger.error(f"Error downloading file {remote_path} from bucket {bucket}: {e}")
+            logger.error(f"An unexpected error occurred during the threaded download attempt: {e}")
             raise
 
     except FileNotFoundError as e:
@@ -143,16 +163,18 @@ def main():
     parser.add_argument("--connect_timeout", help="Time (s) to establish connection.", required=False, type=int, default=10)
     parser.add_argument("--read_timeout", help="Time (s) to wait for a response.", required=False, type=int, default=30)
     parser.add_argument("--retries", help="Number of retries.", required=False, type=int, default=20)
+    parser.add_argument("--threads", help="Number of threads to use for download.", required=False, type=int, default=4)
     args = parser.parse_args()
 
     try:
-        download_file(args.local_path, args.remote_path, args.credentials_path, args.bucket, args.connect_timeout, args.read_timeout, args.retries)
+        download_file(args.local_path, args.remote_path, args.credentials_path, args.bucket, args.connect_timeout, args.read_timeout, args.retries, args.threads)
     except FileNotFoundError as e:
         print(f"File not found: {e}")
         sys.exit(1)  # Exit with a non-zero code for file not found
     except Exception as e:
         print(f"An error occurred: {e}")
         sys.exit(2)  # Exit with a different non-zero code for other errors
+
 
 if __name__ == '__main__':
     try:
