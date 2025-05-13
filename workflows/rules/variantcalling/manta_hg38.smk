@@ -36,8 +36,8 @@ if normalid:
                 f"{output.sv_vcf}",
                 tumor_name=tumorname,
                 normal_name=normalname,
-                min_tumor_support={params.min_tumor_support},
-                max_normal_support={params.max_normal_support}
+                min_tumor_support=params.min_tumor_support,
+                max_normal_support=params.max_normal_support
                 )
             shell("{params.annotate} -v {output.sv_vcf} -g {params.annotate_ref} -o {wildcards.stype}/manta")
 else:
@@ -68,7 +68,7 @@ else:
                 f"{wildcards.stype}/manta/results/variants/tumorSV.vcf",
                 f"{output.sv_vcf}",
                 tumor_name=tumorname,
-                min_tumor_support={params.min_tumor_support},
+                min_tumor_support=params.min_tumor_support,
                 )
             shell("{params.annotate} -v {output.sv_vcf} -g {params.annotate_ref} -o {wildcards.stype}/manta")
 
