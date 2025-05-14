@@ -3,7 +3,7 @@ import os
 import sys
 
 
-def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, SNPfile, threads, output_config):
+def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, mappability, threads, output_config):
     
     outdir = os.path.dirname(output_config)
     os.makedirs(outdir, exist_ok=True)
@@ -22,8 +22,8 @@ def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile
         config_data = re.sub(r'(\[control\]\n\nmateFile =).*', f'\\1 {normal_pileup}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^chrLenFile =.*', f'chrLenFile = {chrLenFile}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^chrFiles =.*', f'chrFiles = {chrFiles}', config_data, flags=re.MULTILINE)
+    config_data = re.sub(r'^gemMappabilityFile =.*', f'gemMappabilityFile = {mappability}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^maxThreads =.*', f'maxThreads = {threads}', config_data, flags=re.MULTILINE)
-    config_data = re.sub(r'^SNPfile =.*', f'SNPfile = {SNPfile}', config_data, flags=re.MULTILINE)
     with open(output_config, 'w') as file:
         file.write(config_data)
 
@@ -37,8 +37,8 @@ if __name__ == "__main__":
     normal_pileup = sys.argv[4]
     chrLenFile = sys.argv[5]
     chrFiles = sys.argv[6]
-    SNPfile = sys.argv[7]
+    mappability = sys.argv[7]
     threads = sys.argv[8]
     output_config = sys.argv[9]
 
-    edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, SNPfile, threads, output_config)
+    edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, mappability, threads, output_config)

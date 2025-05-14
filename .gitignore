@@ -27,3 +27,4 @@ novaseq_runlist.txt
 workflows/scripts/annotate_manta/genelist.txt
 workflows/scripts/annotate_manta/genelist_old.txt
 *.swp
+tmp*
