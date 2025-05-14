@@ -386,7 +386,9 @@ def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', nor
             "Sex": calculated_sex if normalcov else "N/A",
             "Coverage 10x": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "PCT_10X"), "N/A"),
             "Coverage 30x": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "PCT_30X"), "N/A"),
+            "Coverage 60x": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "PCT_60X"), "N/A"),
             "Mean coverage": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "MEAN_COVERAGE"), "N/A"),
+            "Median coverage": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "MEDIAN_COVERAGE"), "N/A"),
             "SD coverage": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "SD_COVERAGE"), "N/A"),
             "Match fraction": match_dict["match_fraction"] if normalcov else "N/A",
             "Match status": match_dict["match_status"] if normalcov else "N/A",
@@ -401,7 +403,9 @@ def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', nor
             "Sex": calculated_sex,
             "Coverage 10x": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "PCT_10X"), "N/A"),
             "Coverage 30x": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "PCT_30X"), "N/A"),
+            "Coverage 60x": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "PCT_60X"), "N/A"),
             "Mean coverage": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "MEAN_COVERAGE"), "N/A"),
+            "Median coverage": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "MEDIAN_COVERAGE"), "N/A"),
             "SD coverage": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "SD_COVERAGE"), "N/A"),
             "Match fraction": match_dict["match_fraction"] if tumorcov else "N/A",
             "Match status": match_dict["match_status"] if tumorcov else "N/A",
@@ -412,7 +416,7 @@ def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', nor
     if not output.endswith(".xlsx"):
         output = f"{output}.xlsx"
     # Create a DataFrame and save to Excel
-    df = pd.DataFrame(rows, columns=["Type","SampleID", "Sex", "Coverage 10x", "Coverage 30x", "Mean coverage", "SD coverage","Match fraction", "Match status", "TMB"])
+    df = pd.DataFrame(rows, columns=["Type", "SampleID", "Sex", "Coverage 10x", "Coverage 30x", "Coverage 60x", "Mean coverage", "Median coverage", "SD coverage", "Match fraction", "Match status", "TMB"])
     df.to_excel(output, index=False)
     # Save to TSV
     tsv_output = output.replace(".xlsx", ".tsv")
