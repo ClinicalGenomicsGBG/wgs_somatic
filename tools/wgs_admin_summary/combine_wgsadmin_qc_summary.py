@@ -14,7 +14,7 @@ def setup_logging(log_dir):
             logging.StreamHandler()
         ]
     )
-
+    
 @click.command()
 @click.option('--base_directory', 
               default="/clinical/data/wgs_somatic/test_output/test_qc_admin/test_combined", #TODO: change to /webstore/clinical/routine/wgs_somatic/current
@@ -22,7 +22,7 @@ def setup_logging(log_dir):
               help="Base directory containing subdirectories for each sample/sample T-N pairs. Each subdirectory should contain '_qc_stats_wgsadmin.xlsx' files to be combined.", 
               required=True, show_default=True)
 @click.option('--output_directory', 
-              default=None, #TODO:change to /webstore/clinical/routine/laboratory/current/quality_reports/
+              default=None,
               type=click.Path(file_okay=False, dir_okay=True),
               help="Directory to save the combined output files. If not provided, the directory is determined from the launcher config file.",
               show_default=True)
