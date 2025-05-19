@@ -47,6 +47,7 @@ if tumorid:
                 expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
                 expand("qc_report/{tumorname}_qc_stats.xlsx", tumorname=tumorname),
                 expand("qc_report/{tumorname}_qc_stats_wgsadmin.xlsx", tumorname=tumorname),
+                expand("qc_report/{tumorname}_qc_stats_wgsadmin.xlsx", tumorname=tumorname),
                 expand("{stype}/canvas/{sname}_CNV_germline.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/manta/{sname}_somatic_mantaSV.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]), 
                 expand("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
@@ -73,6 +74,7 @@ else:
         input:
             expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[normalname]["stype"], caller="dnascope", sname=normalid, vcftype="germline"),
             expand("qc_report/{normalname}_qc_stats.xlsx", normalname=normalname),
+            expand("qc_report/{normalname}_qc_stats_wgsadmin.xlsx", normalname=normalname),
             expand("qc_report/{normalname}_qc_stats_wgsadmin.xlsx", normalname=normalname),
             expand("{stype}/canvas/{sname}_CNV_germline.vcf.xlsx", sname=normalid, stype=sampleconfig[normalname]["stype"]),
             expand("{stype}/dnascope/{sname}_{hgX}_SNV_CNV_germline.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], sname=normalid, stype=sampleconfig[normalname]["stype"], hgX=reference),
