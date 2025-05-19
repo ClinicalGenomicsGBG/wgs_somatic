@@ -17,12 +17,12 @@ def setup_logging(log_dir):
 
 @click.command()
 @click.option('--base_directory', 
-              default="/clinical/data/wgs_somatic/test_output/test_qc_admin/test_combined", 
+              default="/clinical/data/wgs_somatic/test_output/test_qc_admin/test_combined", #TODO: change to /webstore/clinical/routine/wgs_somatic/current
               type=click.Path(file_okay=False, dir_okay=True, exists=True),
               help="Base directory containing subdirectories for each sample/sample T-N pairs. Each subdirectory should contain '_qc_stats_wgsadmin.xlsx' files to be combined.", 
               required=True, show_default=True)
 @click.option('--output_directory', 
-              default=None, 
+              default=None, #TODO:change to /webstore/clinical/routine/laboratory/current/quality_reports/
               type=click.Path(file_okay=False, dir_okay=True),
               help="Directory to save the combined output files. If not provided, the directory is determined from the launcher config file.",
               show_default=True)
@@ -58,40 +58,41 @@ def combine_qc_stats(base_directory, output_directory, launcher_config):
     # Dictionary to store dataframes for each runtag
     runtag_dataframes = {}
 
-    # Iterate through directories in the base directory
-    for directory in os.listdir(base_directory):
-        dir_path = os.path.join(base_directory, directory)
-        
-        # Check if it's a directory and matches the naming pattern
-        if os.path.isdir(dir_path) and len(directory.split('_')) >= 4:
-            # Extract the runtag (second and third parts of the directory name)
-            parts = directory.split('_')
-            runtag = f"{parts[1]}_{parts[2]}"
+    # Iterate through directories in the base directory. Also checks subdirectories such as tumor_only and normal_only
+    for root, dirs, files in os.walk(base_directory):
+        for directory in dirs:
+            dir_path = os.path.join(root, directory)  # Full path of the directory
             
-            logger.info(f"Processing directory: {dir_path} for runtag: {runtag}")
+            # Check if it's a directory and matches the naming pattern
+            if len(directory.split('_')) >= 4:
+                # Extract the runtag (second and third parts of the directory name)
+                parts = directory.split('_')
+                runtag = f"{parts[1]}_{parts[2]}"
+                
+                logger.info(f"Processing directory: {dir_path} for runtag: {runtag}")
 
-            # Find all matching files in the directory
-            matching_files = [file for file in os.listdir(dir_path) if file.endswith("_qc_stats_wgsadmin.xlsx")]
-            
-            # Skip the directory if no matching files are found
-            if not matching_files:
-                logger.warning(f"No '_qc_stats_wgsadmin.xlsx' files found in {dir_path}. Skipping...")
-                continue
-            
-            # Initialize a list to store dataframes for this runtag
-            if runtag not in runtag_dataframes:
-                runtag_dataframes[runtag] = []
-            
-            # Process each matching file
-            for file in matching_files:
-                file_path = os.path.join(dir_path, file)
-                try:
-                    df = pd.read_excel(file_path)
-                    runtag_dataframes[runtag].append((file_path, df))
-                    logger.info(f"Successfully read file: {file_path}")
-                except Exception as e:
-                    logger.error(f"Error reading {file_path}: {e}")
-
+                # Find all matching files in the directory
+                matching_files = [file for file in os.listdir(dir_path) if file.endswith("_qc_stats_wgsadmin.xlsx")]
+                
+                # Skip the directory if no matching files are found
+                if not matching_files:
+                    logger.warning(f"No '_qc_stats_wgsadmin.xlsx' files found in {dir_path}. Skipping...")
+                    continue
+                
+                # Initialize a list to store dataframes for this runtag
+                if runtag not in runtag_dataframes:
+                    runtag_dataframes[runtag] = []
+                
+                # Process each matching file
+                for file in matching_files:
+                    file_path = os.path.join(dir_path, file)
+                    try:
+                        df = pd.read_excel(file_path)
+                        runtag_dataframes[runtag].append((file_path, df))
+                        logger.info(f"Successfully read file: {file_path}")
+                    except Exception as e:
+                        logger.error(f"Error reading {file_path}: {e}")
+                        
     os.makedirs(output_directory, exist_ok=True)
 
     # Combine and save the dataframes for each runtag
@@ -106,19 +107,19 @@ def combine_qc_stats(base_directory, output_directory, launcher_config):
             # Read the existing combined file
             existing_df = pd.read_excel(output_file_xlsx)
             combined_df = existing_df
-            newer_file_detected = False
+            # newer_file_detected = False
+            new_content_detected = False
             for file_path, new_df in file_dataframes:
-                # Compare modification times
-                if os.path.getmtime(file_path) > os.path.getmtime(output_file_xlsx):
-                    logger.info(f"Newer file detected: {file_path}. Combining with existing report.")
+                # check if the content of the files in the directory is already in the combined file
+                if not new_df.isin(existing_df.to_dict(orient='list')).all().all():
+                    logger.info(f"New content detected in file: {file_path}. Combining with existing summary.")
                     combined_df = pd.concat([combined_df, new_df], ignore_index=True).drop_duplicates()
-                    newer_file_detected = True
+                    new_content_detected = True
                 else:
-                    logger.info(f"Skipping {file_path} as it is older than the existing combined file.")
+                    logger.info(f"Skipping {file_path} as its content is already present in the existing combined file.")
             
-            # If no newer file was detected, skip saving
-            if not newer_file_detected:
-                logger.info(f"No newer files detected for runtag {runtag}. Skipping...")
+            if not new_content_detected:
+                logger.info(f"No new content detected for runtag {runtag}. Skipping...")
                 continue
         else:
             logger.info(f"No existing combined file found for runtag {runtag}. Creating a new one.")
