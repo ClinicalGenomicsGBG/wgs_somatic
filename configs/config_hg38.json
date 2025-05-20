@@ -3,6 +3,10 @@
     "referencefai": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai",
     "singularities":
     {
+        "ascat":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/ascat-3.2.0.sif"
+        },
         "canvas":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/canvas_hg38_v1.40.0.1613.sif",
@@ -57,6 +61,14 @@
         "recal":
         {
             "outputdir": "recal"
+        },
+        "ascat_run":{
+            "allelecounter_exe": "/opt/conda/bin/alleleCounter",
+            "alleles_prefix": "/clinical/exec/wgs_somatic/dependencies/ascat/G1000_alleles_hg38_chr",
+            "loci_prefix": "/clinical/exec/wgs_somatic/dependencies/ascat/G1000_loci_hg38_chr",
+            "genome_version": "hg38",
+            "gc_content_file": "/clinical/exec/wgs_somatic/dependencies/ascat/GC_G1000_hg38.txt",
+            "replic_timing_file": "/clinical/exec/wgs_somatic/dependencies/ascat/RT_G1000_hg38.txt"
         },
         "insilico":
         {
