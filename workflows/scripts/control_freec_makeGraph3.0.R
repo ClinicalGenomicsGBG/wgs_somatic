@@ -74,7 +74,14 @@ cytoband <- data.frame(read.table(cytoband, header = TRUE)) %>%
          ))
 
 # Calculate the ploidy based on the ratio data
-ploidy = median(ratio$CopyNumber[which(ratio$MedianRatio > 0.8 & ratio$MedianRatio < 1.2)], na.rm = TRUE)
+valid_ratio <- ratio %>% filter(MedianRatio > 0.8 & MedianRatio < 1.2)
+
+if (nrow(valid_ratio) > 0) {
+  ploidy <- median(valid_ratio$CopyNumber, na.rm = TRUE)
+} else {
+  ploidy <- 2  # Default ploidy value
+}
+
 cat(c("INFO: Selected ploidy:", ploidy, "\n"))
 
 # Calculate the most common increment value in the ratio data

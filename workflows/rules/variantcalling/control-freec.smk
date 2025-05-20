@@ -83,6 +83,6 @@ rule control_freec_plot:
             echo "Skipping plot for {wildcards.sname} because Control-FREEC failed."
             touch {output.ratio_plot} {output.ratio_seg}
         else
-            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg}
+            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg}
         fi
         """
