@@ -1,0 +1,13 @@
+name: ascat-3.2.0
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - ascat=3.2.0
+  - cancerit-allelecount=4.3.0
+  - r-ggpubr
+  - r-cowplot
+  - r-tidyverse
+  - r-htmlwidgets
+  - r-plotly
+  - r-optparse
