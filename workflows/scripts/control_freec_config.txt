@@ -32,7 +32,7 @@ contaminationAdjustment = TRUE
 
 #breakPointType = 4
 #forceGCcontentNormalization = 0
-sex = XY
+sex = XX
 
 
 ##set BedGraphOutput=TRUE if you want to create a BedGraph track for visualization in the UCSC genome browser:
