@@ -41,7 +41,7 @@ def combine_qc_stats(base_directory, output_directory, launcher_config):
         setup_logging(json.load(launcher_config_file).get('logdir'))
     
     logger = logging.getLogger(__name__)
-    logger.info("Starting WGS admin QC summary summary per run")
+    logger.info("Starting WGS admin QC summary per run")
     
     if output_directory is None:
         try:
