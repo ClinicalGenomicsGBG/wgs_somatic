@@ -31,6 +31,13 @@ opt$`loci-prefix` <- normalizePath(opt$`loci-prefix`)
 opt$`gc-content-file` <- normalizePath(opt$`gc-content-file`)
 opt$`replic-timing-file` <- normalizePath(opt$`replic-timing-file`)
 
+# Map "male" and "female" to "XY" and "XX"
+if (opt$gender == "male") {
+  opt$gender <- "XY"
+} else if (opt$gender == "female") {
+  opt$gender <- "XX"
+}
+
 # Ensure the output directory exists
 if (!dir.exists(opt$`output-dir`)) {
   dir.create(opt$`output-dir`, recursive = TRUE)
