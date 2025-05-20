@@ -16,10 +16,6 @@
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/control-freec-11.6.sif"
         },
-        "control-freec":
-        {
-            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/control-freec-11.6.sif"
-        },
         "msi":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/msisensor-pro-1.3.0.sif"
