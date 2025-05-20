@@ -1,10 +1,13 @@
 import re
 import os
 import sys
+from sex import calc_sex
 
 
-def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, mappability, threads, output_config):
-    
+def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, mappability, threads, output_config, wgscovfile, ycovfile):
+    # Predict sex using calc_sex
+    pred_sex = calc_sex(wgscovfile, ycovfile)
+
     outdir = os.path.dirname(output_config)
     os.makedirs(outdir, exist_ok=True)
 
@@ -24,6 +27,7 @@ def edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile
     config_data = re.sub(r'^chrFiles =.*', f'chrFiles = {chrFiles}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^gemMappabilityFile =.*', f'gemMappabilityFile = {mappability}', config_data, flags=re.MULTILINE)
     config_data = re.sub(r'^maxThreads =.*', f'maxThreads = {threads}', config_data, flags=re.MULTILINE)
+    config_data = re.sub(r'^sex =.*', f'sex = {"XY" if pred_sex == "male" else "XX"}', config_data, flags=re.MULTILINE)
     with open(output_config, 'w') as file:
         file.write(config_data)
 
@@ -40,5 +44,7 @@ if __name__ == "__main__":
     mappability = sys.argv[7]
     threads = sys.argv[8]
     output_config = sys.argv[9]
+    wgscovfile = sys.argv[10]
+    ycovfile = sys.argv[11]
 
-    edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, mappability, threads, output_config)
+    edit_config(config_template, ploidy, tumor_pileup, normal_pileup, chrLenFile, chrFiles, mappability, threads, output_config, wgscovfile, ycovfile)
