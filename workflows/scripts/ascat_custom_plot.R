@@ -13,13 +13,21 @@ option_list <- list(
   make_option("--genome-fai", type = "character", help = "Path to the genome FAI file", metavar = "character"),
   make_option("--segments", type = "character", help = "Path to the segments file", metavar = "character"),
   make_option("--Rdata-file", type = "character", help = "Path to the ascat run Rdata file", metavar = "character"),
-  make_option("--output-plot", type = "character", help = "Path to output plot", metavar = "character")
+  make_option("--output-plot", type = "character", help = "Path to output plot", metavar = "character"),
+  make_option("--output-seg", type = "character", help = "Path to output segments file", metavar = "character"),
+  make_option("--output-baf", type = "character", help = "Path to output BAF file", metavar = "character")
 )
 
 # Parse command-line arguments
 opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 
+# Map "male" and "female" to "XY" and "XX"
+if (opt$gender == "male") {
+  opt$gender <- "XY"
+} else if (opt$gender == "female") {
+  opt$gender <- "XX"
+}
 
 theme_set(theme_pubclean())
 
@@ -108,7 +116,10 @@ plot_grid(Segment_plot, BAF_plot, LogR_plot,
 dev.off()
 
 # Write the segmentation data to a file for IGV visualization
-output_ratio_seg <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_copynumber_IGV.seg"))
+output_ratio_seg <- opt$`output-seg`
+if (is.null(output_ratio_seg)) {
+  output_ratio_seg <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_copynumber_IGV.seg"))
+}
 
 # Add IGV-compatible header
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_ratio_seg)
@@ -125,7 +136,10 @@ read.table(opt$`segments`, header = TRUE, sep = "\t") %>%
 
 
 # Write the BAF data to an IGV-compatible file
-output_baf_seg <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_BAF_IGV.seg"))
+output_baf_seg <- opt$`output-baf`
+if (is.null(output_baf_seg)) {
+  output_baf_seg <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_BAF_IGV.seg"))
+}
 
 # Add IGV-compatible header
 writeLines("#track graphType=points maxHeightPixels=100:100:100 color=0,0,255 altColor=255,0,0", con = output_baf_seg)
