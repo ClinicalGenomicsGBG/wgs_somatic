@@ -47,7 +47,6 @@ if tumorid:
                 expand("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.{fmt}", fmt=["vcf.gz", "vcf.gz.csi"], stype=sampleconfig[tumorname]["stype"], caller="tnscope", sname=tumorid, vcftype="somatic"),
                 expand("qc_report/{tumorname}_qc_stats.xlsx", tumorname=tumorname),
                 expand("qc_report/{tumorname}_qc_stats_wgsadmin.xlsx", tumorname=tumorname),
-                expand("qc_report/{tumorname}_qc_stats_wgsadmin.xlsx", tumorname=tumorname),
                 expand("{stype}/canvas/{sname}_CNV_germline.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 expand("{stype}/manta/{sname}_somatic_mantaSV.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]), 
                 expand("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
