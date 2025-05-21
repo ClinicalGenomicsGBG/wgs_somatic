@@ -141,5 +141,5 @@ rule ascat_plot:
             --Rdata-file {input.rdata_file} \
             --output-plot {output.plot} \
             --output-seg {output.seg} \
-            --output-BAF {output.BAF}
+            --output-baf {output.BAF}
         """
