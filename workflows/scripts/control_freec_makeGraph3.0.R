@@ -31,22 +31,40 @@ cytoband <- args[5]               # Cytoband file (chromosome banding informatio
 output_ratio_plot <- args[6]      # Output file for the ratio plot
 output_ratio_seg <- args[7]       # Output file for the ratio segmentation
 
+# Set the default theme for plots
+theme_set(theme_pubclean())
+
 # Check if the FAI file exists
 if (!file.exists(fai_file)) {
   stop(paste("FAI file not found:", fai_file))
 }
 
-# Set the default theme for plots
-theme_set(theme_pubclean())
-
-# Read the ratio data into a data frame
-ratio <- data.frame(read.table(ratio_file, header=TRUE))
+# Check if the ratio file exists and is not empty
+if (!file.exists(ratio_file) || file.info(ratio_file)$size == 0) {
+  cat("WARNING: Ratio file is missing or empty. Creating placeholder outputs.\n")
+  # Create empty placeholder outputs
+  png(output_ratio_plot)
+  plot.new()
+  text(0.5, 0.5, "No data available", cex = 2)
+  dev.off()
+  
+  write.table(data.frame(), output_ratio_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+  quit(status = 0)
+} else {
+  # Read the ratio data into a data frame
+  ratio <- data.frame(read.table(ratio_file, header=TRUE))
+}
 
 # Read the BAF data into a data frame, skipping header lines starting with '#'
-BAF <- read.table(BAF_file, header = FALSE, comment.char = "#", sep = "\t",
-                  col.names = c("Chromosome", "Start", "End", "Features", "BAF"))%>%
-  mutate(Chromosome = substr(Chromosome, 4, 30)) # Remove the "chr" prefix from chromosome names
-
+if (!file.exists(BAF_file) || file.info(BAF_file)$size == 0) {
+  cat("WARNING: BAF file is missing or empty. Proceeding without BAF data.\n")
+  BAF <- data.frame()  # Create an empty data frame
+} else {
+  BAF <- read.table(
+    BAF_file, header = FALSE, comment.char = "#", sep = "\t",
+    col.names = c("Chromosome", "Start", "End", "Features", "BAF"))%>%
+    mutate(Chromosome = substr(Chromosome, 4, 30)) # Remove the "chr" prefix from chromosome names
+}
 
 # Read the FAI file and process it
 fai <- read.table(fai_file, header = FALSE, sep = "\t", 
