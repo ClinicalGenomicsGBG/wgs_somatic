@@ -127,7 +127,15 @@ ratio_adjusted <- ratio %>%
 # Calculate breaks and labels for the y-axis
 max_corr_ratio <- max(ratio_adjusted$corr_ratio, na.rm = TRUE)
 breaks <- seq(0, max_corr_ratio, by = 1)
-labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max(breaks) - 1))
+
+# If the maximum ratio after correction is the same as before correction, 
+# it means the ratio is not adjusted and we can use the original labels
+if (max_corr_ratio == max(ratio_adjusted$Ratio * ploidy, na.rm = TRUE)) {
+  labels <- as.character(breaks)
+} else {
+  # Otherwise, we need to adjust the labels to reflect the correction
+  labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max_corr_ratio - 1))
+}
 
 # Create the ratio plot
 Ratio_plot <- ggplot(fai) +                                              
