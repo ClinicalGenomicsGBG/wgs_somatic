@@ -59,7 +59,7 @@ else:
             """
             set -e
             (python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_bam} {input.normal_bam} {params.chrLenFile} {params.chrFiles} {params.mappability} {threads} {output.config} {input.wgscovfile} {input.ycov} &&
-            freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info} {output.tumor_ratio}.failed)
+            freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info})
             """
 
 rule control_freec_plot:
@@ -77,12 +77,5 @@ rule control_freec_plot:
         ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg"),
     shell:
         """
-        FAILED_FILE=$(realpath {input.ratio}.failed)
-        echo "Checking for failed file: $FAILED_FILE"
-        if test -f $FAILED_FILE; then
-            echo "Skipping plot for {wildcards.sname} because Control-FREEC failed."
-            touch {output.ratio_plot} {output.ratio_seg}
-        else
-            Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg}
-        fi
+        Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg}
         """
