@@ -50,11 +50,27 @@ seg_df <- merge(seg_df, fai, by = "chr") %>%
   mutate(
     startpos = startpos + start,
     endpos = endpos + start,
-    segment_size = endpos - startpos,
-    segment_frac = segment_size / sum(segment_size)
+    segment_size = endpos - startpos
   )%>%
   dplyr::rename(minor_allele = nMinor, major_allele = nMajor)%>%
   pivot_longer(cols = c(major_allele, minor_allele), names_to = "allele", values_to = "ascat_ploidy")
+
+# If there are any segments with more than 3 times the median segment ploidy, cap them to 3 times the median
+max_ploidy <- median(seg_df$ascat_ploidy, na.rm = TRUE) * 3
+if (any(seg_df$ascat_ploidy > max_ploidy)) {
+  seg_df <- seg_df %>%
+    mutate(ascat_ploidy = ifelse(
+      ascat_ploidy > max_ploidy,
+      # If the ploidy is greater than max_ploidy, subtract the rounded difference from ascat_ploidy
+      ascat_ploidy - (round(ascat_ploidy - max_ploidy, 0)),
+      ascat_ploidy
+    ))
+  breaks <- seq(0, max_ploidy, by = 1)
+  labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max_ploidy))
+} else {
+  breaks <- seq(0, max(seg_df$ascat_ploidy, na.rm = TRUE), by = 1)
+  labels <- as.character(breaks)
+}
 
 ## Load ascat.bc from the Rdata file
 load(opt$`Rdata-file`)  # Load the Rdata file containing ascat.bc
@@ -92,7 +108,10 @@ Segment_plot <- ggplot(fai)+
                  aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
                  linewidth = 2.5, position = position_dodge(width = -0.1))+
   geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5)+
-  ylab("Copy number")+
+  scale_y_continuous("Copy number",
+                     breaks = breaks,
+                     labels = labels,
+                     expand = expansion(mult = 0.1)) +
   theme(legend.title=element_blank(), axis.title.x = element_blank())
 
 BAF_plot <-  ggplot(fai)+
@@ -111,7 +130,7 @@ LogR_plot <-  ggplot(fai)+
   theme(axis.title.x = element_blank())
 
 plot_grid(Segment_plot, BAF_plot, LogR_plot, 
-          ncol = 1, align = "v", rel_heights = c(3,2,2))
+          ncol = 1, align = "v", rel_heights = c(2,1,1))
 
 dev.off()
 
