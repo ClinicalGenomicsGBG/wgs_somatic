@@ -53,13 +53,17 @@ rule dnascope_vcffilter:
         threads = clusterconf["dnascope_vcffilter"]["threads"],
         bcftools = pipeconfig["rules"]["dnascope_vcffilter"]["bcftools"],
         vcftools = pipeconfig["rules"]["dnascope_vcffilter"]["vcftools"],
-        passfilter = "'FILTER=\"PASS\"'"
     output:
         germline_vcf = "{stype}/dnascope/{sname}_germline.vcf", 
         germline_snv_vcf = temp("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf"),
-    shadow:
-        pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
-    run:
-        shell("{params.bcftools} filter -s 'ML_FAIL' -e 'INFO/ML_PROB > 0.5' -m x {input.vcf} > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_modelfiltered_0.5.vcf")
-        shell("{params.bcftools} filter -i {params.passfilter} -m x {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_modelfiltered_0.5.vcf > {output.germline_vcf}")
-        shell("{params.vcftools} --vcf {output.germline_vcf} --remove-indels --recode --stdout > {output.germline_snv_vcf}")
+    #shadow:
+        #pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
+    shell:
+        """
+        {params.bcftools} filter -s 'ML_FAIL' -e 'INFO/ML_PROB > 0.5' -m + {input.vcf} > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered1.vcf
+        {params.bcftools} filter -s 'low_depth' -e 'FORMAT/DP < 10' -m + {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered1.vcf> {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered2.vcf
+        {params.bcftools} filter -s 'low_genotype_quality' -e 'FORMAT/GQ < 20' -m + {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered2.vcf > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered3.vcf
+        {params.bcftools} filter -s 'low_qual_per_depth' -e 'INFO/QD < 4' -m + {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered3.vcf > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered4.vcf
+        {params.bcftools} view -f PASS {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered4.vcf > {output.germline_vcf}
+        {params.vcftools} --vcf {output.germline_vcf} --remove-indels --recode --stdout > {output.germline_snv_vcf}
+        """
