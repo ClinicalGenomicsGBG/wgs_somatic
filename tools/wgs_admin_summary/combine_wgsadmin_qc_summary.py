@@ -17,10 +17,10 @@ def setup_logging(log_dir):
     
 @click.command()
 @click.option('--base_directory', 
-              default="/clinical/data/wgs_somatic/test_output/test_qc_admin/test_combined", #TODO: change to /webstore/clinical/routine/wgs_somatic/current
+              default=None,
               type=click.Path(file_okay=False, dir_okay=True, exists=True),
-              help="Base directory containing subdirectories for each sample/sample T-N pairs. Each subdirectory should contain '_qc_stats_wgsadmin.xlsx' files to be combined.", 
-              required=True, show_default=True)
+              help="Base directory containing subdirectories for each sample/sample T-N pairs. Each subdirectory should contain '_qc_stats_wgsadmin.xlsx' files to be combined. If not provided, the directory is determined from the launcher config file.", 
+              show_default=True)
 @click.option('--output_directory', 
               default=None,
               type=click.Path(file_okay=False, dir_okay=True),
@@ -32,7 +32,12 @@ def setup_logging(log_dir):
               default=os.path.join(os.path.dirname(__file__), "../../configs/launcher_config.json"), 
               help="Path to the launcher config file. This file should contain the 'wgsadmin_dir' key specifying the default output directory.", 
               show_default=True)
-def combine_qc_stats(base_directory, output_directory, launcher_config):
+@click.option('--runtag_results',
+              type=str,
+              default=None,
+              help="Specific runtag to process. If provided, only this runtag will be processed. Otherwise, all runtags in the base directory will be processed.",
+              show_default=True)
+def combine_qc_stats(base_directory, output_directory, launcher_config, runtag_results):
     """
     Command-line tool to combine '_qc_stats_wgsadmin.xlsx' files for each runtag in the given BASE_DIRECTORY.
     """
@@ -43,20 +48,32 @@ def combine_qc_stats(base_directory, output_directory, launcher_config):
     logger = logging.getLogger(__name__)
     logger.info("Starting WGS admin QC summary per run")
     
-    if output_directory is None:
-        try:
-            with open(launcher_config, 'r') as launcher_config_file:
-                output_directory = json.load(launcher_config_file).get('wgsadmin_dir')
+    # if output_directory is not provided, read it from the launcher_config
+    # if base_directory is not provided, read it from the launcher_config
+    try:
+        with open(launcher_config, 'r') as launcher_config_file:
+            config_data = json.load(launcher_config_file)
+            if output_directory is None:
+                output_directory = config_data.get('wgsadmin_dir')
                 if output_directory is None:
                     raise KeyError("Key 'wgsadmin_dir' not found in launcher_config.")
-        except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-            raise FileNotFoundError(f"Launcher config not found: {e}")
+            if base_directory is None:
+                base_directory = config_data.get('resultdir_hg38')
+                if base_directory is None:
+                    raise KeyError("Key 'resultdir_hg38' not found in launcher_config.")
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        raise FileNotFoundError(f"Launcher config not found or invalid: {e}")
         
     logger.info(f"Base directory: {base_directory}")
     logger.info(f"Output directory: {output_directory}")
     
     # Dictionary to store dataframes for each runtag
     runtag_dataframes = {}
+    if runtag_results:
+        runtag_parts = runtag_results.split("+")[0].split("_")
+        input_runtag = f"{runtag_parts[0]}_{runtag_parts[3]}"
+    else:
+        input_runtag = None
 
     # Iterate through directories in the base directory. Also checks subdirectories such as tumor_only and normal_only
     for root, dirs, files in os.walk(base_directory):
@@ -67,9 +84,14 @@ def combine_qc_stats(base_directory, output_directory, launcher_config):
             if len(directory.split('_')) >= 4:
                 # Extract the runtag (second and third parts of the directory name)
                 parts = directory.split('_')
-                runtag = f"{parts[1]}_{parts[2]}"
+                current_runtag = f"{parts[1]}_{parts[2]}"
                 
-                logger.info(f"Processing directory: {dir_path} for runtag: {runtag}")
+                # If a specific runtag is provided, skip directories that don't match
+                if input_runtag and current_runtag != input_runtag:
+                    logger.info(f"Skipping directory: {dir_path} as it does not match the specified runtag: {input_runtag}")
+                    continue
+                
+                logger.info(f"Processing directory: {dir_path} for runtag: {current_runtag}")
 
                 # Find all matching files in the directory
                 matching_files = [file for file in os.listdir(dir_path) if file.endswith("_qc_stats_wgsadmin.xlsx")]
@@ -80,15 +102,15 @@ def combine_qc_stats(base_directory, output_directory, launcher_config):
                     continue
                 
                 # Initialize a list to store dataframes for this runtag
-                if runtag not in runtag_dataframes:
-                    runtag_dataframes[runtag] = []
+                if current_runtag not in runtag_dataframes:
+                    runtag_dataframes[current_runtag] = []
                 
                 # Process each matching file
                 for file in matching_files:
                     file_path = os.path.join(dir_path, file)
                     try:
                         df = pd.read_excel(file_path)
-                        runtag_dataframes[runtag].append((file_path, df))
+                        runtag_dataframes[current_runtag].append((file_path, df))
                         logger.info(f"Successfully read file: {file_path}")
                     except Exception as e:
                         logger.error(f"Error reading {file_path}: {e}")
