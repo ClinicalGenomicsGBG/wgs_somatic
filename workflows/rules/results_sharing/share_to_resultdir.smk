@@ -35,6 +35,8 @@ if tumorid:
                 expand("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/ascat/{sname}_ascat_plot.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                expand("{stype}/ascat/{sname}_ascat_copynumber_IGV.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                expand("{stype}/ascat/{sname}_ascat_BAF_IGV.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             output:
                 "reporting/shared_result_files.txt"
             run:
@@ -62,6 +64,8 @@ if tumorid:
                 expand("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"], ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
                 expand("{stype}/ascat/{sname}_ascat_plot.png", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                expand("{stype}/ascat/{sname}_ascat_copynumber_IGV.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                expand("{stype}/ascat/{sname}_ascat_BAF_IGV.seg", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
             output:
                 "reporting/shared_result_files.txt"
             run:
