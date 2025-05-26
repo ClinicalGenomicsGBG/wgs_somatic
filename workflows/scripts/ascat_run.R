@@ -101,9 +101,6 @@ if (opt$tumoronly) {
 
 }
 
-# Restore the original working directory
-setwd(original_wd)
-
 # Common steps for both tumor-only and tumor-and-normal
 ascat.bc <- ascat.correctLogR(
   ascat.bc,
@@ -116,6 +113,9 @@ if (opt$tumoronly) {
 } else {
   ascat.bc <- ascat.aspcf(ascat.bc)
 }
+
+# Restore the original working directory
+setwd(original_wd)
 
 ascat.output <- ascat.runAscat(ascat.bc, gamma = 1, write_segments = TRUE, img.dir = opt$`output-dir`)
 
