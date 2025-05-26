@@ -43,7 +43,8 @@ if normalid:
             replic_timing_file = pipeconfig["rules"]["ascat_run"]["replic_timing_file"],
             ascat_run_script = f"{ROOT_DIR}/workflows/scripts/ascat_run.R",
         output:
-            # All output will be stored in the temporary output_directory except the Rdata and segments files
+            # All output will be stored in the temporary output_directory. 
+            # The Rdata and segments files are moved to the below output locations for further processing.
             output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
             rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
             segments = temp("{stype}/ascat/{sname}.segments.txt"),

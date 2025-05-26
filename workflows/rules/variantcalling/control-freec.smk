@@ -59,7 +59,7 @@ else:
         shell:
             """
             set -e
-            (python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_bam} {input.normal_bam} {params.chrLenFile} {params.chrFiles} {params.mappability} {threads} {output.config} {input.wgscovfile} {input.ycov} &&
+            (python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_bam} {params.normal_bam} {params.chrLenFile} {params.chrFiles} {params.mappability} {threads} {output.config} {input.wgscovfile} {input.ycov} &&
             freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info})
             """
 
