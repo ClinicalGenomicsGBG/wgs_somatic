@@ -13,34 +13,6 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
     df = df.dropna(subset=['ID'])
 
 
-    # this part of the script removes duplicates (translocations from both directions)
-
-    row_indices = []
-
-    for a in df['ID']:
-        for b in df['MATEID']:
-            if a == b:
-
-                row_index_b = df[df['MATEID']==b].index.values
-                row_index_a = df[df['ID']==a].index.values
-
-
-                # append indices as tuples for each matching pair
-                row_indices.append((row_index_a[0], row_index_b[0]))
-
-
-
-    # get pair only once (a,b) and remove the same pair (b,a)
-    a_b_pairs = [tup for tup in row_indices if tup[0] < tup[1]]
-
-
-
-    # second element of each tuple = row indices to be removed
-    remove_indices = [i[1] for i in a_b_pairs]
-
-
-    df.drop(remove_indices, 0, inplace=True)
-
     # this part of the script highlights genes from the gene list
 
     # open the genelist
