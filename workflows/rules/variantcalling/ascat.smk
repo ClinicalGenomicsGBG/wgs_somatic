@@ -4,6 +4,7 @@ from workflows.scripts.sex import calc_sex
 # Helper function to resolve file paths dynamically
 def get_cov_files(wildcards):
     if normalid:
+        # If normal is included in the run, the Ycov and WGScov files are taken from the normal sample
         return {
             "wgscov": "{stype}/reports/{sname}_WGScov.tsv".format(
                 stype=sampleconfig[normalname]["stype"], sname=normalid),
@@ -11,6 +12,7 @@ def get_cov_files(wildcards):
                 stype=sampleconfig[normalname]["stype"], sname=normalid)
         }
     else:
+        # If no normal is included, the Ycov and WGScov files are taken from the tumor sample
         return {
             "wgscov": "{stype}/reports/{sname}_WGScov.tsv".format(
                 stype=sampleconfig[tumorname]["stype"], sname=tumorid),
@@ -29,6 +31,9 @@ if normalid:
             allelecounter_exe = pipeconfig["rules"]["ascat_run"]["allelecounter_exe"],
             alleles_prefix = pipeconfig["rules"]["ascat_run"]["alleles_prefix"],
             loci_prefix = pipeconfig["rules"]["ascat_run"]["loci_prefix"],
+            # calc_sex outputs male / female, ascat Rscript accepts male/XY or female/XX
+            # ascat will currently not calculate on chrY but will add it to the plot depending on sex
+            # see also: https://github.com/VanLoo-lab/ascat/issues/125
             gender = lambda wildcards: calc_sex(
                 get_cov_files(wildcards)["wgscov"],
                 get_cov_files(wildcards)["ycov"]
@@ -38,6 +43,7 @@ if normalid:
             replic_timing_file = pipeconfig["rules"]["ascat_run"]["replic_timing_file"],
             ascat_run_script = f"{ROOT_DIR}/workflows/scripts/ascat_run.R",
         output:
+            # All output will be stored in the temporary output_directory except the Rdata and segments files
             output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
             rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
             segments = temp("{stype}/ascat/{sname}.segments.txt"),
