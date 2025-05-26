@@ -23,6 +23,7 @@ opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 
 # Map "male" and "female" to "XY" and "XX"
+# Added for compatibility with the calc_sex() function
 if (opt$gender == "male") {
   opt$gender <- "XY"
 } else if (opt$gender == "female") {
@@ -31,7 +32,7 @@ if (opt$gender == "male") {
 
 theme_set(theme_pubclean())
 
-
+# The fai is used to get the chromosome lengths and plot them sequentially
 fai <- read.table(opt$`genome-fai`, header = FALSE, sep = "\t", 
                   col.names = c("chr", "length", "start", "value1", "value2")) %>%
   mutate(chr = substr(chr,4,30))%>%
@@ -65,6 +66,7 @@ if (any(seg_df$ascat_ploidy > max_ploidy)) {
       ascat_ploidy - (round(ascat_ploidy - max_ploidy, 0)),
       ascat_ploidy
     ))
+  # If the ploidy is capped, make it clear in the plot with the labels
   breaks <- seq(0, max_ploidy, by = 1)
   labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max_ploidy))
 } else {

@@ -25,10 +25,11 @@ if normalid:
         shadow:
             pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
+            # The output files are created by freec, but we also create them if freec fails
             """
             set -e
             (python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_bam} {input.normal_bam} {params.chrLenFile} {params.chrFiles} {params.mappability} {threads} {output.config} {input.wgscovfile} {input.ycov} &&
-            freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info} {output.tumor_ratio}.failed)
+            freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info})
             """
 
 else:
@@ -76,6 +77,7 @@ rule control_freec_plot:
         ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png"),
         ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg"),
     shell:
+        # The Rscript accepts empty input files, so we can run it even if the previous step failed
         """
         Rscript {params.plot_script} {wildcards.sname} {input.ratio} {input.BAF} {params.fai} {params.cytoBandIdeo} {output.ratio_plot} {output.ratio_seg}
         """
