@@ -25,7 +25,6 @@ opt <- parse_args(opt_parser)
 
 # Convert input file paths to absolute paths
 opt$`tumor-bam` <- normalizePath(opt$`tumor-bam`)
-opt$`normal-bam` <- normalizePath(opt$`normal-bam`)
 opt$`alleles-prefix` <- normalizePath(opt$`alleles-prefix`)
 opt$`loci-prefix` <- normalizePath(opt$`loci-prefix`)
 opt$`gc-content-file` <- normalizePath(opt$`gc-content-file`)
@@ -71,6 +70,8 @@ if (opt$tumoronly) {
   )
 
 } else {
+  opt$`normal-bam` <- normalizePath(opt$`normal-bam`)
+
   # Tumor-and-normal analysis
   ascat.prepareHTS(
     tumourseqfile = opt$`tumor-bam`,
