@@ -273,12 +273,16 @@ def wrapper(instrument=None, outpath=None):
                 end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, None)))
                 final_pairs.append(f'{t_key} (T), {t_value[2]} {["prio" if t_value[3] else ""][0]}')
 
-        for n_key in normal_samples:
+        for n_key, n_value in normal_samples.items():
             if not any(n_key == pair[1] for pair in paired_samples):
+                # We are no longer running the normal-only samples
+                """
                 outputdir = submit_pipeline(None, n_key, outpath, config, logger, threads)
                 outputdirs.append(outputdir)
                 end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, None, n_key)))
                 final_pairs.append(f'{n_key} (N), {n_value[2]} {["prio" if n_value[3] else ""][0]}')
+                """
+                logger.info(f'Skipping normal-only sample {n_key} as it is not paired with a tumor sample.')
 
         # Start several samples at the same time
         for t in threads:
