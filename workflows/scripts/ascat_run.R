@@ -25,10 +25,13 @@ opt <- parse_args(opt_parser)
 
 # Convert input file paths to absolute paths
 opt$`tumor-bam` <- normalizePath(opt$`tumor-bam`)
-opt$`alleles-prefix` <- normalizePath(opt$`alleles-prefix`)
-opt$`loci-prefix` <- normalizePath(opt$`loci-prefix`)
+opt$`alleles-prefix` <- normalizePath(opt$`alleles-prefix`, mustWork = FALSE)
+opt$`loci-prefix` <- normalizePath(opt$`loci-prefix`, mustWork = FALSE)
 opt$`gc-content-file` <- normalizePath(opt$`gc-content-file`)
 opt$`replic-timing-file` <- normalizePath(opt$`replic-timing-file`)
+if (!opt$tumoronly) {
+    opt$`normal-bam` <- normalizePath(opt$`normal-bam`)
+}
 
 # Map "male" and "female" to "XY" and "XX"
 if (opt$gender == "male") {
@@ -70,7 +73,7 @@ if (opt$tumoronly) {
   )
 
 } else {
-  opt$`normal-bam` <- normalizePath(opt$`normal-bam`)
+#   opt$`normal-bam` <- normalizePath(opt$`normal-bam`)
 
   # Tumor-and-normal analysis
   ascat.prepareHTS(
