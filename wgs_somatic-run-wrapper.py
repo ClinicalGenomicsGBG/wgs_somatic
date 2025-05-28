@@ -323,7 +323,8 @@ def wrapper(instrument=None, outpath=None):
         # the defaults for base_directory and output_directory are defined in the launcher config file
         # and don't need to be added as arguments
         try:
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, runtag_results=Rctx_run.run_name, base_directory = "/clinical/data/wgs_somatic/test_output/test_qc_admin", output_dir = "/clinical/data/wgs_somatic/test_output/test_qc_admin")
+            logger.info(f'Combining qc stats for run {Rctx_run.run_name}')
+            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, runtag_results=Rctx_run.run_name, base_directory = "/clinical/data/wgs_somatic/test_output/test_qc_admin", output_directory = "/clinical/data/wgs_somatic/test_output/test_qc_admin")
         except Exception as e:
             logger.error(f"Error combining qc stats: {e}")
         # break out of for loop to avoid starting pipeline for a possible other run that was done sequenced at the same time.

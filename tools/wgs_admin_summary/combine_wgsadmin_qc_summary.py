@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-import click
+# import click
 import json
 import logging
 
@@ -15,28 +15,28 @@ def setup_logging(log_dir):
         ]
     )
     
-@click.command()
-@click.option('--base_directory', 
-              default=None,
-              type=click.Path(file_okay=False, dir_okay=True, exists=True),
-              help="Base directory containing subdirectories for each sample/sample T-N pairs. Each subdirectory should contain '_qc_stats_wgsadmin.xlsx' files to be combined. If not provided, the directory is determined from the launcher config file.", 
-              show_default=True)
-@click.option('--output_directory', 
-              default=None,
-              type=click.Path(file_okay=False, dir_okay=True),
-              help="Directory to save the combined output files. If not provided, the directory is determined from the launcher config file.",
-              show_default=True)
-@click.option('--launcher_config', 
-              type=click.Path(exists=True), 
-              required=True, 
-              default=os.path.join(os.path.dirname(__file__), "../../configs/launcher_config.json"), 
-              help="Path to the launcher config file. This file should contain the 'wgsadmin_dir' key specifying the default output directory.", 
-              show_default=True)
-@click.option('--runtag_results',
-              type=str,
-              default=None,
-              help="Specific runtag to process. If provided, only this runtag will be processed. Otherwise, all runtags in the base directory will be processed.",
-              show_default=True)
+# @click.command()
+# @click.option('--base_directory', 
+#               default=None,
+#               type=click.Path(file_okay=False, dir_okay=True, exists=True),
+#               help="Base directory containing subdirectories for each sample/sample T-N pairs. Each subdirectory should contain '_qc_stats_wgsadmin.xlsx' files to be combined. If not provided, the directory is determined from the launcher config file.", 
+#               show_default=True)
+# @click.option('--output_directory', 
+#               default=None,
+#               type=click.Path(file_okay=False, dir_okay=True),
+#               help="Directory to save the combined output files. If not provided, the directory is determined from the launcher config file.",
+#               show_default=True)
+# @click.option('--launcher_config', 
+#               type=click.Path(exists=True), 
+#               required=True, 
+#               default=os.path.join(os.path.dirname(__file__), "../../configs/launcher_config.json"), 
+#               help="Path to the launcher config file. This file should contain the 'wgsadmin_dir' key specifying the default output directory.", 
+#               show_default=True)
+# @click.option('--runtag_results',
+#               type=str,
+#               default=None,
+#               help="Specific runtag to process. If provided, only this runtag will be processed. Otherwise, all runtags in the base directory will be processed.",
+#               show_default=True)
 def combine_qc_stats(base_directory, output_directory, launcher_config, runtag_results):
     """
     Command-line tool to combine '_qc_stats_wgsadmin.xlsx' files for each runtag in the given BASE_DIRECTORY.
