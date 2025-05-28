@@ -249,8 +249,10 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         # copying configfiles to analysisdir
         clusterconf = config["clusterconf"]
         filterconf = config["filterconf"]
+        keepfiles = config["keepfiles"]
         copyfile(os.path.join(configdir, clusterconf), os.path.join(runconfigs, clusterconf))
         copyfile(os.path.join(configdir, filterconf), os.path.join(runconfigs, filterconf))
+        copyfile(os.path.join(configdir, keepfiles), os.path.join(runconfigs, keepfiles))
         copyfile(os.path.join(configdir, mainconf_name), os.path.join(runconfigs, mainconf_name))
         if tumorname:
             samplelog = f"{samplelogs}/{tumorid}.log"
@@ -280,6 +282,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
         analysisdict["clusterconfig"] = os.path.join(configdir, clusterconf)
         analysisdict["pipeconfig"] = os.path.join(configdir, mainconf_name)
+        analysisdict["keepfiles"] = os.path.join(configdir, keepfiles)
 
         # insilico
         analysisdict["insilico"] = config["insilicopanels"]
