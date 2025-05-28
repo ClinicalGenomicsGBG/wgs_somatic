@@ -25,6 +25,7 @@ insilico_panels = config["insilico"]
 pipeconfig = read_config(config["pipeconfig"])  # In launch_snakemake.py the pipeconfig is adjusted to the genome (hg19/hg38)
 clusterconf = read_config(config["clusterconfig"])
 filterconfig = read_config(config["filterconfig"])
+keepfiles = read_config(config["keepfiles"])
 
 shell.executable("/bin/bash")
 
@@ -180,4 +181,4 @@ def insilico_coverage(wildcards):
 
 rule all:
     input: 
-        "reporting/workflow_finished.txt"
+        keepfiles["keep_files"]
