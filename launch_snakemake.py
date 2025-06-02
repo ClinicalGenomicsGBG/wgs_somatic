@@ -189,7 +189,6 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             mainconf = "hg19conf"
         configdir = config["configdir"]
         mainconf_name = config[mainconf]
-        mainconf_path = f"{configdir}/{mainconf_name}"  # not used
 
         # validate fastqdirs
         if starttype == "force":
@@ -262,7 +261,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             keepfiles_templates = read_config(keepfilesconf_path)["tumor-only"]
         elif normalname:
             keepfiles_templates = read_config(keepfilesconf_path)["normal-only"]
-        
+
         # Use wildcards to fill in the keepfiles templates
         wildcards = {
                 "tumor": "tumor",
@@ -281,7 +280,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         with open(os.path.join(runconfigs, keepfilesconf), 'w') as keepfiles_file:
             yaml.dump(keepfiles, keepfiles_file, default_flow_style=False)
 
-
+        # Prepare log
         if tumorname:
             samplelog = f"{samplelogs}/{tumorid}.log"
         else:
@@ -376,8 +375,6 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         ###################################################################
         # Start SnakeMake pipeline
         ###################################################################
-        scriptdir = os.path.dirname(os.path.realpath(__file__))  # find current dir  # not used
-
         # Generate random hash for shadow directory
         letters = string.ascii_lowercase
         letters = ''.join(random.choice(letters) for i in range(10))
