@@ -11,7 +11,7 @@ import traceback
 from shutil import copyfile, copy
 import subprocess
 import stat
-import requests
+import yaml
 import random
 import string
 from definitions import LAUNCHER_CONFIG_PATH
@@ -249,11 +249,39 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         # copying configfiles to analysisdir
         clusterconf = config["clusterconf"]
         filterconf = config["filterconf"]
-        keepfiles = config["keepfiles"]
         copyfile(os.path.join(configdir, clusterconf), os.path.join(runconfigs, clusterconf))
         copyfile(os.path.join(configdir, filterconf), os.path.join(runconfigs, filterconf))
-        copyfile(os.path.join(configdir, keepfiles), os.path.join(runconfigs, keepfiles))
         copyfile(os.path.join(configdir, mainconf_name), os.path.join(runconfigs, mainconf_name))
+
+        # Read keepfiles templates from config
+        keepfilesconf = config["keepfilesconf"]
+        keepfilesconf_path = os.path.join(configdir, keepfilesconf)
+        if tumorname and normalname:
+            keepfiles_templates = read_config(keepfilesconf_path)["tumor-normal"]
+        elif tumorname:
+            keepfiles_templates = read_config(keepfilesconf_path)["tumor-only"]
+        elif normalname:
+            keepfiles_templates = read_config(keepfilesconf_path)["normal-only"]
+        
+        # Use wildcards to fill in the keepfiles templates
+        wildcards = {
+                "tumor": "tumor",
+                "normal": "normal",
+                "DNAtumor": tumorname,
+                "DNAnormal": normalname
+            }
+        keepfiles = {
+            "keep_files": [
+                keepfiles_template.format(**wildcards)
+                for keepfiles_template in keepfiles_templates
+            ]
+        }
+
+        # Write the keepfiles configuration to the working directory
+        with open(os.path.join(runconfigs, keepfilesconf), 'w') as keepfiles_file:
+            yaml.dump(keepfiles, keepfiles_file, default_flow_style=False)
+
+
         if tumorname:
             samplelog = f"{samplelogs}/{tumorid}.log"
         else:
@@ -282,7 +310,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
         analysisdict["clusterconfig"] = os.path.join(configdir, clusterconf)
         analysisdict["pipeconfig"] = os.path.join(configdir, mainconf_name)
-        analysisdict["keepfiles"] = os.path.join(configdir, keepfiles)
+        analysisdict["keepfiles"] = os.path.join(configdir, keepfilesconf)
 
         # insilico
         analysisdict["insilico"] = config["insilicopanels"]
