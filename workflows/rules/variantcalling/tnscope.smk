@@ -32,6 +32,7 @@ if normalid:
                 -i {input.normalbam} -q {input.normaltable} \
                 --algo TNscope --tumor_sample {params.tumorname} --normal_sample {params.normalname} \
                 --dbsnp {params.dbsnp} \
+                --pcr_indel_model none \
                 --model {params.modelpath} {output.tnscope_vcf} || \
                 {{ echo 'TNscope failed'; exit 1; }}
             """
@@ -62,6 +63,7 @@ else:
                 -i {input.tumorbam} -q {input.tumortable} \
                 --algo TNscope --tumor_sample {params.tumorname} --pon {params.pon} \
                 --dbsnp {params.dbsnp} \
+                --pcr_indel_model none \
                 {output.tnscope_vcf} || \
                 {{ echo 'TNscope failed'; exit 1; }}
             """
