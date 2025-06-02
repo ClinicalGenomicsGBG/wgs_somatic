@@ -31,22 +31,40 @@ cytoband <- args[5]               # Cytoband file (chromosome banding informatio
 output_ratio_plot <- args[6]      # Output file for the ratio plot
 output_ratio_seg <- args[7]       # Output file for the ratio segmentation
 
+# Set the default theme for plots
+theme_set(theme_pubclean())
+
 # Check if the FAI file exists
 if (!file.exists(fai_file)) {
   stop(paste("FAI file not found:", fai_file))
 }
 
-# Set the default theme for plots
-theme_set(theme_pubclean())
-
-# Read the ratio data into a data frame
-ratio <- data.frame(read.table(ratio_file, header=TRUE))
+# Check if the ratio file exists and is not empty
+if (!file.exists(ratio_file) || file.info(ratio_file)$size == 0) {
+  cat("WARNING: Ratio file is missing or empty. Creating placeholder outputs.\n")
+  # Create empty placeholder outputs
+  png(output_ratio_plot)
+  plot.new()
+  text(0.5, 0.5, "No data available", cex = 2)
+  dev.off()
+  
+  write.table(data.frame(), output_ratio_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+  quit(status = 0)
+} else {
+  # Read the ratio data into a data frame
+  ratio <- data.frame(read.table(ratio_file, header=TRUE))
+}
 
 # Read the BAF data into a data frame, skipping header lines starting with '#'
-BAF <- read.table(BAF_file, header = FALSE, comment.char = "#", sep = "\t",
-                  col.names = c("Chromosome", "Start", "End", "Features", "BAF"))%>%
-  mutate(Chromosome = substr(Chromosome, 4, 30)) # Remove the "chr" prefix from chromosome names
-
+if (!file.exists(BAF_file) || file.info(BAF_file)$size == 0) {
+  cat("WARNING: BAF file is missing or empty. Proceeding without BAF data.\n")
+  BAF <- data.frame()  # Create an empty data frame
+} else {
+  BAF <- read.table(
+    BAF_file, header = FALSE, comment.char = "#", sep = "\t",
+    col.names = c("Chromosome", "Start", "End", "Features", "BAF"))%>%
+    mutate(Chromosome = substr(Chromosome, 4, 30)) # Remove the "chr" prefix from chromosome names
+}
 
 # Read the FAI file and process it
 fai <- read.table(fai_file, header = FALSE, sep = "\t", 
@@ -74,7 +92,14 @@ cytoband <- data.frame(read.table(cytoband, header = TRUE)) %>%
          ))
 
 # Calculate the ploidy based on the ratio data
-ploidy = median(ratio$CopyNumber[which(ratio$MedianRatio > 0.8 & ratio$MedianRatio < 1.2)], na.rm = TRUE)
+valid_ratio <- ratio %>% filter(MedianRatio > 0.8 & MedianRatio < 1.2)
+
+if (nrow(valid_ratio) > 0) {
+  ploidy <- median(valid_ratio$CopyNumber, na.rm = TRUE)
+} else {
+  ploidy <- 2  # Default ploidy value
+}
+
 cat(c("INFO: Selected ploidy:", ploidy, "\n"))
 
 # Calculate the most common increment value in the ratio data
@@ -102,7 +127,15 @@ ratio_adjusted <- ratio %>%
 # Calculate breaks and labels for the y-axis
 max_corr_ratio <- max(ratio_adjusted$corr_ratio, na.rm = TRUE)
 breaks <- seq(0, max_corr_ratio, by = 1)
-labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max(breaks) - 1))
+
+# If the maximum ratio after correction is the same as before correction, 
+# it means the ratio is not adjusted and we can use the original labels
+if (max_corr_ratio == max(ratio_adjusted$Ratio * ploidy, na.rm = TRUE)) {
+  labels <- as.character(breaks)
+} else {
+  # Otherwise, we need to adjust the labels to reflect the correction
+  labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max_corr_ratio - 1))
+}
 
 # Create the ratio plot
 Ratio_plot <- ggplot(fai) +                                              

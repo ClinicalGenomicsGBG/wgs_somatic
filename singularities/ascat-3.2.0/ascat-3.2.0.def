@@ -1,0 +1,19 @@
+Bootstrap: docker
+From: mambaorg/micromamba
+
+%files
+    ascat-3.2.0.yaml /ascat-3.2.0.yaml
+
+%environment
+    export PATH="${MAMBA_ROOT_PREFIX}/bin:$PATH"
+
+%post -c /bin/bash
+    micromamba install -n base --file ascat-3.2.0.yaml && \
+    micromamba clean --all --yes
+    # After installation, the alleleCounter executable is located in /opt/conda/bin/alleleCounter
+
+%runscript
+    #!/bin/bash
+
+    # Activate base environment
+    source /usr/local/bin/_activate_current_env.sh

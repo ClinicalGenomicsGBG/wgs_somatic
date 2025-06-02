@@ -111,3 +111,6 @@ control_freec_plot:
     name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
     output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
     error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
+
+ascat_run:
+    threads: 16

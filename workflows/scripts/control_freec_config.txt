@@ -10,6 +10,7 @@ gemMappabilityFile = /clinical/exec/wgs_somatic/dependencies/control_freec/out10
 ploidy = 1,2,3,4
 outputDir = ./
 maxThreads = 4
+sex = XX
 
 
 ##Parameter "breakPointThreshold" specifies the maximal slope of the slope of residual sum of squares. The closer it is to Zero, the more breakpoints will be called.
@@ -32,7 +33,6 @@ contaminationAdjustment = TRUE
 
 #breakPointType = 4
 #forceGCcontentNormalization = 0
-sex = XY
 
 
 ##set BedGraphOutput=TRUE if you want to create a BedGraph track for visualization in the UCSC genome browser:
