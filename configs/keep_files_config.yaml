@@ -1,4 +1,4 @@
-keep_files:
+tumor-normal:
   # Read mapping
   - "{tumor}/realign/{DNAtumor}_REALIGNED.bam"
   - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.bai"
@@ -49,4 +49,4 @@ keep_files:
   - "{tumor}/pindel/{DNAtumor}_pindel.xlsx"
 
   # QC reports
-  - "qc_report/{tumor}_qc_stats.xlsx"
+  - "qc_report/{DNAtumor}_qc_stats.xlsx"
