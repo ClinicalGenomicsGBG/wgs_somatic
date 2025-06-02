@@ -1,5 +1,6 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
+from tools.helpers import conditional_temp
 
 rule msi:
     input:
@@ -14,10 +15,10 @@ rule msi:
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
-        msi_out = temp("{stype}/msi/{sname}_msi.txt"),
-        msi_out_dis = temp("{stype}/msi/{sname}_msi.txt_dis"),
-        msi_out_all = temp("{stype}/msi/{sname}_msi.txt_all"),
-        msi_out_unstable = temp("{stype}/msi/{sname}_msi.txt_unstable"),
+        msi_out = conditional_temp("{stype}/msi/{sname}_msi.txt", keepfiles),
+        msi_out_dis = conditional_temp("{stype}/msi/{sname}_msi.txt_dis", keepfiles),
+        msi_out_all = conditional_temp("{stype}/msi/{sname}_msi.txt_all", keepfiles),
+        msi_out_unstable = conditional_temp("{stype}/msi/{sname}_msi.txt_unstable", keepfiles),
     shell:
         """
         msisensor-pro msi \
@@ -37,8 +38,8 @@ rule msi_filter_bam:
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
-        filtered_bam = temp("{stype}/msi/{sname}_filtered.bam"),
-        filtered_bam_bai = temp("{stype}/msi/{sname}_filtered.bam.bai")
+        filtered_bam = conditional_temp("{stype}/msi/{sname}_filtered.bam", keepfiles),
+        filtered_bam_bai = conditional_temp("{stype}/msi/{sname}_filtered.bam.bai", keepfiles)
     shell:
         """
         bedtools intersect -wa -abam {input.bam} -b {params.bed} > {output.filtered_bam}
@@ -58,10 +59,10 @@ rule msi_filtered:
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
-        msi_out = temp("{stype}/msi/{sname}_msi_filtered.txt"),
-        msi_out_dis = temp("{stype}/msi/{sname}_msi_filtered.txt_dis"),
-        msi_out_all = temp("{stype}/msi/{sname}_msi_filtered.txt_all"),
-        msi_out_unstable = temp("{stype}/msi/{sname}_msi_filtered.txt_unstable"),
+        msi_out = conditional_temp("{stype}/msi/{sname}_msi_filtered.txt", keepfiles),
+        msi_out_dis = conditional_temp("{stype}/msi/{sname}_msi_filtered.txt_dis", keepfiles),
+        msi_out_all = conditional_temp("{stype}/msi/{sname}_msi_filtered.txt_all", keepfiles),
+        msi_out_unstable = conditional_temp("{stype}/msi/{sname}_msi_filtered.txt_unstable", keepfiles),
     shell:
         """
         msisensor-pro msi \

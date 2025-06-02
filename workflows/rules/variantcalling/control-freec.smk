@@ -1,3 +1,5 @@
+from tools.helpers import conditional_temp
+
 if normalid:
     rule control_freec_run:
         input:
@@ -19,9 +21,9 @@ if normalid:
         threads:
             clusterconf["control_freec_run"]["threads"]
         output:
-            config = temp("{stype}/control-freec_{ploidy}/{sname}.config"),
-            tumor_ratio = temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_ratio.txt"),
-            info = temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt"),
+            config = conditional_temp("{stype}/control-freec_{ploidy}/{sname}.config", keepfiles),
+            tumor_ratio = conditional_temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_ratio.txt", keepfiles),
+            info = conditional_temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt", keepfiles),
         shadow:
             pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -51,9 +53,9 @@ else:
         threads:
             clusterconf["control_freec_run"]["threads"]
         output:
-            config = temp("{stype}/control-freec_{ploidy}/{sname}.config"),
-            tumor_ratio = temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_ratio.txt"),
-            info = temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt"),
+            config = conditional_temp("{stype}/control-freec_{ploidy}/{sname}.config", keepfiles),
+            tumor_ratio = conditional_temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_ratio.txt", keepfiles),
+            info = conditional_temp("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt", keepfiles),
         shadow:
             pipeconfig["rules"].get("control-freec", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -74,8 +76,8 @@ rule control_freec_plot:
     singularity:
         pipeconfig["singularities"]["control-freec"]["sing"]
     output:
-        ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png"),
-        ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg"),
+        ratio_plot = conditional_temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png", keepfiles),
+        ratio_seg = conditional_temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg", keepfiles),
     shell:
         # The Rscript accepts empty input files, so we can run it even if the previous step failed
         """

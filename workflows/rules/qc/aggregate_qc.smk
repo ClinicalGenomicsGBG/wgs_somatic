@@ -1,5 +1,5 @@
-# # vim: syntax=python tabstop=4 expandtab
-# # coding: utf-8
+# vim: syntax=python tabstop=4 expandtab
+# coding: utf-8
 
 from workflows.scripts.create_qc_excel import create_excel_main, create_qc_toaggregate
 import os

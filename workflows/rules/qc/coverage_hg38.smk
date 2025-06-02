@@ -1,6 +1,6 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
-
+from tools.helpers import conditional_temp
 
 rule wgs_coverage:
     input:
@@ -13,7 +13,7 @@ rule wgs_coverage:
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
-        temp("{stype}/reports/{sname}_WGScov.tsv")
+        conditional_temp("{stype}/reports/{sname}_WGScov.tsv", keepfiles)
     shadow:
         pipeconfig["rules"].get("wgs_coverage", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
@@ -31,7 +31,7 @@ rule y_coverage:
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
-        temp("{stype}/reports/{sname}_Ycov.tsv")
+        conditional_temp("{stype}/reports/{sname}_Ycov.tsv", keepfiles)
     shadow:
         pipeconfig["rules"].get("y_coverage", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:

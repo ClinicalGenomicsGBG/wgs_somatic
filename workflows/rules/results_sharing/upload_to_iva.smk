@@ -1,7 +1,7 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 import os
-from tools.helpers import read_config
+from tools.helpers import read_config, conditional_temp
 from shutil import copyfile
 
 rule filter_variants_in_bed:
@@ -11,7 +11,7 @@ rule filter_variants_in_bed:
         rtg = pipeconfig["rules"]["filter_variants_in_bed"]["rtg"],
         bedfile = pipeconfig["rules"]["filter_variants_in_bed"]["bedfile"],
     output:
-        temp("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf")
+        conditional_temp("{stype}/{caller}/{sname}_{vcftype}_refseq3kfilt.vcf", keepfiles)
     shadow:
         pipeconfig["rules"].get("filter_variants_in_bed", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
@@ -36,7 +36,7 @@ rule upload_to_iva:
         clcivadir = pipeconfig["rules"]["upload_to_iva"]["clcivadir"],
         clcivadir_servpath = pipeconfig["rules"]["upload_to_iva"]["clcivadir_servpath"]
     output:
-        "reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}.txt"
+        conditional_temp("reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}.txt", keepfiles)
     shadow:
         pipeconfig["rules"].get("upload_to_iva", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
@@ -76,7 +76,7 @@ rule upload_to_iva_test:
         clcivadir = pipeconfig["rules"]["upload_to_iva"]["clcivadir"],
         clcivadir_servpath = pipeconfig["rules"]["upload_to_iva"]["clcivadir_servpath"]
     output:
-        "reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}_test.txt"
+        conditional_temp("reporting/uploaded_to_iva_{stype}_{caller}_{sname}_{vcftype}_test.txt", keepfiles)
     shadow:
         pipeconfig["rules"].get("upload_to_iva_test", {}).get("shadow", pipeconfig.get("shadow", False))
     run:

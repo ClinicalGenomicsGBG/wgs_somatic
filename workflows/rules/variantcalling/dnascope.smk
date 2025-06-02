@@ -1,5 +1,6 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
+from tools.helpers import conditional_temp
 
 rule dnascope:
     input:
@@ -15,8 +16,8 @@ rule dnascope:
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
-        vcf = temp("{stype}/dnascope/{sname}_DNAscope.vcf"),
-        idx = temp("{stype}/dnascope/{sname}_DNAscope.vcf.idx")
+        vcf = conditional_temp("{stype}/dnascope/{sname}_DNAscope.vcf", keepfiles),
+        idx = conditional_temp("{stype}/dnascope/{sname}_DNAscope.vcf.idx", keepfiles)
     shadow:
         pipeconfig["rules"].get("dnascope", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
@@ -37,8 +38,8 @@ rule dnascope_modelfilter:
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
-        vcf = temp("{stype}/dnascope/{sname}_DNAscope_modelfiltered.vcf"),
-        idx = temp("{stype}/dnascope/{sname}_DNAscope_modelfiltered.vcf.idx")
+        vcf = conditional_temp("{stype}/dnascope/{sname}_DNAscope_modelfiltered.vcf", keepfiles),
+        idx = conditional_temp("{stype}/dnascope/{sname}_DNAscope_modelfiltered.vcf.idx", keepfiles)
     shadow:
         pipeconfig["rules"].get("dnascope_modelfilter", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
@@ -55,8 +56,8 @@ rule dnascope_vcffilter:
         vcftools = pipeconfig["rules"]["dnascope_vcffilter"]["vcftools"],
         passfilter = "'FILTER=\"PASS\"'"
     output:
-        germline_vcf = temp("{stype}/dnascope/{sname}_germline.vcf"),
-        germline_snv_vcf = temp("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf")
+        germline_vcf = conditional_temp("{stype}/dnascope/{sname}_germline.vcf", keepfiles),
+        germline_snv_vcf = conditional_temp("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", keepfiles)
     shadow:
         pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
     run:

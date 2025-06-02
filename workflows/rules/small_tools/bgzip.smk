@@ -1,5 +1,6 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
+from tools.helpers import conditional_temp
 
 rule bgzip_vcf:
     input:
@@ -7,7 +8,7 @@ rule bgzip_vcf:
     params:
         bgzip = pipeconfig["rules"]["bgzip"]["bgzip"],
     output:
-        temp("{path}/{file}.vcf.gz")
+        conditional_temp("{path}/{file}.vcf.gz", keepfiles)
     wildcard_constraints:
         file = r"[^/]+"
     shadow:
@@ -21,7 +22,7 @@ rule index_vcf:
     params:
         bcftools = pipeconfig["rules"]["bgzip"]["bcftools"],
     output:
-        temp("{path}/{file}.vcf.gz.csi")
+        conditional_temp("{path}/{file}.vcf.gz.csi", keepfiles)
     wildcard_constraints:
         file = r"[^/]+"
     shadow:
