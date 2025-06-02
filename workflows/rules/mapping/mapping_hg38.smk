@@ -1,5 +1,6 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
+from tools.helpers import conditional_temp
 
 def format_fwd(wcs):
     fastq = fastq_dict[f"{wcs.stype}"]["fastqpair_patterns"][f"{wcs.fastqpattern}"]["fwd"]
@@ -39,8 +40,8 @@ rule mapping:
     shadow:
         pipeconfig["rules"].get("mapping", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
-        bam = temp("{stype}/mapping/{fastqpattern}.bam"),
-        bai = temp("{stype}/mapping/{fastqpattern}.bam.bai")
+        bam = conditional_temp("{stype}/mapping/{fastqpattern}.bam", keepfiles),
+        bai = conditional_temp("{stype}/mapping/{fastqpattern}.bam.bai", keepfiles)
     shell:
         "echo $HOSTNAME;"
         "{params.sentieon} bwa mem "
@@ -52,10 +53,10 @@ rule dedup:
     input:
         unpack(get_mapping)
     output:
-        bam = temp("{stype}/dedup/{sname}_DEDUP.bam"),
-        bai = temp("{stype}/dedup/{sname}_DEDUP.bam.bai"),
-        score = temp("{stype}/dedup/{sname}_DEDUP_score.txt"),
-        metrics = temp("{stype}/dedup/{sname}_DEDUP.txt")
+        bam = conditional_temp("{stype}/dedup/{sname}_DEDUP.bam", keepfiles),
+        bai = conditional_temp("{stype}/dedup/{sname}_DEDUP.bam.bai", keepfiles),
+        score = conditional_temp("{stype}/dedup/{sname}_DEDUP_score.txt", keepfiles),
+        metrics = conditional_temp("{stype}/dedup/{sname}_DEDUP.txt", keepfiles)
     params:
         threads = clusterconf["dedup"]["threads"],
         samplename = get_samplename,
@@ -88,8 +89,8 @@ rule realign_mapping:
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
-        bam = temp("{stype}/realign/{sname}_REALIGNED.bam"),
-        bai = temp("{stype}/realign/{sname}_REALIGNED.bam.bai")
+        bam = conditional_temp("{stype}/realign/{sname}_REALIGNED.bam", keepfiles),
+        bai = conditional_temp("{stype}/realign/{sname}_REALIGNED.bam.bai", keepfiles)
     params:
         threads = clusterconf["realign_mapping"]["threads"],
         sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
@@ -114,7 +115,7 @@ rule baserecal:
         dbsnp = pipeconfig["singularities"]["sentieon"]["dbsnp"],
         mills = pipeconfig["singularities"]["sentieon"]["mills"]
     output:
-        temp("{stype}/recal/{sname}_RECAL_DATA.TABLE")
+        conditional_temp("{stype}/recal/{sname}_RECAL_DATA.TABLE", keepfiles)
     shadow:
         pipeconfig["rules"].get("baserecal", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:

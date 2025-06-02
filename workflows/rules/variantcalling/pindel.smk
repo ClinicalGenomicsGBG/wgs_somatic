@@ -1,5 +1,6 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
+from tools.helpers import conditional_temp
 
 if normalid:
     rule pindel:
@@ -17,16 +18,16 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["pindel"]["sing"]
         output:
-            temp("{stype}/pindel/{sname}_BP"),
-            temp("{stype}/pindel/{sname}_CloseEndMapped"),
-            temp("{stype}/pindel/{sname}_D"),
-            temp("{stype}/pindel/{sname}_INT_final"),
-            temp("{stype}/pindel/{sname}_INV"),
-            temp("{stype}/pindel/{sname}_LI"),
-            temp("{stype}/pindel/{sname}_RP"),
-            temp("{stype}/pindel/{sname}_SI"),
-            temp("{stype}/pindel/{sname}_TD"),
-            pindelConfig = temp("{stype}/pindel/{sname}_pindelConfig.txt")
+            conditional_temp("{stype}/pindel/{sname}_BP", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_CloseEndMapped", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_D", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_INT_final", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_INV", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_LI", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_RP", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_SI", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_TD", keepfiles),
+            pindelConfig = conditional_temp("{stype}/pindel/{sname}_pindelConfig.txt", keepfiles)
         shadow:
             pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -48,16 +49,16 @@ else:
         singularity:
             pipeconfig["singularities"]["pindel"]["sing"]
         output:
-            temp("{stype}/pindel/{sname}_BP"),
-            temp("{stype}/pindel/{sname}_CloseEndMapped"),
-            temp("{stype}/pindel/{sname}_D"),
-            temp("{stype}/pindel/{sname}_INT_final"),
-            temp("{stype}/pindel/{sname}_INV"),
-            temp("{stype}/pindel/{sname}_LI"),
-            temp("{stype}/pindel/{sname}_RP"),
-            temp("{stype}/pindel/{sname}_SI"),
-            temp("{stype}/pindel/{sname}_TD"),
-            pindelConfig = temp("{stype}/pindel/{sname}_pindelConfig.txt")
+            conditional_temp("{stype}/pindel/{sname}_BP", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_CloseEndMapped", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_D", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_INT_final", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_INV", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_LI", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_RP", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_SI", keepfiles),
+            conditional_temp("{stype}/pindel/{sname}_TD", keepfiles),
+            pindelConfig = conditional_temp("{stype}/pindel/{sname}_pindelConfig.txt", keepfiles)
         shadow:
             pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -87,7 +88,7 @@ rule pindel2vcf:
     singularity:
         pipeconfig["singularities"]["pindel"]["sing"]
     output:
-        temp("{stype}/pindel/{sname}_pindel_noDP_noContig.vcf")
+        conditional_temp("{stype}/pindel/{sname}_pindel_noDP_noContig.vcf", keepfiles)
     shadow:
         pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
@@ -98,7 +99,7 @@ rule fixContigPindel:
     input:
         "{stype}/pindel/{sname}_pindel_noDP_noContig.vcf"
     output:
-        temp("{stype}/pindel/{sname}_pindel_noDP.vcf")
+        conditional_temp("{stype}/pindel/{sname}_pindel_noDP.vcf", keepfiles)
     params: 
         referencefai = pipeconfig["referencefai"]
     shell:
@@ -108,7 +109,7 @@ rule fixPindelDPoAF:
     input:
         "{stype}/pindel/{sname}_pindel_noDP.vcf"
     output:
-        temp("{stype}/pindel/{sname}_pindel.vcf")
+        conditional_temp("{stype}/pindel/{sname}_pindel.vcf", keepfiles)
     params:
         python = pipeconfig["rules"]["pindel"]["python"],
         fix_DPoAF = pipeconfig["rules"]["pindel"].get("fix_DPoAF", f"{ROOT_DIR}/workflows/scripts/fix_pindelDPoAF.py") 
@@ -121,7 +122,7 @@ rule pindel_xlsx:
     input:
         "{stype}/pindel/{sname}_pindel.vcf"
     output:
-        temp("{stype}/pindel/{sname}_pindel.xlsx")
+        conditional_temp("{stype}/pindel/{sname}_pindel.xlsx", keepfiles)
     params:
         python = pipeconfig["rules"]["pindel"]["python"],
         bed = pipeconfig["rules"]["pindel"]["bed"],

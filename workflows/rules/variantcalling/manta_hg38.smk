@@ -3,6 +3,7 @@
 import os
 from workflows.scripts.annotate_manta.manta_summary import manta_summary
 from workflows.scripts.filter_manta import filter_vcf
+from tools.helpers import conditional_temp
 
 if normalid:
     rule manta_somatic:
@@ -20,8 +21,8 @@ if normalid:
             min_tumor_support = filterconfig["sv_filter"]["min_tumor_support"],
             max_normal_support = filterconfig["sv_filter"]["max_normal_support"],
         output:
-            sv_vcf = temp("{stype}/manta/{sname}_somatic_mantaSV.vcf"),
-            sv_xlsx = temp("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx"),
+            sv_vcf = conditional_temp("{stype}/manta/{sname}_somatic_mantaSV.vcf", keepfiles),
+            sv_xlsx = conditional_temp("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx", keepfiles),
         shadow:
             pipeconfig["rules"].get("manta", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -53,8 +54,8 @@ else:
             annotate_ref = pipeconfig["rules"]["manta"]["annotate_ref"],
             min_tumor_support = filterconfig["sv_filter"]["min_tumor_support"],
         output:
-            sv_vcf = temp("{stype}/manta/{sname}_somatic_mantaSV.vcf"),
-            sv_xlsx = temp("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx"),
+            sv_vcf = conditional_temp("{stype}/manta/{sname}_somatic_mantaSV.vcf", keepfiles),
+            sv_xlsx = conditional_temp("{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx", keepfiles),
         shadow:
             pipeconfig["rules"].get("manta", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -79,7 +80,7 @@ if normalid:
         params:
             genelist = pipeconfig["rules"]["manta_summary"]["genelist"]
         output:
-            temp("{stype}/manta/{sname}_somatic_mantaSV_Summary.xlsx")
+            conditional_temp("{stype}/manta/{sname}_somatic_mantaSV_Summary.xlsx", keepfiles)
         shadow:
             pipeconfig["rules"].get("manta_summary", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -92,7 +93,7 @@ else:
         params:
             genelist = pipeconfig["rules"]["manta_summary"]["genelist_tumoronly"]
         output:
-            temp("{stype}/manta/{sname}_somatic_mantaSV_Summary.xlsx")
+            conditional_temp("{stype}/manta/{sname}_somatic_mantaSV_Summary.xlsx", keepfiles)
         shadow:
             pipeconfig["rules"].get("manta_summary", {}).get("shadow", pipeconfig.get("shadow", False))
         run:

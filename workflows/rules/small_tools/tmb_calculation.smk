@@ -1,3 +1,5 @@
+from tools.helpers import conditional_temp
+
 rule tmb_calculation:
     input:
         somatic_vcf = "{stype}/tnscope/{sname}_somatic_w_normal.vcf"
@@ -10,7 +12,7 @@ rule tmb_calculation:
         min_coverage = filterconfig["tmb_filter"]["min_coverage"],
         include_normal = ("True" if normalid else "False"),
     output:
-        tmb = temp("{stype}/reports/{sname}_tmb.txt"),
+        tmb = conditional_temp("{stype}/reports/{sname}_tmb.txt", keepfiles),
     shell:
         """
         bash {params.calculate_tmb} \
