@@ -146,7 +146,7 @@ def copy_results(outputdir, resultdir=None):
                         logger(f"Error occurred while copying {f}")
 
 
-def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, development=False):
+def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, notemp=False):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -388,7 +388,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         my_env = os.environ.copy()
 
         # Set development arguments
-        dev_args = ["--notemp", "--rerun-incomplete"] if development else []
+        notemp_arg = ["--notemp"] if notemp else []
 
         # Construct Snakemake command
 
@@ -433,7 +433,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "--directory", outputdir,
             "--shadow-prefix", shadow_dir,
             "--stats", f"{samplelogs}/stats_{current_date}.json"
-        ] + dev_args
+        ] + notemp_arg
 
         # Execute Snakemake command with outputdir redirection
         with open(samplelog, "a") as log_file:
@@ -460,7 +460,7 @@ if __name__ == '__main__':
     parser.add_argument('-hg38', '--hg38ref', nargs='?', help='run analysis on hg38 reference (write yes if you want this option)', required=False)
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
-    parser.add_argument('-dev', '--development', action="store_true", help='Run the pipeline in development mode (no temp, no timestamp, rerun incomplete)', required=False)
+    parser.add_argument('--notemp', action="store_true", help='Run the pipeline in notemp mode (all intermediate files kept)', required=False)
     parser.add_argument('-onlycopy', '--onlycopyresults', action="store_true", help='Only run the copy_results function', required=False)
     args = parser.parse_args()
 
@@ -470,7 +470,7 @@ if __name__ == '__main__':
     if args.onlycopyresults:
         copy_results(args.outputdir)
     else:
-        if not args.development:
+        if not args.notemp:
             timestamp = get_timestamp()
             args.outputdir = f'{args.outputdir}_{timestamp}'
         if args.tumorfastqs:
@@ -481,7 +481,7 @@ if __name__ == '__main__':
             if not args.normalfastqs.startswith("/"):
                 args.normalfastqs = os.path.abspath(args.normalfastqs)
                 logger(f"Adjusted normalfastqs to {args.normalfastqs}")
-        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.development)
+        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.notemp)
 
         if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
             if args.tumorsample:
