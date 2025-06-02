@@ -28,6 +28,7 @@ if normalid:
             wgscov = lambda wildcards: get_cov_files(wildcards)["wgscov"],
             ycov = lambda wildcards: get_cov_files(wildcards)["ycov"]
         params:
+            # alleleCounter executable is in conda bin directory in the ascat container
             allelecounter_exe = pipeconfig["rules"]["ascat_run"]["allelecounter_exe"],
             alleles_prefix = pipeconfig["rules"]["ascat_run"]["alleles_prefix"],
             loci_prefix = pipeconfig["rules"]["ascat_run"]["loci_prefix"],

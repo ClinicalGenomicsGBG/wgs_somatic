@@ -10,6 +10,7 @@ From: mambaorg/micromamba
 %post -c /bin/bash
     micromamba install -n base --file ascat-3.2.0.yaml && \
     micromamba clean --all --yes
+    # After installation, the alleleCounter executable is located in /opt/conda/bin/alleleCounter
 
 %runscript
     #!/bin/bash
