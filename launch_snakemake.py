@@ -470,9 +470,6 @@ if __name__ == '__main__':
     if args.onlycopyresults:
         copy_results(args.outputdir)
     else:
-        if not args.notemp:
-            timestamp = get_timestamp()
-            args.outputdir = f'{args.outputdir}_{timestamp}'
         if args.tumorfastqs:
             if not args.tumorfastqs.startswith("/"):
                 args.tumorfastqs = os.path.abspath(args.tumorfastqs)
