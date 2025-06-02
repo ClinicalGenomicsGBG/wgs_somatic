@@ -278,6 +278,11 @@ def wrapper(instrument=None, outpath=None):
             if not any(n_key == pair[1] for pair in paired_samples):
                 logger.info(f'Skipping normal-only sample {n_key} as it is not paired with a tumor sample.')
 
+        # If there are no samples to process, skip the rest of the code
+        if not threads:
+            logger.info("No samples to process for this run. Skipping emails and further processing.")
+            break
+
         # Start several samples at the same time
         for t in threads:
             t.start()
