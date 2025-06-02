@@ -38,7 +38,7 @@
             "tool_path": "/sentieon-genomics-202503/bin/sentieon",
             "reference": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
             "mills": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
-            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156.vcf.gz",
+            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156_common.vcf.gz",
             "dnascope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model",
             "tnscope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonTNscopeModelWGS0.2.model"
         }
