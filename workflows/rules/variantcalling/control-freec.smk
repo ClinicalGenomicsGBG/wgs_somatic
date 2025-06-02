@@ -29,7 +29,7 @@ if normalid:
             """
             set -e
             (python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_bam} {input.normal_bam} {params.chrLenFile} {params.chrFiles} {params.mappability} {threads} {output.config} {input.wgscovfile} {input.ycov} &&
-            freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info})
+            freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info}; echo "[control-freec] WARNING: FREEC failed with ploidy {wildcards.ploidy}, creating empty outputs and continuing." >&2)
             """
 
 else:
@@ -60,7 +60,7 @@ else:
             """
             set -e
             (python {params.edit_config} {params.config_template} {wildcards.ploidy} {input.tumor_bam} {params.normal_bam} {params.chrLenFile} {params.chrFiles} {params.mappability} {threads} {output.config} {input.wgscovfile} {input.ycov} &&
-            freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info})
+            freec -conf {output.config}) || (touch {output.config} {output.tumor_ratio} {output.info}; echo "[control-freec] WARNING: FREEC failed with ploidy {wildcards.ploidy}, creating empty outputs and continuing." >&2)
             """
 
 rule control_freec_plot:
