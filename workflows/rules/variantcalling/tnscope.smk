@@ -16,7 +16,6 @@ if normalid:
             normalname = normalname,
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
-            dbsnp = pipeconfig["singularities"]["sentieon"]["dbsnp"],
             modelpath = pipeconfig["singularities"]["sentieon"]["tnscope_m"],
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
@@ -26,12 +25,12 @@ if normalid:
         shadow:
             pipeconfig["rules"].get("tnscope", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
+            # We run TNscope without dbSNP since it flags true positives as germline variants
             """
             {params.sentieon} driver -r {params.reference} -t {params.threads} \
                 -i {input.tumorbam} -q {input.tumortable} \
                 -i {input.normalbam} -q {input.normaltable} \
                 --algo TNscope --tumor_sample {params.tumorname} --normal_sample {params.normalname} \
-                --dbsnp {params.dbsnp} \
                 --pcr_indel_model none \
                 --model {params.modelpath} {output.tnscope_vcf} || \
                 {{ echo 'TNscope failed'; exit 1; }}
@@ -47,7 +46,6 @@ else:
             tumorname = tumorname,
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
-            dbsnp = pipeconfig["singularities"]["sentieon"]["dbsnp"],
             modelpath = pipeconfig["singularities"]["sentieon"]["tnscope_m"],
             pon = pipeconfig["rules"]["tnscope"]["pon"],
         singularity:
@@ -58,11 +56,11 @@ else:
         shadow:
             pipeconfig["rules"].get("tnscope", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
+            # We run TNscope without dbSNP since it flags true positives as germline variants
             """
             {params.sentieon} driver -r {params.reference} -t {params.threads} \
                 -i {input.tumorbam} -q {input.tumortable} \
                 --algo TNscope --tumor_sample {params.tumorname} --pon {params.pon} \
-                --dbsnp {params.dbsnp} \
                 --pcr_indel_model none \
                 {output.tnscope_vcf} || \
                 {{ echo 'TNscope failed'; exit 1; }}
