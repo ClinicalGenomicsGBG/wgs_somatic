@@ -4,7 +4,6 @@ import os
 from workflows.scripts.sex import calc_sex
 from workflows.scripts.create_segfile import create_seg
 from workflows.scripts.fix_sexploidyfile import mod_sex_vcf
-from tools.helpers import conditional_temp
 
 
 if tumorid:
@@ -16,8 +15,8 @@ if tumorid:
                 annotate = pipeconfig["rules"]["canvas"].get("annotate", f"{ROOT_DIR}/workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py"),
                 annotate_ref = pipeconfig["rules"]["canvas"]["annotate_ref"]
             output:
-                conditional_temp("{stype}/canvas/{sname}_CNV_somatic.vcf.xlsx", keepfiles),
-                conditional_temp("{stype}/canvas/{sname}_CNV_somatic.vcf", keepfiles)
+                "{stype}/canvas/{sname}_CNV_somatic.vcf.xlsx",
+                "{stype}/canvas/{sname}_CNV_somatic.vcf"
             shadow:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             run:
@@ -34,8 +33,8 @@ rule filter_canvas_germline:
         annotate = pipeconfig["rules"]["canvas"].get("annotate", f"{ROOT_DIR}/workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py"),
         annotate_ref = pipeconfig["rules"]["canvas"]["annotate_ref"]
     output:
-        conditional_temp("{stype}/canvas/{sname}_CNV_germline.vcf.xlsx", keepfiles),
-        conditional_temp("{stype}/canvas/{sname}_CNV_germline.vcf", keepfiles)
+        "{stype}/canvas/{sname}_CNV_germline.vcf.xlsx",
+        "{stype}/canvas/{sname}_CNV_germline.vcf"
     shadow:
         pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
@@ -69,9 +68,9 @@ if tumorid:
             singularity:
                 pipeconfig["singularities"]["canvas"]["sing"]
             output:
-                conditional_temp("{stype}/canvas/{sname}_somatic_CNV.vcf.gz", keepfiles),
-                conditional_temp("{stype}/canvas/{sname}_somatic_CNV_observed.seg", keepfiles),
-                conditional_temp("{stype}/canvas/{sname}_somatic_CNV_called.seg", keepfiles)
+                "{stype}/canvas/{sname}_somatic_CNV.vcf.gz",
+                "{stype}/canvas/{sname}_somatic_CNV_observed.seg",
+                "{stype}/canvas/{sname}_somatic_CNV_called.seg"
             shadow:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             shell:
@@ -99,9 +98,9 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["canvas"]["sing"]
         output:
-            conditional_temp("{stype}/canvas/{sname}_germline_CNV.vcf.gz", keepfiles),
-            conditional_temp("{stype}/canvas/{sname}_germline_CNV_observed.seg", keepfiles),
-            conditional_temp("{stype}/canvas/{sname}_germline_CNV_called.seg", keepfiles)
+            "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
+            "{stype}/canvas/{sname}_germline_CNV_observed.seg",
+            "{stype}/canvas/{sname}_germline_CNV_called.seg"
         shadow:
             pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -128,9 +127,9 @@ else:
         singularity:
             pipeconfig["singularities"]["canvas"]["sing"]
         output:
-            conditional_temp("{stype}/canvas/{sname}_germline_CNV.vcf.gz", keepfiles),
-            conditional_temp("{stype}/canvas/{sname}_germline_CNV_observed.seg", keepfiles),
-            conditional_temp("{stype}/canvas/{sname}_germline_CNV_called.seg", keepfiles)
+            "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
+            "{stype}/canvas/{sname}_germline_CNV_observed.seg",
+            "{stype}/canvas/{sname}_germline_CNV_called.seg"
         shadow:
             pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -145,7 +144,7 @@ rule convert_to_alissaformat:
         converter = pipeconfig["rules"]["convert_to_alissaformat"].get("converter", f"{ROOT_DIR}/workflows/scripts/canvas_to_interpreter/canvasvcf_to_interpreter.py"),
         referencegenome = pipeconfig["referencegenome"]
     output:
-        conditional_temp("{stype}/canvas/{sname}_CNV_germline_alissaformat.vcf", keepfiles)
+        "{stype}/canvas/{sname}_CNV_germline_alissaformat.vcf"
     shadow:
         pipeconfig["rules"].get("convert_to_alissaformat", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
@@ -159,7 +158,7 @@ rule merge_snvs_cnvs:
         cnvs = expand("{stype}/canvas/{sname}_CNV_germline_alissaformat.vcf.gz", stype=sampleconfig[normalname]["stype"], sname=normalid, hgX=reference),
         cnvs_csi = expand("{stype}/canvas/{sname}_CNV_germline_alissaformat.vcf.gz.csi", stype=sampleconfig[normalname]["stype"], sname=normalid, hgX=reference),
     output:
-        conditional_temp("{stype}/dnascope/{sname}_{hgX}_SNV_CNV_germline.vcf", keepfiles)
+        "{stype}/dnascope/{sname}_{hgX}_SNV_CNV_germline.vcf"
     shadow:
         pipeconfig["rules"].get("merge_snvs_cnvs", {}).get("shadow", pipeconfig.get("shadow", False))
     params:

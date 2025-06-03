@@ -24,9 +24,3 @@ def setup_logger(name, log_path=None):
         logger.addHandler(file_handle)
 
     return logger
-
-def conditional_temp(output_file, keepfiles):
-    if output_file in keepfiles["keep_files"]:
-        return output_file
-    else:
-        return temp(output_file)

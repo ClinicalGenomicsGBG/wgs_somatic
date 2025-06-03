@@ -1,6 +1,5 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
-from tools.helpers import conditional_temp
 
 from workflows.scripts.create_qc_excel import create_excel_main
 import os
@@ -24,7 +23,7 @@ if tumorid:
                 msi = expand("{stype}/msi/{sname}_msi.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
                 tumor_info_files = expand("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid, ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
             output:
-                conditional_temp("qc_report/{tumorname}_qc_stats.xlsx", keepfiles)
+                "qc_report/{tumorname}_qc_stats.xlsx"
             run:
                 my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
                 insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
@@ -41,7 +40,7 @@ if tumorid:
                 tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid),
                 tumor_info_files = expand("{stype}/control-freec_{ploidy}/{sname}_REALIGNED.bam_info.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid, ploidy=pipeconfig["rules"]["control-freec"]["ploidy"]),
             output:
-                conditional_temp("qc_report/{tumorname}_qc_stats.xlsx", keepfiles)
+                "qc_report/{tumorname}_qc_stats.xlsx"
             run:
                 my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
                 insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works
@@ -57,7 +56,7 @@ else:
             normalvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[normalname]["stype"], sname=normalid),
             insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[normalname]["stype"], insiliconame=sampleconfig["insilico"], sname=normalid),
         output:
-            conditional_temp("qc_report/{normalname}_qc_stats.xlsx", keepfiles)
+            "qc_report/{normalname}_qc_stats.xlsx"
         run:
             my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0]
             insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] # Somehow this stuff works

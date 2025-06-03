@@ -1,6 +1,5 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
-from tools.helpers import conditional_temp
 
 if normalid:
     rule tnscope:
@@ -22,10 +21,10 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            tnscope_vcf = conditional_temp("{stype}/tnscope/{sname}_TNscope_tn.vcf", keepfiles),
-            tnscope_idx = conditional_temp("{stype}/tnscope/{sname}_TNscope_tn.vcf.idx", keepfiles),
-            tnscope_bam = conditional_temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam", keepfiles),
-            tnscope_bai = conditional_temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam.bai", keepfiles)
+            tnscope_vcf = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf"),
+            tnscope_idx = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf.idx"),
+            tnscope_bam = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"),
+            tnscope_bai = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam.bai")
         shadow:
             pipeconfig["rules"].get("tnscope", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -51,10 +50,10 @@ else:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            tnscope_vcf = conditional_temp("{stype}/tnscope/{sname}_TNscope_tn.vcf", keepfiles),
-            tnscope_idx = conditional_temp("{stype}/tnscope/{sname}_TNscope_tn.vcf.idx", keepfiles),
-            tnscope_bam = conditional_temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam", keepfiles),
-            tnscope_bai = conditional_temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam.bai", keepfiles)
+            tnscope_vcf = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf"),
+            tnscope_idx = temp("{stype}/tnscope/{sname}_TNscope_tn.vcf.idx"),
+            tnscope_bam = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam"),
+            tnscope_bai = temp("{stype}/tnscope/{sname}_REALIGNED_realignedTNscope.bam.bai")
         shadow:
             pipeconfig["rules"].get("tnscope", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -77,8 +76,8 @@ if normalid:
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
-            vcf = conditional_temp("{stype}/tnscope/{sname}_TNscope_tn_ML.vcf", keepfiles),
-            idx = conditional_temp("{stype}/tnscope/{sname}_TNscope_tn_ML.vcf.idx", keepfiles)
+            vcf = temp("{stype}/tnscope/{sname}_TNscope_tn_ML.vcf"),
+            idx = temp("{stype}/tnscope/{sname}_TNscope_tn_ML.vcf.idx")
         shadow:
             pipeconfig["rules"].get("tnscope_modelfilter", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
@@ -95,8 +94,8 @@ if normalid:
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
-            somatic_n = conditional_temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf", keepfiles),
-            somatic = conditional_temp("{stype}/tnscope/{sname}_somatic.vcf", keepfiles)
+            somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
+            somatic = "{stype}/tnscope/{sname}_somatic.vcf"
         shadow:
             pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -126,8 +125,8 @@ else:
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
-            somatic_n = conditional_temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf", keepfiles),
-            somatic = conditional_temp("{stype}/tnscope/{sname}_somatic.vcf", keepfiles)
+            somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
+            somatic = "{stype}/tnscope/{sname}_somatic.vcf"
         shadow:
             pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
