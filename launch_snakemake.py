@@ -84,7 +84,7 @@ def yearly_stats(tumorname, normalname):
         yearly_stats_file.write(f"Tumor ID: {tumorname} Normal ID: {normalname} Date and Time: {date_time}\n")
 
 
-def copy_results(outputdir, resultdir=None):
+def copy_results(outputdir, resultdir=None, resultsconf=None):
     '''Rsync result files from outputdir to resultdir'''
     if not resultdir:
         config_dir = os.path.join(outputdir, 'configs')
@@ -95,55 +95,45 @@ def copy_results(outputdir, resultdir=None):
                     config_file = os.path.join(config_dir, f)
                     with open(config_file, 'r') as cf:
                         resultdir = json.load(cf).get('resultdir')
+                        resultsconf = json.load(cf).get('resultfilesconf')
                         logger(f"Resultdir found in config file: {resultdir}")
+                        logger(f"Results configuration file found: {resultsconf}")
                     break
             if not resultdir:
                 logger(f"Automatic detection of config file failed. No matching configuration file found in {config_dir}")
                 raise ValueError("No resultdir found in config file")
 
-    try:
-        os.makedirs(resultdir, exist_ok=True)
-        igv_dir = os.path.join(resultdir, 'igv_files')
-        os.makedirs(igv_dir, exist_ok=True)
-    except Exception as e:
-        logger(f"Error creating resultdir: {e}")
-        raise
+    for category, relpaths in read_config(resultsconf).items():
+        if category == "toplevel":
+            dest_dir = resultdir
+        else:
+            dest_dir = os.path.join(resultdir, category)
 
-    # Find resultfiles to copy to resultdir on webstore
-    copy_files = []
-    files_match = ['.xlsx', 'CNV_SNV_germline.vcf.gz', 'somatic.vcf.gz', 'refseq3kfilt.vcf.gz', '.png']
-    for files in files_match:
-        copy_files = copy_files + glob.glob(os.path.join(outputdir, f'*{files}*'))
-    copy_files = set(copy_files)
-    for f in os.listdir(outputdir):
-        f = os.path.join(outputdir, f)
-        if os.path.isdir(f):
-            if 'configs' in f:
-                copy(os.path.join(outputdir, 'configs', 'config_hg38.json'), resultdir)
-                # copy config file to resultdir
-                logger("Run configuration file copied successfully")
-        if os.path.isfile(f):
-            if f in copy_files:
+        try:
+            os.makedirs(dest_dir, exist_ok=True)
+        except Exception as e:
+            logger(f"Error creating resultdir: {e}")
+            raise
+
+        for relpath in relpaths:
+            src_path = os.path.join(outputdir, relpath)
+            if os.path.exists(src_path):
+                dest_path = os.path.join(dest_dir, os.path.basename(relpath))
                 try:
-                    copy(f, resultdir)
-                    logger(f"{f} copied successfully")
-                except Exception:
-                    logger(f"Error occurred while copying {f}")
+                    copyfile(src_path, dest_path)
+                    logger(f"Copied {src_path} to {dest_path}")
+                except Exception as e:
+                    logger(f"Error copying {src_path} to {dest_path}: {e}")
             else:
-                # Copy all files that are not cram and that do not match the files_match pattern to webstore igv_dir
-                if not f.endswith('.cram') and not f.endswith('.crai'):
-                    try:
-                        copy(f, igv_dir)
-                        logger(f"{f} copied successfully")
-                        if f.endswith('.bam') or f.endswith('.bai'):
-                            try:
-                                # Remove the bam files from the outputdir
-                                logger(f"Removing {f} from outputdir.")
-                                os.remove(f)
-                            except:
-                                logger(f"Error occurred while removing {f}")
-                    except:
-                        logger(f"Error occurred while copying {f}")
+                logger(f"Source file {src_path} does not exist, skipping copy.")
+
+            if src_path.endswith('.bam') or src_path.endswith('.bai'):
+                try:
+                    # Remove the bam files from the outputdir
+                    logger(f"Removing {src_path} from outputdir.")
+                    os.remove(src_path)
+                except Exception as e:
+                    logger(f"Error occurred while removing {src_path}: {e}")
 
 
 def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, notemp=False):
