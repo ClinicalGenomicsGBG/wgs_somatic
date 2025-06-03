@@ -25,7 +25,7 @@ insilico_panels = config["insilico"]
 pipeconfig = read_config(config["pipeconfig"])  # In launch_snakemake.py the pipeconfig is adjusted to the genome (hg19/hg38)
 clusterconf = read_config(config["clusterconfig"])
 filterconfig = read_config(config["filterconfig"])
-keepfiles = read_config(config["keepfiles"])
+resultsconf = read_config(config["resultfilesconf"])
 
 shell.executable("/bin/bash")
 
@@ -179,6 +179,10 @@ def insilico_coverage(wildcards):
     if tumorid:
         return expand("{sname}_insilicostuffplaceholder", sname=normalid)
 
+all_result_files = []
+for result in resultsconf.values():
+    all_result_files.extend(result)
+
 rule all:
     input: 
-        keepfiles["keep_files"]
+        all_result_files
