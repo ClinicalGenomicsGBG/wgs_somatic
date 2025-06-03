@@ -1,6 +1,5 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
-from tools.helpers import conditional_temp
 
 rule dnascope:
     input:
@@ -57,7 +56,7 @@ rule dnascope_vcffilter:
         passfilter = "'FILTER=\"PASS\"'"
     output:
         germline_vcf = "{stype}/dnascope/{sname}_germline.vcf", 
-        temp(germline_snv_vcf = "{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf"),
+        germline_snv_vcf = temp("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf"),
     shadow:
         pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
