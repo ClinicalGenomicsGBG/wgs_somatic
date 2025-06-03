@@ -3,7 +3,6 @@
 import os
 from workflows.scripts.annotate_manta.manta_summary import manta_summary
 from workflows.scripts.filter_manta import filter_vcf
-from tools.helpers import conditional_temp
 
 if normalid:
     rule manta_somatic:
