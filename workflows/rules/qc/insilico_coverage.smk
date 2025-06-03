@@ -1,6 +1,5 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
-from tools.helpers import conditional_temp
 import os
 
 def get_bedfile_path(wcs):
@@ -27,11 +26,11 @@ if normalid:
             bedfile_path = get_bedfile_path,
             bedfile_version = get_bedfile_version
         output:
-            conditional_temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}_10x.xlsx", keepfiles),
-            conditional_temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}_20x.xlsx", keepfiles),
-            conditional_temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", keepfiles),
-            conditional_temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}.csv", keepfiles),
-            conditional_temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}_cov.tsv", keepfiles),
+            temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}_10x.xlsx"),
+            temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}_20x.xlsx"),
+            temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx"),
+            temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}.csv"),
+            temp("{normalid}/insilico/{insiliconame}/{sname}_{insiliconame}_cov.tsv"),
         shadow:
             pipeconfig["rules"].get("insilico", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -55,11 +54,11 @@ else:
             bedfile_path = get_bedfile_path,
             bedfile_version = get_bedfile_version
         output:
-            conditional_temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}_10x.xlsx", keepfiles),
-            conditional_temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}_20x.xlsx", keepfiles),
-            conditional_temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", keepfiles),
-            conditional_temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}.csv", keepfiles),
-            conditional_temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}_cov.tsv", keepfiles),
+            temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}_10x.xlsx"),
+            temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}_20x.xlsx"),
+            temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx"),
+            temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}.csv"),
+            temp("{tumorid}/insilico/{insiliconame}/{sname}_{insiliconame}_cov.tsv"),
         shadow:
             pipeconfig["rules"].get("insilico", {}).get("shadow", pipeconfig.get("shadow", False))
         run:

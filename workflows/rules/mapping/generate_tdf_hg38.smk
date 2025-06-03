@@ -1,6 +1,5 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
-from tools.helpers import conditional_temp
 
 rule generate_tdf_hg38:
     input:
@@ -12,6 +11,6 @@ rule generate_tdf_hg38:
     shadow:
         pipeconfig["rules"].get("generate_tdf", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
-        conditional_temp("{stype}/reports/{sname}_REALIGNED.bam.tdf", keepfiles)
+        "{stype}/reports/{sname}_REALIGNED.bam.tdf"
     run:
         shell("nohup java -Xmx{params.igvtools_memory_limit} -jar {params.igvtools_jar_path} count {input.bam} {output} hg38")

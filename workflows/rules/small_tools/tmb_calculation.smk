@@ -1,4 +1,3 @@
-from tools.helpers import conditional_temp
 
 rule tmb_calculation:
     input:
@@ -12,7 +11,7 @@ rule tmb_calculation:
         min_coverage = filterconfig["tmb_filter"]["min_coverage"],
         include_normal = ("True" if normalid else "False"),
     output:
-        tmb = conditional_temp("{stype}/reports/{sname}_tmb.txt", keepfiles),
+        tmb = temp("{stype}/reports/{sname}_tmb.txt"),
     shell:
         """
         bash {params.calculate_tmb} \

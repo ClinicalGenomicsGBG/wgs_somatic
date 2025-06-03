@@ -1,6 +1,5 @@
 import os
 from workflows.scripts.sex import calc_sex
-from tools.helpers import conditional_temp
 
 # Helper function to resolve file paths dynamically
 def get_cov_files(wildcards):
@@ -47,9 +46,9 @@ if normalid:
         output:
             # All output will be stored in the temporary output_directory. 
             # The Rdata and segments files are moved to the below output locations for further processing.
-            output_dir = conditional_temp(directory("{stype}/ascat/{sname}_run_output"), keepfiles),
-            rdata_file = conditional_temp("{stype}/ascat/{sname}_ascat_bc.Rdata", keepfiles),
-            segments = conditional_temp("{stype}/ascat/{sname}.segments.txt", keepfiles),
+            output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
+            rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
+            segments = temp("{stype}/ascat/{sname}.segments.txt"),
         singularity:
             pipeconfig["singularities"]["ascat"]["sing"]
         threads:
@@ -94,9 +93,9 @@ else:
             replic_timing_file = pipeconfig["rules"]["ascat_run"]["replic_timing_file"],
             ascat_run_script = f"{ROOT_DIR}/workflows/scripts/ascat_run.R",
         output:
-            output_dir = conditional_temp(directory("{stype}/ascat/{sname}_run_output"), keepfiles),
-            rdata_file = conditional_temp("{stype}/ascat/{sname}_ascat_bc.Rdata", keepfiles),
-            segments = conditional_temp("{stype}/ascat/{sname}.segments.txt", keepfiles),
+            output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
+            rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
+            segments = temp("{stype}/ascat/{sname}.segments.txt"),
         singularity:
             pipeconfig["singularities"]["ascat"]["sing"]
         threads:
@@ -135,9 +134,9 @@ rule ascat_plot:
         genome_fai = pipeconfig["referencefai"],
         ascat_plot_script = f"{ROOT_DIR}/workflows/scripts/ascat_custom_plot.R",
     output:
-        plot = conditional_temp("{stype}/ascat/{sname}_ascat_plot.png", keepfiles),
-        seg = conditional_temp("{stype}/ascat/{sname}_ascat_copynumber_IGV.seg", keepfiles),
-        BAF = conditional_temp("{stype}/ascat/{sname}_ascat_BAF_IGV.seg", keepfiles)
+        plot = "{stype}/ascat/{sname}_ascat_plot.png",
+        seg = "{stype}/ascat/{sname}_ascat_copynumber_IGV.seg",
+        BAF = "{stype}/ascat/{sname}_ascat_BAF_IGV.seg",
     singularity:
         pipeconfig["singularities"]["ascat"]["sing"]
     shell:
