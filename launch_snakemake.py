@@ -266,8 +266,8 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         wildcards = {
                 "tumor": "tumor",
                 "normal": "normal",
-                "DNAtumor": tumorname,
-                "DNAnormal": normalname
+                "DNAtumor": tumorid,
+                "DNAnormal": normalid
             }
         keepfiles = {
             "keep_files": [
@@ -429,6 +429,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "--latency-wait", "60",
             "--directory", outputdir,
             "--shadow-prefix", shadow_dir,
+            "--rerun-incomplete",
             "--stats", f"{samplelogs}/stats_{current_date}.json"
         ] + notemp_arg
 
