@@ -15,7 +15,7 @@ from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, I
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
-from tools.custom_email import start_email, end_email, error_email
+from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
@@ -324,9 +324,10 @@ def wrapper(instrument=None, outpath=None):
         # and don't need to be added as arguments
         try:
             logger.info(f'Combining qc stats for run {Rctx_run.run_name}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, runtag_results=Rctx_run.run_name, base_directory = "/clinical/data/wgs_somatic/test_output/test_qc_admin", output_directory = "/clinical/data/wgs_somatic/test_output/test_qc_admin")
+            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, runtag_results=Rctx_run.run_name)
         except Exception as e:
             logger.error(f"Error combining qc stats: {e}")
+            error_admin_qc_email(Rctx_run.run_name)
         # break out of for loop to avoid starting pipeline for a possible other run that was done sequenced at the same time.
         # if cron runs every 30 mins it will find other runs at the next cron instance and run from there instead (and add to novaseq_runlist)
         break

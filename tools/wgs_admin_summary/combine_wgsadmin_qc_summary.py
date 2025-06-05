@@ -37,7 +37,7 @@ def setup_logging(log_dir):
 #               default=None,
 #               help="Specific runtag to process. If provided, only this runtag will be processed. Otherwise, all runtags in the base directory will be processed.",
 #               show_default=True)
-def combine_qc_stats(base_directory, output_directory, launcher_config, runtag_results):
+def combine_qc_stats(launcher_config, runtag_results, base_directory=None, output_directory=None):
     """
     Command-line tool to combine '_qc_stats_wgsadmin.xlsx' files for each runtag in the given BASE_DIRECTORY.
     """
