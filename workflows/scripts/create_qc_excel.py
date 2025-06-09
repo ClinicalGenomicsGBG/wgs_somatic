@@ -353,12 +353,10 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         create_excel(statsdict, output, normalname, sex=calculated_sex)
         add_insilico_stats(insilicodir, output)
 
-def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', output='', tmb = ''):
+def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', output='', tmb = '', tumorid = '', normalid = ''):
 
     statsdict = {}
     if tumorcov:
-        tumorcovfile = os.path.basename(tumorcov)
-        tumorname = tumorcovfile.replace("_WGScov.tsv", "")
         statsdict = extract_stats(tumorcov, "coverage",  "tumor", statsdict)
         statsdict = extract_stats(tumordedup, "dedup",  "tumor", statsdict)
         tmb_dict = read_tmb_file(tmb)
@@ -369,8 +367,6 @@ def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', nor
             calculated_sex = calc_sex(tumorcov, ycov)
             
     if normalcov:
-        normalcovfile = os.path.basename(normalcov)
-        normalname = normalcovfile.replace("_WGScov.tsv", "")
         statsdict = extract_stats(normalcov, "coverage", "normal", statsdict)
         statsdict = extract_stats(normaldedup, "dedup", "normal", statsdict)
         if not tumorcov:
@@ -382,7 +378,7 @@ def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', nor
     if tumorcov:
         tumor_row = {
             "Type": "Tumor",
-            "SampleID": tumorname,
+            "SampleID": tumorid,
             "Sex": calculated_sex if normalcov else "N/A",
             "Coverage 10x": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "PCT_10X"), "N/A"),
             "Coverage 30x": next((item["colvalue"] for item in statsdict["coverage"]["tumor"].values() if item["colname"] == "PCT_30X"), "N/A"),
@@ -399,7 +395,7 @@ def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', nor
     if normalcov:
         normal_row = {
             "Type": "Normal",
-            "SampleID": normalname,
+            "SampleID": normalid,
             "Sex": calculated_sex,
             "Coverage 10x": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "PCT_10X"), "N/A"),
             "Coverage 30x": next((item["colvalue"] for item in statsdict["coverage"]["normal"].values() if item["colname"] == "PCT_30X"), "N/A"),

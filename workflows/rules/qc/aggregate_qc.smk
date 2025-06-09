@@ -67,6 +67,9 @@ rule qcstats_wgs_admin:
         tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid) if tumorid else [],
     output: 
         qcstats_wgs_admin_output
+    params:
+        tumorid = tumorid if tumorid else '',
+        normalid = normalid if normalid else ''
     run: 
         create_qc_toaggregate(
         tumorcov=f"{input.tumorcov}",
@@ -77,5 +80,7 @@ rule qcstats_wgs_admin:
         tumorvcf=f"{input.tumorvcf}" ,
         normalvcf=f"{input.normalvcf}" ,
         tmb=f"{input.tmb}" ,
-        output=f"{output}"
+        output=f"{output}",
+        tumorid = f"{params.tumorid}",
+        normalid = f"{params.normalid}"
         )
