@@ -29,7 +29,8 @@ def send_email_qc(subject, body):
 
     msg['Subject'] = subject
     msg['From'] = "cgg-cancer@gu.se" # TODO Get from config
-    msg['To'] = "cgg-cancer@gu.se"
+    msg['Cc'] = "cgg-cancer@gu.se"
+    msg['To'] = "su.vokliniskgen.wgsadmin@vgregion.se"
 
     # Send the message
     s = smtplib.SMTP('smtp.gu.se')
@@ -87,7 +88,7 @@ def error_admin_qc_email(run_name):
     subject = f'WGS somatic - admin QC failed {run_name}'
 
     body = f"""Generating the WGS Admin QC report failed for run {run_name}.\n
-    Please create the report manually.\n
+Please create the report manually.\n
     """
     
     send_email_qc(subject, body)
