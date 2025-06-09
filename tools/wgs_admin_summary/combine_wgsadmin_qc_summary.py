@@ -41,28 +41,32 @@ def combine_qc_stats(launcher_config, runtag_results, base_directory=None, outpu
     """
     Command-line tool to combine '_qc_stats_wgsadmin.xlsx' files for each runtag in the given BASE_DIRECTORY.
     """
-    # set up logger. log dir is taken from launcher_config
-    with open(launcher_config, 'r') as launcher_config_file:
-        setup_logging(json.load(launcher_config_file).get('logdir'))
+    # Load launcher_config once and parse it
+    try:
+        with open(launcher_config, 'r') as launcher_config_file:
+            config_data = json.load(launcher_config_file)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        raise FileNotFoundError(f"Launcher config not found or invalid: {e}")
+    
+    # Set up logger. log dir is taken from launcher_config
+    setup_logging(config_data.get('logdir'))
     
     logger = logging.getLogger(__name__)
     logger.info("Starting WGS admin QC summary per run")
     
-    # if output_directory is not provided, read it from the launcher_config
-    # if base_directory is not provided, read it from the launcher_config
+    # If output_directory is not provided, read it from the launcher_config
+    # If base_directory is not provided, read it from the launcher_config
     try:
-        with open(launcher_config, 'r') as launcher_config_file:
-            config_data = json.load(launcher_config_file)
+        if output_directory is None:
+            output_directory = config_data.get('wgsadmin_dir')
             if output_directory is None:
-                output_directory = config_data.get('wgsadmin_dir')
-                if output_directory is None:
-                    raise KeyError("Key 'wgsadmin_dir' not found in launcher_config.")
+                raise KeyError("Key 'wgsadmin_dir' not found in launcher_config.")
+        if base_directory is None:
+            base_directory = config_data.get('resultdir_hg38')
             if base_directory is None:
-                base_directory = config_data.get('resultdir_hg38')
-                if base_directory is None:
-                    raise KeyError("Key 'resultdir_hg38' not found in launcher_config.")
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        raise FileNotFoundError(f"Launcher config not found or invalid: {e}")
+                raise KeyError("Key 'resultdir_hg38' not found in launcher_config.")
+    except KeyError as e:
+        raise FileNotFoundError(f"Launcher config missing required key: {e}")
         
     logger.info(f"Base directory: {base_directory}")
     logger.info(f"Output directory: {output_directory}")
