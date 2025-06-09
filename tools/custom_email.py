@@ -84,7 +84,7 @@ CGG Cancer
 def error_admin_qc_email(run_name):
     """Send an email when the generating the qd admin summary report fails"""
 
-    subject = f'WGS somatic - admin QC failed{run_name}'
+    subject = f'WGS somatic - admin QC failed {run_name}'
 
     body = f"""Generating the WGS Admin QC report failed for run {run_name}.\n
     Please create the report manually.\n
