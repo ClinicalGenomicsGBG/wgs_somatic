@@ -94,8 +94,9 @@ def copy_results(outputdir, resultdir=None, resultsconf=None):
                 if config_pattern.match(f):
                     config_file = os.path.join(config_dir, f)
                     with open(config_file, 'r') as cf:
-                        resultdir = json.load(cf).get('resultdir')
-                        resultsconf = json.load(cf).get('resultfilesconf')
+                        config_data = json.load(cf)
+                        resultdir = config_data.get('resultdir')
+                        resultsconf = config_data.get('resultfilesconf')
                         logger(f"Resultdir found in config file: {resultdir}")
                         logger(f"Results configuration file found: {resultsconf}")
                     break
@@ -446,7 +447,7 @@ if __name__ == '__main__':
     parser.add_argument('-tf', '--tumorfastqs', nargs='?', help='path to directory containing tumor fastqs', required=False)
     parser.add_argument('-hg38', '--hg38ref', nargs='?', help='run analysis on hg38 reference (write yes if you want this option)', required=False)
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
-    parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on seqstore', required=False)
+    parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on webstore', required=False)
     parser.add_argument('--notemp', action="store_true", help='Run the pipeline in notemp mode (all intermediate files kept)', required=False)
     parser.add_argument('-onlycopy', '--onlycopyresults', action="store_true", help='Only run the copy_results function', required=False)
     args = parser.parse_args()
