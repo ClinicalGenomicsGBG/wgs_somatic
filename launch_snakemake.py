@@ -84,57 +84,89 @@ def yearly_stats(tumorname, normalname):
         yearly_stats_file.write(f"Tumor ID: {tumorname} Normal ID: {normalname} Date and Time: {date_time}\n")
 
 
-def copy_results(outputdir, resultdir=None, resultsconf=None):
+def copy_results(outputdir, runconfig=None):
     '''Rsync result files from outputdir to resultdir'''
-    if not resultdir:
-        config_dir = os.path.join(outputdir, 'configs')
-        config_pattern = re.compile(r'DNA[\dA-Za-z]+_.+_.+_config\.json')
-        if os.path.isdir(config_dir):
-            for f in os.listdir(config_dir):
-                if config_pattern.match(f):
-                    config_file = os.path.join(config_dir, f)
-                    with open(config_file, 'r') as cf:
-                        config_data = json.load(cf)
-                        resultdir = config_data.get('resultdir')
-                        resultsconf = config_data.get('resultfilesconf')
-                        logger(f"Resultdir found in config file: {resultdir}")
-                        logger(f"Results configuration file found: {resultsconf}")
-                    break
-            if not resultdir:
-                logger(f"Automatic detection of config file failed. No matching configuration file found in {config_dir}")
-                raise ValueError("No resultdir found in config file")
+    try:
+        if not runconfig:
+            # Automatic detection of runconfig
+            config_dir = os.path.join(outputdir, 'configs')
+            config_pattern = re.compile(r'DNA[\dA-Za-z]+_.+_.+_config\.json')
 
-    for category, relpaths in read_config(resultsconf).items():
-        if category == "toplevel":
-            dest_dir = resultdir
+            if os.path.isdir(config_dir):
+                for f in os.listdir(config_dir):
+                    if config_pattern.match(f):
+                        runconfig = os.path.join(config_dir, f)
+                        logger(f"Found runconfig: {runconfig}")
+                        break
+                else:
+                    logger(f"Automatic detection of config file failed. No matching configuration file found in {config_dir}")
+                    logger(f"Pattern used to match the config file: {config_pattern.pattern}")
+                    raise ValueError("Automatic detection of config file failed. No matching configuration file found.")
         else:
-            dest_dir = os.path.join(resultdir, category)
+            if not os.path.isfile(runconfig):
+                logger(f"Provided runconfig file does not exist: {runconfig}")
+                raise FileNotFoundError(f"Runconfig file not found: {runconfig}")
 
         try:
-            os.makedirs(dest_dir, exist_ok=True)
+            # Read the runconfig file to get resultdir and resultsconf
+            with open(runconfig, 'r') as cf:
+                config_data = json.load(cf)
+                try:
+                    resultdir = config_data.get('resultdir')
+                    logger(f"Resultdir found in config file: {resultdir}")
+                except KeyError:
+                    logger(f"Key 'resultdir' not found in config file {runconfig}")
+                    raise KeyError("Key 'resultdir' not found in config file")
+                try:
+                    resultsconf = config_data.get('resultfilesconf')
+                    logger(f"Results configuration file found: {resultsconf}")
+                except KeyError:
+                    logger(f"Key 'resultfilesconf' not found in config file {runconfig}")
+                    raise KeyError("Key 'resultfilesconf' not found in config file")
         except Exception as e:
-            logger(f"Error creating resultdir: {e}")
+            logger(f"Error reading config file {runconfig}: {e}")
             raise
 
-        for relpath in relpaths:
-            src_path = os.path.join(outputdir, relpath)
-            if os.path.exists(src_path):
-                dest_path = os.path.join(dest_dir, os.path.basename(relpath))
-                try:
-                    copyfile(src_path, dest_path)
-                    logger(f"Copied {src_path} to {dest_path}")
-                except Exception as e:
-                    logger(f"Error copying {src_path} to {dest_path}: {e}")
-            else:
-                logger(f"Source file {src_path} does not exist, skipping copy.")
+        try:
+            results = read_config(resultsconf)
+        except Exception as e:
+            logger(f"Failed to read results config from {resultsconf}: {e}")
+            raise
 
-            if src_path.endswith('.bam') or src_path.endswith('.bai'):
-                try:
-                    # Remove the bam files from the outputdir
-                    logger(f"Removing {src_path} from outputdir.")
-                    os.remove(src_path)
-                except Exception as e:
-                    logger(f"Error occurred while removing {src_path}: {e}")
+        # Read the results into the subdirectories unless they are marked toplevel
+        for category, relpaths in results.items():
+            dest_dir = resultdir if category == "toplevel" else os.path.join(resultdir, category)
+
+            try:
+                os.makedirs(dest_dir, exist_ok=True)
+            except Exception as e:
+                logger(f"Error creating result directory {dest_dir}: {e}")
+                raise
+
+            for relpath in relpaths:
+                src_path = os.path.join(outputdir, relpath)
+                dest_path = os.path.join(dest_dir, os.path.basename(relpath))
+
+                if os.path.exists(src_path):
+                    try:
+                        copyfile(src_path, dest_path)
+                        logger(f"Copied {src_path} to {dest_path}")
+
+                        # Remove .bam and .bai files from outputdir once copied
+                        if src_path.endswith('.bam') or src_path.endswith('.bai'):
+                            try:
+                                logger(f"Removing {src_path} from outputdir.")
+                                os.remove(src_path)
+                            except Exception as e:
+                                logger(f"Error occurred while removing {src_path}: {e}")
+                    except Exception as e:
+                        logger(f"Error copying {src_path} to {dest_path}: {e}")
+                else:
+                    logger(f"Source file {src_path} does not exist, skipping copy.")
+
+    except Exception as e:
+        logger(f"Unhandled error in copy_results: {e}")
+        raise
 
 
 def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, notemp=False):
