@@ -331,7 +331,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
         analysisdict["clusterconfig"] = os.path.join(configdir, clusterconf)
         analysisdict["pipeconfig"] = os.path.join(configdir, mainconf_name)
-        analysisdict["resultfilesconf"] = os.path.join(configdir, resultsconf)
+        analysisdict["resultfilesconf"] = os.path.join(runconfigs, resultsconf)
 
         # insilico
         analysisdict["insilico"] = config["insilicopanels"]
