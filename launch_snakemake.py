@@ -500,18 +500,17 @@ if __name__ == '__main__':
                 logger(f"Adjusted normalfastqs to {args.normalfastqs}")
         analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.notemp)
 
-        if os.path.isfile(f"{args.outputdir}/reporting/workflow_finished.txt"):
-            if args.tumorsample:
-                if args.normalsample:
-                    # these functions are only executed if snakemake workflow has finished successfully
-                    yearly_stats(args.tumorsample, args.normalsample)
-                    if args.copyresults:
-                        copy_results(args.outputdir)
-                else:
-                    yearly_stats(args.tumorsample, 'None')
-                    if args.copyresults:
-                        copy_results(args.outputdir)
-            else:
-                yearly_stats('None', args.normalsample)
+        if args.tumorsample:
+            if args.normalsample:
+                # these functions are only executed if snakemake workflow has finished successfully
+                yearly_stats(args.tumorsample, args.normalsample)
                 if args.copyresults:
                     copy_results(args.outputdir)
+            else:
+                yearly_stats(args.tumorsample, 'None')
+                if args.copyresults:
+                    copy_results(args.outputdir)
+        else:
+            yearly_stats('None', args.normalsample)
+            if args.copyresults:
+                copy_results(args.outputdir)
