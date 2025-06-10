@@ -168,8 +168,7 @@ else:
     # Generate tdf
     include:    "workflows/rules/mapping/generate_tdf.smk"
 
-# Prefer making bam from cram instead of remapping everything
-ruleorder: cram_to_bam > realign_mapping
+
 
 ruleorder: merge_snvs_cnvs > dnascope_vcffilter
 ruleorder: canvas_germline > bgzip_vcf
