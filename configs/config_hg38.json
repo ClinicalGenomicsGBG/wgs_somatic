@@ -137,19 +137,6 @@
             "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf",
             "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools"
         },
-        "upload_to_iva":
-        {
-            "clcserver": "medair.sahlgrenska.gu.se",
-            "clcport": "7777",
-            "clcqueue": "clinical-production",
-            "clcuser": "cmduser",
-            "clccmd": "/apps/clcservercmdline/clcserver", 
-            "passwords": "/root/password_config.json",
-            "clusterclcdir": "/medstore/Development/Sentieon/ingenuity_upload_directory/barncancer",
-            "clcref": "clc://server/CLC_References/homo_sapiens/sequence/hg19/Homo_sapiens_sequence_hg19",
-            "clcivadir": "clc://server/CLC_Data_Folders/Admin/Mathias/Trashcan/IVA_waitingroom",
-            "clcivadir_servpath": "/medstore/CLC_Data_Folders/Admin/Mathias/Trashcan/IVA_waitingroom"
-        },
         "convert_to_alissaformat":
         {
             "python": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/python"
