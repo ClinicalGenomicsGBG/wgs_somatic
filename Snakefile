@@ -95,13 +95,13 @@ if tumorfastqdirs:
 if tumorid:
     if normalid:
         # Runs tn_workflow / paired if tumorid and normalid
-        localrules: all, upload_to_iva, tn_workflow, share_to_resultdir, excel_qc, tmb_calculation, qcstats_wgs_admin
+        localrules: all, tn_workflow, share_to_resultdir, excel_qc, tmb_calculation, qcstats_wgs_admin
     else:
         # Runs tumoronly_workflow if tumorid but not normalid
-        localrules: all, upload_to_iva, tumoronly_workflow, share_to_resultdir, excel_qc, tmb_calculation, qcstats_wgs_admin
+        localrules: all, tumoronly_workflow, share_to_resultdir, excel_qc, tmb_calculation, qcstats_wgs_admin
 else: 
     # Runs normalonly_workflow if normalid but not tumorid
-    localrules: all, upload_to_iva, normalonly_workflow, share_to_resultdir, excel_qc, qcstats_wgs_admin
+    localrules: all, normalonly_workflow, share_to_resultdir, excel_qc, qcstats_wgs_admin
 ###########################################################
 
 ########################################
@@ -135,7 +135,6 @@ include:        "workflows/rules/qc/aggregate_qc.smk"
 #########################################
 # ResultSharing:
 include:        "workflows/rules/results_sharing/share_to_resultdir.smk"
-include:        "workflows/rules/results_sharing/upload_to_iva.smk"
 
 
 if reference == "hg38":
