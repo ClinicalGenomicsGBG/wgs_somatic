@@ -112,7 +112,6 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None):
 
 
 def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads):
-    hg38ref = config['hg38ref']['GMS-BT']
     timestamp = get_timestamp()
     if tumorsample and normalsample:
         logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
@@ -127,8 +126,7 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
-                         'tumorfastqs': f'{tumor_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'tumorfastqs': f'{tumor_fastq_dir}'}
 
     elif tumorsample:
         logger.info(f'Preparing run: Tumor-only {tumorsample}')
@@ -141,8 +139,7 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
         tumor_fastq_dir = link_fastqs_to_outputdir(fastq_dict_tumor, outputdir, logger)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
-                         'tumorfastqs': f'{tumor_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'tumorfastqs': f'{tumor_fastq_dir}'}
 
     elif normalsample:
         logger.info(f'Preparing run: Normal-only {normalsample}')
@@ -155,8 +152,7 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
         normal_fastq_dir = link_fastqs_to_outputdir(fastq_dict_normal, outputdir, logger)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
-                         'normalfastqs': f'{normal_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'normalfastqs': f'{normal_fastq_dir}'}
 
     threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
     logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')

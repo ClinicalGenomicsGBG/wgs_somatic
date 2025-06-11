@@ -1,7 +1,7 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 
-rule generate_tdf_hg38:
+rule generate_tdf:
     input:
         bam = "{stype}/realign/{sname}_REALIGNED.bam",
         bai = "{stype}/realign/{sname}_REALIGNED.bam.bai"
