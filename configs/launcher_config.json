@@ -4,12 +4,10 @@
     "commandlogs": "/clinical/exec/wgs_somatic/logs/commandlogs",
     "configdir": "configs",
     "hg38conf": "config_hg38.json",
-    "hg19conf": "config_hg19.json",
     "clusterconf": "cluster.yaml",
     "filterconf": "filters.yaml",
     "resultfilesconf": "result_files_config.yaml",
     "resultdir_hg38": "/webstore/clinical/routine/wgs_somatic/current",
-    "resultdir_hg19": "/seqstore/webfolders/wgs/neuroblastom",
     "testresultdir" : "/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", 
     "wgsadmin_dir": "/webstore/clinical/routine/laboratory/current/quality_reports/", 
     "singularitybinddirs":
