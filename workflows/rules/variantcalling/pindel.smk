@@ -4,10 +4,10 @@
 if normalid:
     rule pindel:
         input:
-            tumorbam = expand("{stype}/dedup/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            tumorbai = expand("{stype}/dedup/{sname}_REALIGNED.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            normalbam = expand("{stype}/dedup/{sname}_REALIGNED.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            normalbai = expand("{stype}/dedup/{sname}_REALIGNED.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            tumorbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            normalbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            normalbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         params:
             bed = pipeconfig["rules"]["pindel"]["bed"],
             reference = pipeconfig["referencegenome"],
@@ -37,8 +37,8 @@ if normalid:
 else:
     rule pindel:
         input:
-            tumorbam = expand("{stype}/dedup/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            tumorbai = expand("{stype}/dedup/{sname}_REALIGNED.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         params:
             bed = pipeconfig["rules"]["pindel"]["bed"],
             reference = pipeconfig["referencegenome"],

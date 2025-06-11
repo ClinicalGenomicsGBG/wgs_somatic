@@ -93,15 +93,9 @@ if tumorfastqdirs:
 ###########################################################
 # Defining Non Cluster Rules
 if tumorid:
-    if normalid:
-        # Runs tn_workflow / paired if tumorid and normalid
-        localrules: all, tn_workflow, share_to_resultdir, excel_qc, tmb_calculation
-    else:
-        # Runs tumoronly_workflow if tumorid but not normalid
-        localrules: all, tumoronly_workflow, share_to_resultdir, excel_qc, tmb_calculation
+        localrules: all, excel_qc, tmb_calculation
 else: 
-    # Runs normalonly_workflow if normalid but not tumorid
-    localrules: all, normalonly_workflow, share_to_resultdir, excel_qc
+    localrules: all, excel_qc
 ###########################################################
 
 #########################################

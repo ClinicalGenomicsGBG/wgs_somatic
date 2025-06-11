@@ -323,9 +323,6 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         analysisdict["pipeconfig"] = os.path.join(configdir, mainconf_name)
         analysisdict["resultfilesconf"] = os.path.join(runconfigs, resultsconf)
 
-        # insilico
-        analysisdict["insilico"] = config["insilicopanels"]
-
         basename_outputdir = os.path.basename(outputdir)
 
         analysisdict["reference"] = "hg38"

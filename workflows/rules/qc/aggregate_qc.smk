@@ -24,7 +24,7 @@ if tumorid:
             output:
                 "qc_report/{tumorname}_qc_stats.xlsx"
             run:
-                create_excel_main(tumorcov = f"{input.tumorcov}", ycov = f"{input.ycov}" , normalcov = f"{input.normalcov}", tumordedup = f"{input.tumordedup}", normaldedup = f"{input.normaldedup}", tumorvcf = f"{input.tumorvcf}", normalvcf = f"{input.normalvcf}", canvasvcf = f"{input.canvasvcf}", tmb = f"{input.tmb}", msi = f"{input.msi}", msi_red = f"{input.msi_filtered}", tumor_info_files=[f"{file}" for file in input.tumor_info_files], output = f"{output}", insilicodir = f"{insilicodir}") 
+                create_excel_main(tumorcov = f"{input.tumorcov}", ycov = f"{input.ycov}" , normalcov = f"{input.normalcov}", tumordedup = f"{input.tumordedup}", normaldedup = f"{input.normaldedup}", tumorvcf = f"{input.tumorvcf}", normalvcf = f"{input.normalvcf}", canvasvcf = f"{input.canvasvcf}", tmb = f"{input.tmb}", msi = f"{input.msi}", msi_red = f"{input.msi_filtered}", tumor_info_files=[f"{file}" for file in input.tumor_info_files], output = f"{output}") 
     else:
         # excel_qc rule for tumor only
         rule excel_qc:
@@ -38,7 +38,7 @@ if tumorid:
             output:
                 "qc_report/{tumorname}_qc_stats.xlsx"
             run:
-                create_excel_main(tumorcov = f"{input.tumorcov}", ycov = f"{input.ycov}", tumordedup = f"{input.tumordedup}", tumorvcf = f"{input.tumorvcf}", tmb = f"{input.tmb}", tumor_info_files=[f"{file}" for file in input.tumor_info_files], output = f"{output}"")
+                create_excel_main(tumorcov = f"{input.tumorcov}", ycov = f"{input.ycov}", tumordedup = f"{input.tumordedup}", tumorvcf = f"{input.tumorvcf}", tmb = f"{input.tmb}", tumor_info_files=[f"{file}" for file in input.tumor_info_files], output = f"{output}")
 
 else:
     # excel_qc rule for normal only
