@@ -70,11 +70,6 @@
             "gc_content_file": "/clinical/exec/wgs_somatic/dependencies/ascat/GC_G1000_hg38.txt",
             "replic_timing_file": "/clinical/exec/wgs_somatic/dependencies/ascat/RT_G1000_hg38.txt"
         },
-        "insilico":
-        {
-        "samtools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/samtools",
-        "python": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/python"
-        },
         "tnscope":
         {
             "outputdir": "tumor/tnscope",

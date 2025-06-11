@@ -8,42 +8,6 @@ from workflows.scripts.determine_match import determine_match
 from tools.git_versions import get_git_commit, get_git_tag, get_git_reponame
 from workflows.scripts.sex import calc_sex
 import time
-import pandas as pd
-import glob
-
-
-def add_insilico_stats(insilicofolder, main_excel):
-    from workflows.scripts.insilico_coverage import insilico_overall_coverage
-
-    # generate overall insilico coverage dataframe & append to main excel
-    ocov_file_list = glob.glob(f"{insilicofolder}/**/*_cov.tsv")
-    for ocov in ocov_file_list:
-        ocov_sheetname = os.path.basename(os.path.splitext(ocov)[0])
-        # This abbreviation has to be done because microsoft has a hardcap of 31 characters for sheetnames
-        ocov_sheetname_abbr = ocov_sheetname.replace("_", "")[-30:]
-        ocov_list = insilico_overall_coverage.overall_coverage_stats(ocov, "10,20,30,40,50,60,70,80,90,100,110,120")
-        ocov_df = pd.DataFrame(ocov_list)
-        with pd.ExcelWriter(main_excel, engine='openpyxl', mode='a') as writer:
-            ocov_df.to_excel(writer, sheet_name=ocov_sheetname_abbr, index=False, header=False)
-
-    # generate all region stats (even if they are 100%)
-    arcov_file_list = glob.glob(f"{insilicofolder}/**/*v[0-9].[0-9].csv")
-    for arcov in arcov_file_list:
-        arcov_sheetname = os.path.basename(os.path.splitext(arcov)[0]) + "_allgenes"
-        arcov_sheetname_abbr = arcov_sheetname.replace("_", "")[-30:]
-        arcov_df = pd.read_csv(arcov)
-        with pd.ExcelWriter(main_excel, engine='openpyxl', mode='a') as writer:
-            arcov_df.to_excel(writer, sheet_name=arcov_sheetname_abbr) # may need to set index and or header to false here
-
-    # generate per region stats and append to main excel
-    excel_file_list = glob.glob(f"{insilicofolder}/**/*.xlsx")
-    for xlfile in excel_file_list:
-        dataframe = pd.read_excel(xlfile, engine='openpyxl')
-        dataframe = dataframe.iloc[: , 1:]
-        sheetname = os.path.basename(os.path.splitext(xlfile)[0])
-        sheetname_abbr = sheetname.replace("_", "")[-30:]
-        with pd.ExcelWriter(main_excel, engine='openpyxl', mode='a') as writer:
-            dataframe.to_excel(writer, sheet_name=sheetname_abbr, index=False)
 
 
 def extract_stats(statsfile, statstype, sampletype, statsdict):
@@ -312,8 +276,7 @@ def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, 
     excelfile.close()
 
 
-def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', msi='', msi_red='', tumor_info_files=[], output='', insilicodir=''):
-    print(f"insilicodir: {insilicodir}")
+def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', msi='', msi_red='', tumor_info_files=[], output=''):
     statsdict = {}
     if tumorcov:
         tumorcovfile = os.path.basename(tumorcov)
@@ -335,23 +298,20 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
     if not output.endswith(".xlsx"):
         output = f"{output}.xlsx"
 
-    # Determine which files to use to calculate sex and where to get insilico coverageg files
+    # Determine which files to use to calculate sex
     if tumorcov:
         if normalcov:
             # Tumour + Normal
             calculated_sex = calc_sex(normalcov, ycov)
             create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict, freec_purities=freec_purities)
-            add_insilico_stats(insilicodir, output)
         else:
             # Tumour only
             calculated_sex = calc_sex(tumorcov, ycov)
             create_excel(statsdict, output, tumorname=tumorname, sex=calculated_sex, tmb_dict=tmb_dict, freec_purities=freec_purities)
-            add_insilico_stats(insilicodir, output) # Maybe this can be commented out if not needed for tumour only
     else:
         # Normal only
         calculated_sex = calc_sex(normalcov, ycov)
         create_excel(statsdict, output, normalname, sex=calculated_sex)
-        add_insilico_stats(insilicodir, output)
 
 def create_qc_toaggregate(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', output='', tmb = '', tumorid = '', normalid = ''):
 
@@ -428,7 +388,6 @@ if __name__ == '__main__':
     parser.add_argument('-tv', '--tumorvcf', nargs='?', help='Tumor Germlinecalls', required=False)
     parser.add_argument('-nv', '--normalvcf', nargs='?', help='Normal Germlinecalls', required=True)
     parser.add_argument('-cv', '--canvasvcf', nargs='?', help='Somatic Canvas VCF', required=False)
-    parser.add_argument('-is', '--insilicodir', nargs='?', help='Full path to insilico directory (which contains excel files)', required=False)
     parser.add_argument('--tmb', nargs='?', help='TMB file', required=False)
     parser.add_argument('--msi', nargs='?', help='MSI result file', required=False)
     parser.add_argument('--msi_red', nargs='?', help='MSI filtered to bed file result file', required=False)
@@ -438,5 +397,5 @@ if __name__ == '__main__':
     create_excel_main(
         args.tumorcov, args.ycov, args.normalcov, args.tumordedup, args.normaldedup,
         args.tumorvcf, args.normalvcf, args.canvasvcf, args.tmb, args.msi, args.msi_red,
-        args.tumor_info_files, args.output, args.insilicodir
+        args.tumor_info_files, args.output
     )

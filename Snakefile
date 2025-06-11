@@ -19,8 +19,6 @@ tumorid = config["tumorid"]
 
 reference = config["reference"]
 
-insilico_panels = config["insilico"]
-
 # It uses the following configs from the working directory
 pipeconfig = read_config(config["pipeconfig"])  # In launch_snakemake.py the pipeconfig is adjusted to the genome (hg19/hg38)
 clusterconf = read_config(config["clusterconfig"])
@@ -40,7 +38,6 @@ sampleconfig["normal"] = normalid
 sampleconfig["tumor"] = tumorid
 sampleconfig["normalname"] = normalname
 sampleconfig["tumorname"] = tumorname
-sampleconfig["insilico"] = insilico_panels #What should this be?
 
 ####################################################
 # Prepare Fastq Variables 
@@ -134,7 +131,6 @@ include:        "workflows/rules/small_tools/bgzip.smk"
 #########################################
 # QC
 include:        "workflows/rules/qc/aggregate_qc.smk"
-include:        "workflows/rules/qc/insilico_coverage.smk"
 
 #########################################
 # ResultSharing:
@@ -176,9 +172,6 @@ ruleorder: canvas_germline > bgzip_vcf
 if tumorid and normalid:
     ruleorder: canvas_somatic > bgzip_vcf
 
-def insilico_coverage(wildcards):
-    if tumorid:
-        return expand("{sname}_insilicostuffplaceholder", sname=normalid)
 
 all_result_files = []
 for result in resultsconf.values():

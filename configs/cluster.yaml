@@ -82,10 +82,6 @@ cutadapt:
     threads:  1
     excl: excl=1
 
-insilico_coverage:
-    threads: 2
-    excl: excl=1
-
 bgzip_vcf:
     threads: 1
     excl: excl=1
