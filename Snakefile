@@ -104,65 +104,35 @@ else:
     localrules: all, normalonly_workflow, share_to_resultdir, excel_qc, qcstats_wgs_admin
 ###########################################################
 
-########################################
-# Workflows
-if tumorid:
-    if normalid:
-        include:        "workflows/tn_workflow.smk"
-    else:
-        include:        "workflows/tumoronly_workflow.smk"
-else:
-    include:        "workflows/normalonly_workflow.smk"
+#########################################
+# Mapping
+include:    "workflows/rules/mapping/mapping.smk"
+include:    "workflows/rules/mapping/cram.smk"
+include:    "workflows/rules/mapping/generate_tdf.smk"
 
 #########################################
 # VariantCalling
 if tumorid:
     include:        "workflows/rules/variantcalling/tnscope.smk"
     include:        "workflows/rules/variantcalling/pindel.smk"
-    include:        "workflows/rules/small_tools/tmb_calculation.smk"
-    include:        "workflows/rules/small_tools/msi.smk"
     include:        "workflows/rules/variantcalling/control-freec.smk"
     include:        "workflows/rules/variantcalling/ascat.smk"
 include:        "workflows/rules/variantcalling/dnascope.smk"
-include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"
+include:        "workflows/rules/variantcalling/manta.smk"
+
+#########################################
+# Small Tools
+if tumorid:
+    include:        "workflows/rules/small_tools/tmb_calculation.smk"
+    include:        "workflows/rules/small_tools/msi.smk"
+include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/small_tools/bgzip.smk"
 
 #########################################
 # QC
-include:        "workflows/rules/qc/aggregate_qc.smk"
-
-#########################################
-# ResultSharing:
-include:        "workflows/rules/results_sharing/share_to_resultdir.smk"
-
-
-if reference == "hg38":
-    ###########################################################
-    # HG38 rules
-    ###########################################################
-    # Mapping
-    include:    "workflows/rules/mapping/mapping_hg38.smk"
-    include:    "workflows/rules/mapping/cram.smk"
-    # Variantcalling
-    include:    "workflows/rules/variantcalling/manta_hg38.smk"
-    # Coverage
-    include:    "workflows/rules/qc/coverage_hg38.smk"
-    # Generate tdf
-    include:    "workflows/rules/mapping/generate_tdf_hg38.smk"
-else:
-    ###########################################################
-    # HG19 rules
-    ###########################################################
-    # Mapping
-    include:        "workflows/rules/mapping/mapping.smk"
-    # VariantCalling
-    include:        "workflows/rules/variantcalling/manta.smk"
-    # Coverage
-    include:        "workflows/rules/qc/coverage.smk"
-    # Generate tdf
-    include:    "workflows/rules/mapping/generate_tdf.smk"
-
+include:       "workflows/rules/qc/aggregate_qc.smk"
+include:       "workflows/rules/qc/coverage.smk"
 
 
 ruleorder: merge_snvs_cnvs > dnascope_vcffilter

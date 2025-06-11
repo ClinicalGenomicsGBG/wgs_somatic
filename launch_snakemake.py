@@ -169,7 +169,7 @@ def copy_results(outputdir, runconfig=None):
         raise
 
 
-def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, hg38ref=False, starttype=False, notemp=False):
+def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, starttype=False, notemp=False):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -200,18 +200,8 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
 
         error_list = []
 
-        if hg38ref:
-            logger(f"hg38 argument given with value: {hg38ref}")
-            if hg38ref != "yes":
-                logger("argument is not yes, if you want hg19 simply dont provide hg38 argument, exiting")
-                error_list.append(f"invalid hg38 argument value: {hg38ref}")
-
-        if hg38ref == "yes":
-            mainconf = "hg38conf"
-        else:
-            mainconf = "hg19conf"
         configdir = config["configdir"]
-        mainconf_name = config[mainconf]
+        mainconf_name = config["hg38conf"]
 
         # validate fastqdirs
         if starttype == "force":
@@ -338,24 +328,14 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
 
         basename_outputdir = os.path.basename(outputdir)
 
-        if hg38ref == "yes":
-            analysisdict["reference"] = "hg38"
-            if tumorname:
-                if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'  # Use f'{config["testresultdir"]}/{tumorname}'for testing
-                else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_outputdir}'
+        analysisdict["reference"] = "hg38"
+        if tumorname:
+            if normalname:
+                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'  # Use f'{config["testresultdir"]}/{tumorname}'for testing
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_outputdir}'
+                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_outputdir}'
         else:
-            analysisdict["reference"] = "hg19"
-            if tumorname:
-                if normalname:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/{basename_outputdir}'
-                else:
-                    analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/tumor_only/{basename_outputdir}'
-            else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg19"]}/normal_only/{basename_outputdir}'
+            analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_outputdir}'
 
         if tumorname:
             snakemake_config = f"{runconfigs}/{tumorid}_config.json"
@@ -478,7 +458,6 @@ if __name__ == '__main__':
     parser.add_argument('-nf', '--normalfastqs', nargs='?', help='path to directory containing normal fastqs', required=False)
     parser.add_argument('-ts', '--tumorsample', nargs='?', help='tumor samplename', required=False)
     parser.add_argument('-tf', '--tumorfastqs', nargs='?', help='path to directory containing tumor fastqs', required=False)
-    parser.add_argument('-hg38', '--hg38ref', nargs='?', help='run analysis on hg38 reference (write yes if you want this option)', required=False)
     parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on webstore', required=False)
     parser.add_argument('--notemp', action="store_true", help='Run the pipeline in notemp mode (all intermediate files kept)', required=False)
@@ -499,7 +478,7 @@ if __name__ == '__main__':
             if not args.normalfastqs.startswith("/"):
                 args.normalfastqs = os.path.abspath(args.normalfastqs)
                 logger(f"Adjusted normalfastqs to {args.normalfastqs}")
-        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.hg38ref, args.starttype, args.notemp)
+        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.starttype, args.notemp)
 
         if args.tumorsample:
             if args.normalsample:

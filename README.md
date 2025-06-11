@@ -72,7 +72,6 @@ python launch_snakemake.py \
     --normalfastqs <directory containing normal fastqs> \
     --tumorsample <e.g. "DNA654321", should match beginning of tumor fastqs> \
     --tumorfastqs <path to directory containing tumor fastqs> \
-    --hg38ref yes \
     --copyresults <copy results to resultdir_hg38 in launcher_config.json> \
     --development <save intermediate files; allows for resuming of crashed runs>
 ```

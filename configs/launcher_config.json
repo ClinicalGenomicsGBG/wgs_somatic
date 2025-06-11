@@ -28,21 +28,6 @@
         {
             "source": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/",
             "destination": "/gatk"
-        },
-        "databases_hg19":
-        {
-            "source": "/apps/bio/dependencies/wgs_somatic/hg19/sentieon/",
-            "destination": "/databases"
-        },
-        "canvasfiles_hg19":
-        {
-            "source": "/medstore/External_References/Canvas_CLC_HG19_Dataset/hs37d5/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta",
-            "destination": "/medstore/External_References/Canvas_CLC_HG19_Dataset/hs37d5/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta"
-        },
-        "canvassequence_hg19":
-        {
-            "source": "/apps/bio/dependencies/wgs_somatic/hg19/canvas/Sequence",
-            "destination": "/Sequence"
         }
     }
 }
