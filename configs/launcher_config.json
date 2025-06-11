@@ -43,22 +43,5 @@
             "source": "/apps/bio/dependencies/wgs_somatic/hg19/canvas/Sequence",
             "destination": "/Sequence"
         }
-    },
-    "insilicopanels":
-    {
-        "ChiCap_Clinical_v5.0":
-        {
-            "bed": "/apps/bio/dependencies/wgs_somatic/hg38/insilico/ChiCap_Clinical.bed",
-            "genelist": "/apps/bio/dependencies/wgs_somatic/hg38/insilico/ChiCap_Clinical_v5.0/ChiCap_Clinical_v5.0",
-            "version": "5.0",
-            "levels": 2
-        },
-        "ChiCap_Actionable_v2.0":
-        {
-            "bed": "/apps/bio/dependencies/wgs_somatic/hg38/insilico/ChiCap_Actionable.bed",
-            "genelist": "/apps/bio/dependencies/wgs_somatic/hg38/insilico/ChiCap_Actionable_v2.0/ChiCap_Actionable_v2.0",
-            "version": "2.0",
-            "levels": 2
-        }
     }
 }
