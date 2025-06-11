@@ -1,0 +1,134 @@
+tumor-normal:
+  toplevel:
+    # QC reports
+    - "qc_report/{DNAtumor}_qc_stats.xlsx"
+
+  mapped_reads:
+    # Read mapping
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.bam"
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.bai"
+    - "{tumor}/reports/{DNAtumor}_REALIGNED.bam.tdf"
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.cram"
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.cram.crai"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.bam"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.bam.bai"
+    - "{normal}/reports/{DNAnormal}_REALIGNED.bam.tdf"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.cram"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.cram.crai"
+
+  SNV_INDEL:
+    # SNV/INDEL calling
+    - "{tumor}/tnscope/{DNAtumor}_somatic.vcf.gz"
+    - "{tumor}/tnscope/{DNAtumor}_somatic.vcf.gz.csi"
+    - "{normal}/dnascope/{DNAnormal}_germline.vcf.gz"
+    - "{normal}/dnascope/{DNAnormal}_germline.vcf.gz.csi"
+
+  SV:
+    # SV calling
+    ## Manta
+    - "{tumor}/manta/{DNAtumor}_somatic_mantaSV.vcf.gz"
+    - "{tumor}/manta/{DNAtumor}_somatic_mantaSV.vcf.gz.csi"
+    - "{tumor}/manta/{DNAtumor}_somatic_mantaSV.vcf.xlsx"
+    - "{tumor}/manta/{DNAtumor}_somatic_mantaSV_Summary.xlsx"  
+    ## Pindel
+    - "{tumor}/pindel/{DNAtumor}_pindel.xlsx"
+
+  CNV:
+    # CNV calling
+    ## Canvas
+    - "{tumor}/canvas/{DNAtumor}_CNV_somatic.vcf.gz"
+    - "{tumor}/canvas/{DNAtumor}_CNV_somatic.vcf.gz.csi"
+    - "{tumor}/canvas/{DNAtumor}_somatic_CNV_called.seg"
+    - "{tumor}/canvas/{DNAtumor}_somatic_CNV_observed.seg"
+    - "{tumor}/reports/{DNAtumor}_baf.igv"
+    - "{normal}/canvas/{DNAnormal}_CNV_germline.vcf.gz"
+    - "{normal}/canvas/{DNAnormal}_CNV_germline.vcf.gz.csi"
+    - "{normal}/canvas/{DNAnormal}_germline_CNV_called.seg"
+    - "{normal}/canvas/{DNAnormal}_germline_CNV_observed.seg"
+    - "{normal}/reports/{DNAnormal}_baf.igv"
+    ## Ascat
+    - "{tumor}/ascat/{DNAtumor}_ascat_plot.png"
+    - "{tumor}/ascat/{DNAtumor}_ascat_copynumber_IGV.seg"
+    - "{tumor}/ascat/{DNAtumor}_ascat_BAF_IGV.seg"
+    ## Control-FREEC
+    - "{tumor}/control-freec_2/{DNAtumor}_controlfreec_ploidy2.png"
+    - "{tumor}/control-freec_2/{DNAtumor}_controlfreec_ploidy2.seg"
+    - "{tumor}/control-freec_free/{DNAtumor}_controlfreec_ploidyfree.png"
+    - "{tumor}/control-freec_free/{DNAtumor}_controlfreec_ploidyfree.seg"
+
+
+tumor-only:
+  toplevel:
+    # QC reports
+    - "qc_report/{DNAtumor}_qc_stats.xlsx"
+
+  mapped_reads:
+    # Read mapping
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.bam"
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.bai"
+    - "{tumor}/reports/{DNAtumor}_REALIGNED.bam.tdf"
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.cram"
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.cram.crai"
+
+  SNV_INDEL:
+    # SNV/INDEL calling
+    - "{tumor}/tnscope/{DNAtumor}_somatic.vcf.gz"
+    - "{tumor}/tnscope/{DNAtumor}_somatic.vcf.gz.csi"
+    - "{tumor}/manta/{DNAtumor}_somatic_mantaSV.vcf.xlsx"
+    - "{tumor}/manta/{DNAtumor}_somatic_mantaSV_Summary.xlsx"
+
+  SV:
+    # SV calling
+    ## Manta
+    - "{tumor}/manta/{DNAtumor}_somatic_mantaSV.vcf.gz"
+    - "{tumor}/manta/{DNAtumor}_somatic_mantaSV.vcf.gz.csi"
+    ## Pindel
+    - "{tumor}/pindel/{DNAtumor}_pindel.xlsx"
+
+  CNV:
+    # CNV calling
+    ## Canvas
+    # Note: The canvas output for tumor-only is called germline
+    # We can fix it or remove canvas entirely
+    - "{tumor}/canvas/{DNAtumor}_CNV_germline.vcf.gz"
+    - "{tumor}/canvas/{DNAtumor}_CNV_germline.vcf.gz.csi"
+    - "{tumor}/canvas/{DNAtumor}_germline_CNV_called.seg"
+    - "{tumor}/canvas/{DNAtumor}_germline_CNV_observed.seg"
+    - "{tumor}/reports/{DNAtumor}_baf.igv"
+    ## Ascat
+    - "{tumor}/ascat/{DNAtumor}_ascat_plot.png"
+    - "{tumor}/ascat/{DNAtumor}_ascat_copynumber_IGV.seg"
+    - "{tumor}/ascat/{DNAtumor}_ascat_BAF_IGV.seg"
+    ## Control-FREEC
+    - "{tumor}/control-freec_2/{DNAtumor}_controlfreec_ploidy2.png"
+    - "{tumor}/control-freec_2/{DNAtumor}_controlfreec_ploidy2.seg"
+    - "{tumor}/control-freec_free/{DNAtumor}_controlfreec_ploidyfree.png"
+    - "{tumor}/control-freec_free/{DNAtumor}_controlfreec_ploidyfree.seg"
+
+
+normal-only:
+  toplevel:
+    # QC reports
+    - "qc_report/{DNAnormal}_qc_stats.xlsx"
+
+  mapped_reads:
+    # Read mapping
+    - "{normal}/realign/{DNAnormal}_REALIGNED.bam"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.bam.bai"
+    - "{normal}/reports/{DNAnormal}_REALIGNED.bam.tdf"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.cram"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.cram.crai"
+
+  SNV_INDEL:
+    # SNV/INDEL calling
+    - "{normal}/dnascope/{DNAnormal}_germline.vcf.gz"
+    - "{normal}/dnascope/{DNAnormal}_germline.vcf.gz.csi"
+
+  CNV:
+    # CNV calling
+    ## Canvas
+    - "{normal}/canvas/{DNAnormal}_CNV_germline.vcf.gz"
+    - "{normal}/canvas/{DNAnormal}_CNV_germline.vcf.gz.csi"
+    - "{normal}/canvas/{DNAnormal}_germline_CNV_called.seg"
+    - "{normal}/canvas/{DNAnormal}_germline_CNV_observed.seg"
+    - "{normal}/reports/{DNAnormal}_baf.igv"

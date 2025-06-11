@@ -4,10 +4,10 @@
 if normalid:
     rule pindel:
         input:
-            tumorbam = expand("{stype}/dedup/{sname}_DEDUP.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            tumorbai = expand("{stype}/dedup/{sname}_DEDUP.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            normalbam = expand("{stype}/dedup/{sname}_DEDUP.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            normalbai = expand("{stype}/dedup/{sname}_DEDUP.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            tumorbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            normalbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            normalbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
         params:
             bed = pipeconfig["rules"]["pindel"]["bed"],
             reference = pipeconfig["referencegenome"],
@@ -37,8 +37,8 @@ if normalid:
 else:
     rule pindel:
         input:
-            tumorbam = expand("{stype}/dedup/{sname}_DEDUP.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            tumorbai = expand("{stype}/dedup/{sname}_DEDUP.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+            tumorbai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
         params:
             bed = pipeconfig["rules"]["pindel"]["bed"],
             reference = pipeconfig["referencegenome"],
@@ -108,7 +108,7 @@ rule fixPindelDPoAF:
     input:
         "{stype}/pindel/{sname}_pindel_noDP.vcf"
     output:
-        temp("{stype}/pindel/{sname}_pindel.vcf")
+        "{stype}/pindel/{sname}_pindel.vcf"
     params:
         python = pipeconfig["rules"]["pindel"]["python"],
         fix_DPoAF = pipeconfig["rules"]["pindel"].get("fix_DPoAF", f"{ROOT_DIR}/workflows/scripts/fix_pindelDPoAF.py") 
@@ -121,7 +121,7 @@ rule pindel_xlsx:
     input:
         "{stype}/pindel/{sname}_pindel.vcf"
     output:
-        temp("{stype}/pindel/{sname}_pindel.xlsx")
+        "{stype}/pindel/{sname}_pindel.xlsx"
     params:
         python = pipeconfig["rules"]["pindel"]["python"],
         bed = pipeconfig["rules"]["pindel"]["bed"],

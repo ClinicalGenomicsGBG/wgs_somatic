@@ -51,11 +51,6 @@ rule mapping:
 rule dedup:
     input:
         unpack(get_mapping)
-    output:
-        bam = temp("{stype}/dedup/{sname}_DEDUP.bam"),
-        bai = temp("{stype}/dedup/{sname}_DEDUP.bam.bai"),
-        score = temp("{stype}/dedup/{sname}_DEDUP_score.txt"),
-        metrics = temp("{stype}/dedup/{sname}_DEDUP.txt")
     params:
         threads = clusterconf["dedup"]["threads"],
         samplename = get_samplename,
@@ -65,6 +60,11 @@ rule dedup:
         pipeconfig["singularities"]["sentieon"]["sing"]
     shadow:
         pipeconfig["rules"].get("dedup", {}).get("shadow", pipeconfig.get("shadow", False))
+    output:
+        bam = temp("{stype}/dedup/{sname}_DEDUP.bam"),
+        bai = temp("{stype}/dedup/{sname}_DEDUP.bam.bai"),
+        score = temp("{stype}/dedup/{sname}_DEDUP_score.txt"),
+        metrics = temp("{stype}/dedup/{sname}_DEDUP.txt"),
     shell:
         "echo $HOSTNAME;"
         "{params.sentieon} driver -t {params.threads} "
@@ -74,7 +74,7 @@ rule dedup:
             "{output.score}; "
         "{params.sentieon} driver "
             "-t {params.threads} "
-            "-i {input.bam} "
+            "{params.bamfiles} "
             "--algo Dedup "
             "--rmdup "
             "--score_info {output.score} "
@@ -87,20 +87,19 @@ rule realign_mapping:
         bai = "{stype}/dedup/{sname}_DEDUP.bam.bai"
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
-    output:
-        bam = temp("{stype}/realign/{sname}_REALIGNED.bam"),
-        bai = temp("{stype}/realign/{sname}_REALIGNED.bam.bai")
     params:
         threads = clusterconf["realign_mapping"]["threads"],
         sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
         referencegenome = pipeconfig["singularities"]["sentieon"]["reference"],
-        mills = pipeconfig["singularities"]["sentieon"]["mills"],
-        tgenomes = pipeconfig["singularities"]["sentieon"]["tgenomes"]
+        mills = pipeconfig["singularities"]["sentieon"]["mills"]
     shadow:
         pipeconfig["rules"].get("realign_mapping", {}).get("shadow", pipeconfig.get("shadow", False))
+    output:
+        bam = "{stype}/realign/{sname}_REALIGNED.bam",
+        bai = "{stype}/realign/{sname}_REALIGNED.bam.bai"
     shell:
         "echo $HOSTNAME;"
-        "{params.sentieon} driver -t {params.threads} -r {params.referencegenome} -i {input.bam} --algo Realigner -k {params.mills} -k {params.tgenomes} {output.bam}"
+        "{params.sentieon} driver -t {params.threads} -r {params.referencegenome} -i {input.bam} --algo Realigner -k {params.mills} {output.bam}"
 
 rule baserecal:
     input:
@@ -113,12 +112,11 @@ rule baserecal:
         sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
         referencegenome = pipeconfig["singularities"]["sentieon"]["reference"],
         dbsnp = pipeconfig["singularities"]["sentieon"]["dbsnp"],
-        mills = pipeconfig["singularities"]["sentieon"]["mills"],
-        tgenomes = pipeconfig["singularities"]["sentieon"]["tgenomes"]
-    output:
-        temp("{stype}/recal/{sname}_RECAL_DATA.TABLE")
+        mills = pipeconfig["singularities"]["sentieon"]["mills"]
     shadow:
         pipeconfig["rules"].get("baserecal", {}).get("shadow", pipeconfig.get("shadow", False))
+    output:
+        recal = temp("{stype}/recal/{sname}_RECAL_DATA.TABLE"),
     shell:
         "echo $HOSTNAME;"
-        "{params.sentieon} driver -t {params.threads} -r {params.referencegenome} -i {input.bam} --algo QualCal -k {params.mills} -k {params.dbsnp} -k {params.tgenomes} {output.bam}"
+        "{params.sentieon} driver -t {params.threads} -r {params.referencegenome} -i {input.bam} --algo QualCal -k {params.mills} -k {params.dbsnp} {output}"

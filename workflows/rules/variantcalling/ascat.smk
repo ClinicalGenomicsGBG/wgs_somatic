@@ -134,9 +134,9 @@ rule ascat_plot:
         genome_fai = pipeconfig["referencefai"],
         ascat_plot_script = f"{ROOT_DIR}/workflows/scripts/ascat_custom_plot.R",
     output:
-        plot = temp("{stype}/ascat/{sname}_ascat_plot.png"),
-        seg = temp("{stype}/ascat/{sname}_ascat_copynumber_IGV.seg"),
-        BAF = temp("{stype}/ascat/{sname}_ascat_BAF_IGV.seg")
+        plot = "{stype}/ascat/{sname}_ascat_plot.png",
+        seg = "{stype}/ascat/{sname}_ascat_copynumber_IGV.seg",
+        BAF = "{stype}/ascat/{sname}_ascat_BAF_IGV.seg",
     singularity:
         pipeconfig["singularities"]["ascat"]["sing"]
     shell:

@@ -13,8 +13,8 @@ rule cram:
     shadow:
         pipeconfig["rules"].get("cram", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
-        cram = temp("{stype}/realign/{sname}_REALIGNED.cram"),
-        crai = temp("{stype}/realign/{sname}_REALIGNED.cram.crai")
+        cram = "{stype}/realign/{sname}_REALIGNED.cram",
+        crai = "{stype}/realign/{sname}_REALIGNED.cram.crai",
     shell:
         "samtools view -C --threads {params.threads} -T {params.referencegenome} -o {output.cram} {input.bam} ; "
         "samtools index {output.cram}"

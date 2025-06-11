@@ -1,6 +1,7 @@
 import yaml
 import json
 import logging
+from snakemake.io import temp
 
 def read_config(configpath):
     with open(configpath, 'r') as configfile:
@@ -23,4 +24,3 @@ def setup_logger(name, log_path=None):
         logger.addHandler(file_handle)
 
     return logger
-

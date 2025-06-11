@@ -1,3 +1,4 @@
+
 rule tmb_calculation:
     input:
         somatic_vcf = "{stype}/tnscope/{sname}_somatic_w_normal.vcf"

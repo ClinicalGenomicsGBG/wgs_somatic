@@ -95,7 +95,7 @@ if normalid:
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
             somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
-            somatic = temp("{stype}/tnscope/{sname}_somatic.vcf")
+            somatic = "{stype}/tnscope/{sname}_somatic.vcf"
         shadow:
             pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -126,7 +126,7 @@ else:
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
             somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
-            somatic = temp("{stype}/tnscope/{sname}_somatic.vcf")
+            somatic = "{stype}/tnscope/{sname}_somatic.vcf"
         shadow:
             pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:

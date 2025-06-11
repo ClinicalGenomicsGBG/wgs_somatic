@@ -38,7 +38,7 @@ rule msi_filter_bam:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
         filtered_bam = temp("{stype}/msi/{sname}_filtered.bam"),
-        filtered_bam_bai = temp("{stype}/msi/{sname}_filtered.bam.bai")
+        filtered_bam_bai = temp("{stype}/msi/{sname}_filtered.bam.bai"),
     shell:
         """
         bedtools intersect -wa -abam {input.bam} -b {params.bed} > {output.filtered_bam}
