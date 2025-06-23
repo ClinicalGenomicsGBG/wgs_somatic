@@ -9,6 +9,18 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
     
     df = pd.read_excel(str(mantaSV_vcf),engine='openpyxl')
 
+    # Check for required columns
+    required_columns = ['ID', 'DEL/DUP Genecrossings', 'GeneInfo 1', 'GeneInfo 2', 'FORMAT', tumorname]
+    if normalname:
+        required_columns.append(normalname)
+    missing = [col for col in required_columns if col not in df.columns]
+    if missing:
+        print(f"Input Excel file is missing required columns: {missing}. Exiting manta_summary.")
+        # Create an empty summary Excel with just headers
+        with pd.ExcelWriter(str(mantaSV_summary)) as writer:
+            df.to_excel(writer, sheet_name="Manta_raw", engine='xlsxwriter')
+        return
+
     # drops rows with NA in columns ID. MATEID can be NA if not a translocation
     df = df.dropna(subset=['ID'])
 
