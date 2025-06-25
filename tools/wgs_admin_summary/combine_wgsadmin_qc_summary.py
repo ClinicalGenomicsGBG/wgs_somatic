@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-# import click
+import click
 import json
 import logging
 from collections import defaultdict
@@ -60,41 +60,38 @@ def combine_qc_stats(launcher_config, runtag_results, base_directory=None, outpu
     else:
         input_runtag = None
 
-    # Iterate through directories in the base directory. Also checks subdirectories such as tumor_only and normal_only
+    # Walk through all subdirectories in the base directory
     for root, dirs, files in os.walk(base_directory):
-        for directory in dirs:
-            dir_path = os.path.join(root, directory)  # Full path of the directory
-            
-            # check if the directory name matches the output folder regex pattern if provided
-            if regex and re.match(regex, directory):
-                # Extract the runtag (second and third parts of the directory name)
-                parts = directory.split('_')
-                current_runtag = f"{parts[1]}_{parts[2]}"
-                # If a specific runtag is provided, skip directories that don't match exactly
-                if input_runtag and current_runtag != input_runtag:
-                    logger.info(f"Skipping directory: {dir_path} as it does not match the specified runtag: {input_runtag}")
-                    continue
-                
-                logger.info(f"Processing directory: {dir_path} for runtag: {current_runtag}")
+        # Extract the runtag (second and third parts of the current directory name)
+        parent_dir = os.path.basename(root)
+        if regex and re.match(regex, parent_dir):
+            parts = parent_dir.split('_')
+            current_runtag = f"{parts[1]}_{parts[2]}"
+            # If a specific runtag is provided, skip directories that don't match exactly
+            if input_runtag and current_runtag != input_runtag:
+                # logger.info(f"Skipping directory: {root} as it does not match the specified runtag: {input_runtag}")
+                continue
 
-                # Find all matching files in the directory
-                matching_files = [file for file in os.listdir(dir_path) if file.endswith("_qc_stats_wgsadmin.xlsx")]
-                
-                # Skip the directory if no matching files are found
-                if not matching_files:
-                    logger.warning(f"No '_qc_stats_wgsadmin.xlsx' files found in {dir_path}. Skipping...")
-                    continue
-                
-                # Process each matching file
-                for file in matching_files:
-                    file_path = os.path.join(dir_path, file)
-                    try:
-                        df = pd.read_excel(file_path)
-                        runtag_dataframes[current_runtag].append((file_path, df))
-                        logger.info(f"Successfully read file: {file_path}")
-                    except Exception as e:
-                        logger.error(f"Error reading {file_path}: {e}")
-                     
+            logger.info(f"Processing directory: {root} for runtag: {current_runtag}")
+
+            # Find all matching files in the current directory
+            matching_files = [file for file in files if file.endswith("_qc_stats_wgsadmin.xlsx")]
+
+            # Skip the directory if no matching files are found
+            if not matching_files:
+                logger.warning(f"No '_qc_stats_wgsadmin.xlsx' files found in {root}. Skipping...")
+                continue
+
+            # Process each matching file
+            for file in matching_files:
+                file_path = os.path.join(root, file)
+                try:
+                    df = pd.read_excel(file_path)
+                    runtag_dataframes[current_runtag].append((file_path, df))
+                    logger.info(f"Successfully read file: {file_path}")
+                except Exception as e:
+                    logger.error(f"Error reading {file_path}: {e}")
+
     if not runtag_dataframes:
         raise RuntimeError(f"No QC summary files found for runtag {input_runtag}")
     
@@ -138,5 +135,20 @@ def combine_qc_stats(launcher_config, runtag_results, base_directory=None, outpu
 
     logger.info("Finished WGS admin QC summary summary per run.")
 
+@click.command()
+@click.option('--launcher_config', required=True, help='Path to launcher config JSON file.')
+@click.option('--runtag_results', required=False, help='Runtag of the directories to process.')
+@click.option('--base_directory', required=False, help='Base directory to search for QC files.')
+@click.option('--output_directory', required=False, help='Directory to save combined summary files.')
+@click.option('--regex', required=False, help='Regex to match directory names.')
+def cli(launcher_config, runtag_results, base_directory, output_directory, regex):
+    combine_qc_stats(
+        launcher_config=launcher_config,
+        runtag_results=runtag_results,
+        base_directory=base_directory,
+        output_directory=output_directory,
+        regex=regex
+    )
+
 if __name__ == "__main__":
-    combine_qc_stats()
+    cli()
