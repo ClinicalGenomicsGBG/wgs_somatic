@@ -9,17 +9,16 @@ import re
 import glob
 from datetime import datetime
 import json
-from itertools import chain
-import traceback
-import subprocess
 import threading
 
-from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
+from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, SlimsSample, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
-from tools.custom_email import start_email, end_email, error_email
+from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
+from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
+from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
+
 
 
 # Store info about samples to use for sending report emails
@@ -51,12 +50,12 @@ def generate_context_objects(Rctx, logger):
         Sctx.add_fastq(sample_info['fastq_paths'])
 
         # Query Slims for clinical information and add to sample context
-        logger.info(f'Fetching SLIMS info.')
+        logger.info('Fetching SLIMS info.')
         Sctx.slims_info = get_sample_slims_info(Sctx, run_tag = Rctx.run_tag)
 
         if not Sctx.slims_info:
-            logger.warning(f'No SLIMS info available!')
-            logger.warning(f'Sample will not be analysed.')
+            logger.warning('No SLIMS info available!')
+            logger.warning('Sample will not be analysed.')
             sample_status['missing_slims'].append(Sctx)
             continue
 
@@ -66,7 +65,7 @@ def generate_context_objects(Rctx, logger):
             continue
 
         # Add sample context to run context list
-        logger.info(f'Adding sample context to list of contexts.')
+        logger.info('Adding sample context to list of contexts.')
         Rctx.add_sample_context(Sctx)
 
     if not Rctx.sample_contexts:
@@ -318,7 +317,17 @@ def wrapper(instrument=None, outpath=None):
             t.start()
         for u in end_threads:
             u.join()
-
+            
+        # Combine all qc stats for the samples in the same run
+        # the defaults for base_directory and output_directory are defined in the launcher config file
+        # and don't need to be added as arguments
+        try:
+            logger.info(f'Combining qc stats for run {Rctx_run.run_name}')
+            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, runtag_results=Rctx_run.run_name, logger=logger, regex=config['outfolder_regex'])
+            logger.info(f'Done with combining qc stats for run {Rctx_run.run_name}')
+        except Exception as e:
+            logger.error(f"Error combining qc stats: {e}")
+            error_admin_qc_email(Rctx_run.run_name)
         # break out of for loop to avoid starting pipeline for a possible other run that was done sequenced at the same time.
         # if cron runs every 30 mins it will find other runs at the next cron instance and run from there instead (and add to novaseq_runlist)
         break

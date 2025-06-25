@@ -9,6 +9,8 @@ novaseq_A01736:
   demultiplex_path: "/seqstore/novaseq_A01736/Demultiplexdir/"
   seq_name_regex: '^[0-9]{6}_A01736_[0-9]{4}_.{10}(?:\+.{8})?$'
 
+outfolder_regex: '^[A-Z0-9]+\d{6,7}_\d{6}_[A-Z0-9]{10}_\d{6}-\d{6}$'
+
 previous_runs_file_path: '../runlists/novaseq_runlist.txt'
 wrapper_log_path: '/clinical/exec/wgs_somatic/logs'
 

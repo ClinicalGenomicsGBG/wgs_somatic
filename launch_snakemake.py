@@ -368,6 +368,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "--bind", "/seqstore",
             "--bind", "/apps",
             "--bind", "/clinical",
+            "--bind", "/webstore",
         ]
 
         cluster_args = [

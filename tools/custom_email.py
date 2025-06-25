@@ -16,6 +16,21 @@ def send_email(subject, body):
     msg['To'] = "gms_btb@gu.se, su.vokliniskgen.wgsadmin@vgregion.se, susanne.fransson@vgregion.se" # TODO Get from config and have different recipients for errors and success
     msg['Cc'] = "cgg-cancer@gu.se" # TODO Get from config
 
+    # Send the message
+    s = smtplib.SMTP('smtp.gu.se')
+    s.send_message(msg)
+    s.quit()
+    
+def send_email_qc(subject, body):
+    """Send a simple email."""
+
+    msg = EmailMessage()
+    msg.set_content(body)
+
+    msg['Subject'] = subject
+    msg['From'] = "cgg-cancer@gu.se" # TODO Get from config
+    msg['Cc'] = "cgg-cancer@gu.se"
+    msg['To'] = "su.vokliniskgen.wgsadmin@vgregion.se"
 
     # Send the message
     s = smtplib.SMTP('smtp.gu.se')
@@ -66,3 +81,14 @@ CGG Cancer
 """
 
     send_email(subject, body)
+
+def error_admin_qc_email(run_name):
+    """Send an email when the generating the qd admin summary report fails"""
+
+    subject = f'WGS somatic - admin QC failed {run_name}'
+
+    body = f"""Generating the WGS Admin QC report failed for run {run_name}.\n
+Please create the report manually.\n
+    """
+    
+    send_email_qc(subject, body)
