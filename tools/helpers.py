@@ -1,7 +1,6 @@
 import yaml
 import json
 import logging
-from snakemake.io import temp
 
 def read_config(configpath):
     with open(configpath, 'r') as configfile:

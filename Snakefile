@@ -27,8 +27,6 @@ resultsconf = read_config(config["resultfilesconf"])
 
 shell.executable("/bin/bash")
 
-analysistime = time.strftime("%Y-%m-%d-%H-%M-%S")
-
 sampleconfig = {}
 sampleconfig[normalname] = {}
 sampleconfig[normalname]["stype"] = "normal"
