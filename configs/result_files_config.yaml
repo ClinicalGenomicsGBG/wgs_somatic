@@ -5,6 +5,8 @@ tumor-normal:
 
   mapped_reads:
     # Read mapping
+    # Note: the cram files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for the cram files is in copy_results() function in launch_snakemake.py
     - "{tumor}/realign/{DNAtumor}_REALIGNED.bam"
     - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.bai"
     - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.tdf"
