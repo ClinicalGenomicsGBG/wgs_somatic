@@ -168,7 +168,7 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                     except Exception as e:
                         logger(f"Error copying {src_path} to {dest_path}: {e}")
                 else:
-                    logger(f"Source file {src_path} does not exist, skipping copy.")
+                    logger(f"Warning: Source file {src_path} does not exist, skipping copy.")
 
     except Exception as e:
         logger(f"Unhandled error in copy_results: {e}")
@@ -275,8 +275,8 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         wildcards = {
                 "tumor": "tumor",
                 "normal": "normal",
-                "DNAtumor": tumorid,
-                "DNAnormal": normalid
+                "tumorid": tumorid,
+                "normalid": normalid
             }
 
         # Read result_files templates from config
