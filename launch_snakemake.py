@@ -84,28 +84,29 @@ def yearly_stats(tumorname, normalname):
         yearly_stats_file.write(f"Tumor ID: {tumorname} Normal ID: {normalname} Date and Time: {date_time}\n")
 
 
-def copy_results(outputdir, runconfig=None):
+def copy_results(outputdir, tumorname=None, normalname=None):
     '''Rsync result files from outputdir to resultdir'''
     try:
-        if not runconfig:
-            # Automatic detection of runconfig
-            config_dir = os.path.join(outputdir, 'configs')
-            config_pattern = re.compile(r'DNA[\dA-Za-z]+_.+_.+_config\.json')
-
-            if os.path.isdir(config_dir):
-                for f in os.listdir(config_dir):
-                    if config_pattern.match(f):
-                        runconfig = os.path.join(config_dir, f)
-                        logger(f"Found runconfig: {runconfig}")
-                        break
-                else:
-                    logger(f"Automatic detection of config file failed. No matching configuration file found in {config_dir}")
-                    logger(f"Pattern used to match the config file: {config_pattern.pattern}")
-                    raise ValueError("Automatic detection of config file failed. No matching configuration file found.")
+        # Automatic detection of runconfig
+        config_dir = os.path.join(outputdir, 'configs')
+        if tumorname:
+            config_pattern = re.compile(rf'^{tumorname}.*_config\.json$')
+        elif normalname:
+            config_pattern = re.compile(rf'^{normalname}.*_config\.json$')
         else:
-            if not os.path.isfile(runconfig):
-                logger(f"Provided runconfig file does not exist: {runconfig}")
-                raise FileNotFoundError(f"Runconfig file not found: {runconfig}")
+            # Fallback to a generic pattern if no specific names are provided
+            config_pattern = re.compile(r'^DNA[\dA-Za-z]+_.+_.+_config\.json$')
+
+        if os.path.isdir(config_dir):
+            for f in os.listdir(config_dir):
+                if config_pattern.match(f):
+                    runconfig = os.path.join(config_dir, f)
+                    logger(f"Found runconfig: {runconfig}")
+                    break
+            else:
+                logger(f"Automatic detection of config file failed. No matching configuration file found in {config_dir}")
+                logger(f"Pattern used to match the config file: {config_pattern.pattern}")
+                raise ValueError("Automatic detection of config file failed. No matching configuration file found.")
 
         try:
             # Read the runconfig file to get resultdir and resultsconf
@@ -470,7 +471,7 @@ if __name__ == '__main__':
         args.outputdir = os.path.abspath(args.outputdir)
         logger(f"Adjusted outputdir to {args.outputdir}")
     if args.onlycopyresults:
-        copy_results(args.outputdir)
+        copy_results(args.outputdir, args.tumorsample, args.normalsample)
     else:
         if args.tumorfastqs:
             if not args.tumorfastqs.startswith("/"):
@@ -487,12 +488,12 @@ if __name__ == '__main__':
                 # these functions are only executed if snakemake workflow has finished successfully
                 yearly_stats(args.tumorsample, args.normalsample)
                 if args.copyresults:
-                    copy_results(args.outputdir)
+                    copy_results(args.outputdir, args.tumorsample, args.normalsample)
             else:
                 yearly_stats(args.tumorsample, 'None')
                 if args.copyresults:
-                    copy_results(args.outputdir)
+                    copy_results(args.outputdir, args.tumorsample, None)
         else:
             yearly_stats('None', args.normalsample)
             if args.copyresults:
-                copy_results(args.outputdir)
+                copy_results(args.outputdir, None, args.normalsample)
