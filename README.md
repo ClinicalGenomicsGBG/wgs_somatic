@@ -73,7 +73,7 @@ python launch_snakemake.py \
     --tumorsample <e.g. "DNA654321", should match beginning of tumor fastqs> \
     --tumorfastqs <path to directory containing tumor fastqs> \
     --copyresults <copy results to resultdir_hg38 in launcher_config.json> \
-    --development <save intermediate files; allows for resuming of crashed runs>
+    --notemp <Run the pipeline in notemp mode; all intermediate files kept>
 ```
 
 - Make sure the FASTQ file names follow the [FASTQ requirements](#fastq-requirements).
@@ -85,7 +85,9 @@ python launch_snakemake.py \
     ```{bash}
     python launch_snakemake.py \
       --outputdir <Same directory as specified when running the pipeline> \
-      --onlycopyresults
+      --onlycopyresults \
+      --tumorsample <[Optional] e.g. "DNA654321" to match config with resultdir path> \
+      --normalsample <[Optional] If neither tumorsample or normalsample are given, will match with DNA*_config.json>
     ```
 
 ### Dependencies
