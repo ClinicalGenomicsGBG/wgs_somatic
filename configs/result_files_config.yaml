@@ -7,12 +7,12 @@ tumor-normal:
     # Read mapping
     - "{tumor}/realign/{DNAtumor}_REALIGNED.bam"
     - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.bai"
-    - "{tumor}/reports/{DNAtumor}_REALIGNED.bam.tdf"
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.tdf"
     - "{tumor}/realign/{DNAtumor}_REALIGNED.cram"
     - "{tumor}/realign/{DNAtumor}_REALIGNED.cram.crai"
     - "{normal}/realign/{DNAnormal}_REALIGNED.bam"
     - "{normal}/realign/{DNAnormal}_REALIGNED.bam.bai"
-    - "{normal}/reports/{DNAnormal}_REALIGNED.bam.tdf"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.bam.tdf"
     - "{normal}/realign/{DNAnormal}_REALIGNED.cram"
     - "{normal}/realign/{DNAnormal}_REALIGNED.cram.crai"
 
@@ -66,7 +66,7 @@ tumor-only:
     # Read mapping
     - "{tumor}/realign/{DNAtumor}_REALIGNED.bam"
     - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.bai"
-    - "{tumor}/reports/{DNAtumor}_REALIGNED.bam.tdf"
+    - "{tumor}/realign/{DNAtumor}_REALIGNED.bam.tdf"
     - "{tumor}/realign/{DNAtumor}_REALIGNED.cram"
     - "{tumor}/realign/{DNAtumor}_REALIGNED.cram.crai"
 
@@ -115,7 +115,7 @@ normal-only:
     # Read mapping
     - "{normal}/realign/{DNAnormal}_REALIGNED.bam"
     - "{normal}/realign/{DNAnormal}_REALIGNED.bam.bai"
-    - "{normal}/reports/{DNAnormal}_REALIGNED.bam.tdf"
+    - "{normal}/realign/{DNAnormal}_REALIGNED.bam.tdf"
     - "{normal}/realign/{DNAnormal}_REALIGNED.cram"
     - "{normal}/realign/{DNAnormal}_REALIGNED.cram.crai"
 
