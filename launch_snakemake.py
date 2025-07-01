@@ -337,12 +337,9 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
                 analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'  # Use f'{config["testresultdir"]}/{tumorname}'for testing
             else:
                 analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_outputdir}'
-        else:
-            analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_outputdir}'
-
-        if tumorname:
             snakemake_config = f"{runconfigs}/{tumorid}_config.json"
         else:
+            analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_outputdir}'
             snakemake_config = f"{runconfigs}/{normalid}_config.json"
 
         with open(snakemake_config, 'w') as analysisconf:
