@@ -149,6 +149,11 @@ def copy_results(outputdir, runconfig=None):
 
                 if os.path.exists(src_path):
                     try:
+                        # Do not copy .cram and .crai files
+                        if src_path.endswith('.cram') or src_path.endswith('.cram.crai'):
+                            logger(f"Skipping copy of {src_path} as it is a .cram or .crai file.")
+                            continue
+
                         copyfile(src_path, dest_path)
                         logger(f"Copied {src_path} to {dest_path}")
 
