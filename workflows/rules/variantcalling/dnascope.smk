@@ -3,8 +3,8 @@
 
 rule dnascope:
     input:
-        bam = "{stype}/realign/{sname}_REALIGNED.bam",
-        bai = "{stype}/realign/{sname}_REALIGNED.bam.bai"
+        bam = "{stype}/dedup/{sname}_DEDUP.bam",
+        bai = "{stype}/dedup/{sname}_DEDUP.bam.bai"
     params:
         threads = clusterconf["dnascope"]["threads"],
         sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
