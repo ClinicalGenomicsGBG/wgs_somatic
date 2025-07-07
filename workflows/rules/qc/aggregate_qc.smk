@@ -6,11 +6,11 @@ import os
 
 # set name of output qc files taking into account if tumorid or normalid exist
 if tumorid:
-    excel_qc_output = temp("qc_report/{tumorname}_qc_stats.xlsx")
-    qcstats_wgs_admin_output = temp("qc_report/{tumorname}_qc_stats_wgsadmin.xlsx")
+    excel_qc_output = "qc_report/{tumorname}_qc_stats.xlsx"
+    qcstats_wgs_admin_output = "qc_report/{tumorname}_qc_stats_wgsadmin.xlsx"
 else:
-    excel_qc_output = temp("qc_report/{normalname}_qc_stats.xlsx")
-    qcstats_wgs_admin_output = temp("qc_report/{normalname}_qc_stats_wgsadmin.xlsx")
+    excel_qc_output = "qc_report/{normalname}_qc_stats.xlsx"
+    qcstats_wgs_admin_output = "qc_report/{normalname}_qc_stats_wgsadmin.xlsx"
 
 
 rule excel_qc:
@@ -23,7 +23,6 @@ rule excel_qc:
         tumorvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid) if tumorid else [],
         normalvcf = expand("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf", stype=sampleconfig[normalname]["stype"], sname=normalid) if normalid else [],
         canvasvcf = expand("{stype}/canvas/{sname}_CNV_somatic.vcf", stype=sampleconfig[tumorname]["stype"], sname=tumorid) if tumorid and normalid else [],
-        insilicofile = expand("{stype}/insilico/{insiliconame}/{sname}_{insiliconame}_genes_below10x.xlsx", stype=sampleconfig[(normalname if normalid else tumorname)]["stype"], insiliconame=sampleconfig["insilico"], sname=(normalid if normalid else tumorid)),
         tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=sampleconfig[tumorname]["stype"], sname=tumorid) if tumorid else [],
         msi_filtered = expand("{stype}/msi/{sname}_msi_filtered.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]) if tumorid and normalid else [],
         msi = expand("{stype}/msi/{sname}_msi.txt", sname=tumorid, stype=sampleconfig[tumorname]["stype"]) if tumorid and normalid else [],
@@ -31,10 +30,6 @@ rule excel_qc:
     output:
         excel_qc_output
     run:
-        # Determine the insilico directory if applicable
-        my_insilicofile = f"{input.insilicofile}".split(" ", 1)[0] if "insilicofile" in input else None
-        insilicodir = os.path.dirname(f"{my_insilicofile}").rsplit("/", 1)[0] if my_insilicofile else None
-
         # Call create_excel_main with all inputs
         create_excel_main(
             tumorcov=f"{input.tumorcov}",
@@ -49,7 +44,6 @@ rule excel_qc:
             msi=f"{input.msi}",
             msi_red=f"{input.msi_filtered}",
             output=f"{output}",
-            insilicodir=f"{insilicodir}",
             tumor_info_files=[file for file in input.tumor_info_files]
         )
 
