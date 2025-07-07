@@ -6,11 +6,11 @@ import os
 
 # set name of output qc files taking into account if tumorid or normalid exist
 if tumorid:
-    excel_qc_output = "qc_report/{tumorname}_qc_stats.xlsx"
-    qcstats_wgs_admin_output = "qc_report/{tumorname}_qc_stats_wgsadmin.xlsx"
+    excel_qc_output = "qc_report/{tumorid}_qc_stats.xlsx"
+    qcstats_wgs_admin_output = "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
 else:
-    excel_qc_output = "qc_report/{normalname}_qc_stats.xlsx"
-    qcstats_wgs_admin_output = "qc_report/{normalname}_qc_stats_wgsadmin.xlsx"
+    excel_qc_output = "qc_report/{normalid}_qc_stats.xlsx"
+    qcstats_wgs_admin_output = "qc_report/{normalid}_qc_stats_wgsadmin.xlsx"
 
 
 rule excel_qc:

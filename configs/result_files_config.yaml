@@ -2,6 +2,7 @@ tumor-normal:
   toplevel:
     # QC reports
     - "qc_report/{tumorid}_qc_stats.xlsx"
+    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
 
   mapped_reads:
     # Read mapping
