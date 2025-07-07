@@ -40,8 +40,12 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                     continue
 
                 # Extract PR and SR values for the tumor sample
-                tumor_pr, tumor_sr = tumor_sample["PR"], tumor_sample["SR"]
-                tumor_support = tumor_pr[1] + tumor_sr[1]
+                tumor_pr, tumor_sr = tumor_sample["PR"][1], tumor_sample["SR"][1]
+
+                # Require both PR and SR supporting the variant
+                if tumor_pr == 0 or tumor_sr == 0:
+                    continue
+                tumor_support = tumor_pr + tumor_sr
 
                 # Apply the tumor support filter
                 if tumor_support < min_tumor_support:
@@ -54,13 +58,12 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                 except KeyError:
                     continue  # Skip if normal sample is missing
 
-                # Ensure both PR and SR are present in the normal sample
-                if "PR" not in normal_sample or "SR" not in normal_sample:
-                    continue
-
-                # Extract PR and SR values for the normal sample
-                normal_pr, normal_sr = normal_sample["PR"], normal_sample["SR"]
-                normal_support = normal_pr[1] + normal_sr[1]
+                # Combine PR and SR support from the normal sample
+                normal_support = 0
+                if "PR" in normal_sample:
+                    normal_support += normal_sample["PR"][1]
+                if "SR" in normal_sample:
+                    normal_support += normal_sample["SR"][1]
 
                 if tumor_name:
                     # Apply the normal support filter
