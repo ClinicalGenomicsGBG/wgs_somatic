@@ -8,6 +8,7 @@ from workflows.scripts.determine_match import determine_match
 from tools.git_versions import get_git_commit, get_git_tag, get_git_reponame
 from workflows.scripts.sex import calc_sex
 import time
+import pandas as pd
 
 
 def extract_stats(statsfile, statstype, sampletype, statsdict):
