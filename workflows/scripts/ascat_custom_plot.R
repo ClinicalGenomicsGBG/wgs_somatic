@@ -6,6 +6,47 @@ library(plotly)
 library(htmlwidgets)
 library(optparse)
 
+# Function to plot ascat panels
+plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels, chr = NULL) {
+  if (!is.null(chr)) {
+    fai <- fai %>% filter(chr == !!chr)
+    seg_df <- seg_df %>% filter(chr == !!chr)
+    tumorBAF_df_adj <- tumorBAF_df_adj %>% filter(chr == !!chr)
+    tumorLogR_df_adj <- tumorLogR_df_adj %>% filter(chr == !!chr)
+  }
+  
+  Segment_plot <- ggplot(fai) +
+    geom_vline(aes(xintercept = start), col = "grey") +
+    geom_linerange(data = seg_df, 
+                   aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
+                   linewidth = 2.5, position = position_dodge(width = -0.1)) +
+    geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
+    scale_y_continuous("Copy number",
+                       breaks = breaks,
+                       labels = labels,
+                       expand = expansion(mult = 0.1),
+                       limits = c(0, max(2, max(breaks, na.rm = TRUE)))) +
+    theme(legend.title=element_blank(), axis.title.x = element_blank())
+  
+  BAF_plot <- ggplot(fai) +
+    geom_vline(aes(xintercept = start), col = "grey") +
+    geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = '.', col = "#00000010") +
+    geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
+    scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7,0.9), limits = c(0.05,0.95)) +
+    theme(axis.title.x = element_blank())
+  
+  LogR_plot <- ggplot(fai) +
+    geom_vline(aes(xintercept = start), col = "grey") +
+    geom_point(data = tumorLogR_df_adj, aes(pos, LogR), shape = '.', col = "#00000010") +
+    geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
+    scale_y_continuous(limits = c(-2,2)) +
+    theme(axis.title.x = element_blank())
+  
+  plot_grid(Segment_plot, BAF_plot, LogR_plot, 
+            ncol = 1, align = "v", rel_heights = c(2,1,1))
+}
+
+
 # Define command-line arguments
 option_list <- list(
   make_option("--tumorname", type = "character", help = "Tumor sample name", metavar = "character"),
@@ -102,37 +143,12 @@ tumorLogR_df_adj <- merge(tumorLogR_df, fai, by = "chr") %>%
   )
 
 ## Plot segments, BAF, and LogR
-png(opt$`output-plot`, width = 24, height = 24, units = "cm", res = 1200)
+pdf(opt$`output-plot`, width = 18, height = 9)
 
-Segment_plot <- ggplot(fai)+
-  geom_vline(aes(xintercept = start), col = "grey")+
-  geom_linerange(data = seg_df, 
-                 aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
-                 linewidth = 2.5, position = position_dodge(width = -0.1))+
-  geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5)+
-  scale_y_continuous("Copy number",
-                     breaks = breaks,
-                     labels = labels,
-                     expand = expansion(mult = 0.1)) +
-  theme(legend.title=element_blank(), axis.title.x = element_blank())
-
-BAF_plot <-  ggplot(fai)+
-  geom_vline(aes(xintercept = start), col = "grey")+
-  geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = '.', col = "#00000010")+
-  geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5)+
-  scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7,0.9), 
-                     limits = c(0.05,0.95)) +
-  theme(axis.title.x = element_blank())
-
-LogR_plot <-  ggplot(fai)+
-  geom_vline(aes(xintercept = start), col = "grey")+
-  geom_point(data = tumorLogR_df_adj, aes(pos, LogR), shape = '.', col = "#00000010")+
-  geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5)+
-  scale_y_continuous(limits = c(-2,2))+
-  theme(axis.title.x = element_blank())
-
-plot_grid(Segment_plot, BAF_plot, LogR_plot, 
-          ncol = 1, align = "v", rel_heights = c(2,1,1))
+print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels))
+for (chr in unique(fai$chr)) {
+  print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels, chr))
+}
 
 dev.off()
 
