@@ -31,7 +31,7 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, br
                        expand = expansion(mult = 0.1),
                        limits = c(-0.03*max(breaks, na.rm = TRUE), max(2, max(breaks, na.rm = TRUE)))) +
     theme(legend.title=element_blank(), axis.title.x = element_blank())
-  
+
   if (!is.null(cytoband)) {
     Segment_plot <- Segment_plot +
       geom_rect(data = cytoband, aes(xmin = adjStart, xmax = adjEnd, ymin = -0.03*max(breaks, na.rm = TRUE), ymax = 0, fill = color), inherit.aes = FALSE) +
@@ -40,14 +40,14 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, br
   
   BAF_plot <- ggplot(fai) +
     geom_vline(aes(xintercept = start), col = "grey") +
-    geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = '.', col = "#00000010") +
+    geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = '.', col = "#00000060") +
     geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
     scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7,0.9), limits = c(0.05,0.95)) +
     theme(axis.title.x = element_blank())
   
   LogR_plot <- ggplot(fai) +
     geom_vline(aes(xintercept = start), col = "grey") +
-    geom_point(data = tumorLogR_df_adj, aes(pos, LogR), shape = '.', col = "#00000010") +
+    geom_point(data = tumorLogR_df_adj, aes(pos, LogR), shape = '.', col = "#00000060") +
     geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
     scale_y_continuous(limits = c(-2,2)) +
     theme(axis.title.x = element_blank())
@@ -56,8 +56,8 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, br
             ncol = 1, align = "v", rel_heights = c(2,1,1))
 }
 
-# Set the theme for ggplot2
 theme_set(theme_pubclean())
+show_points = 5E5  # Number of points to show in the BAF/LogR plots
 
 # Define command-line arguments
 option_list <- list(
@@ -168,6 +168,10 @@ tumorBAF_df_adj <- merge(tumorBAF_df, fai, by = "chr") %>%
   mutate(
     pos = pos + start
   )
+# Reduce the number of points for the BAF plot
+tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
+  slice(which(row_number() %% floor(n() / show_points) == 1))
+
 
 ## LogR
 # Extract LogR from the ascat.bc object
@@ -180,6 +184,11 @@ tumorLogR_df_adj <- merge(tumorLogR_df, fai, by = "chr") %>%
   mutate(
     pos = pos + start
   )
+# Reduce the number of points for the LogR plot
+tumorLogR_df_adj_plot <- tumorLogR_df_adj %>%
+  slice(which(row_number() %% floor(n() / show_points) == 1))
+
+
 ## Cytoband
 # Read the cytoband file if provided
 if (!is.null(opt$cytoband) && file.exists(opt$cytoband)) {
@@ -208,9 +217,9 @@ if (!is.null(opt$cytoband) && file.exists(opt$cytoband)) {
 ## Plot segments, BAF, and LogR
 pdf(opt$`output-plot`, width = 18, height = 9)
 
-print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels))
+print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj_plot, tumorLogR_df_adj_plot, breaks, labels, cytoband = cytoband))
 for (chr in unique(fai$chr)) {
-  print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels, chr))
+  print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj_plot, tumorLogR_df_adj_plot, breaks, labels, chr, cytoband = cytoband))
 }
 
 dev.off()
