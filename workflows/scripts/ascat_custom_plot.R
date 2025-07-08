@@ -22,28 +22,32 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, tumorLog
 
     # Use unadjusted seg_df for the chromosome-specific plot
     Segment_plot <- ggplot(fai) +
-      geom_vline(aes(xintercept = start), col = "grey") +
       geom_linerange(data = seg_df, 
                      aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
                      linewidth = 2.5, position = position_dodge(width = -0.1)) +
-      geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
       scale_y_continuous("Copy number",
                          expand = expansion(mult = 0.1),
                          limits = c(
-                          -0.04*max(seg_df$ascat_ploidy, na.rm = TRUE), 
+                          -0.04*max(2, max(seg_df$ascat_ploidy, na.rm = TRUE)), 
                           max(2, max(seg_df$ascat_ploidy, na.rm = TRUE))
                           )) +
-      theme(legend.title=element_blank(), axis.title.x = element_blank())
+      theme(legend.title=element_blank(), axis.title.x = element_blank())+
+      labs(title = chr)+
+      theme(plot.title = element_text(hjust = 0.5))
   } else {
     # Whole genome plot
     # Use adjusted seg_df for the whole genome plot
     seg_df <- seg_df_adj
+    cytoband$chromStart <- cytoband$adjStart
+    cytoband$chromEnd <- cytoband$adjEnd
+    tumorBAF_df_adj$pos <- tumorBAF_df_adj$adjpos
+    tumorLogR_df_adj$pos <- tumorLogR_df_adj$adjpos
 
     # Use breaks and labels for the y-axis
     Segment_plot <- ggplot(fai) +
     geom_vline(aes(xintercept = start), col = "grey") +
     geom_linerange(data = seg_df, 
-                   aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
+                   aes(xmin = adjstartpos, xmax = adjendpos, y = ascat_ploidy, col = allele), 
                    linewidth = 2.5, position = position_dodge(width = -0.1)) +
     geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
     scale_y_continuous("Copy number",
@@ -51,7 +55,7 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, tumorLog
                        labels = labels,
                        expand = expansion(mult = 0.1),
                        limits = c(
-                        -0.04*max(seg_df$ascat_ploidy, na.rm = TRUE), 
+                        -0.04*max(2, max(seg_df$ascat_ploidy, na.rm = TRUE)), 
                         max(2, max(seg_df$ascat_ploidy, na.rm = TRUE))
                         )) +
     theme(legend.title=element_blank(), axis.title.x = element_blank())
@@ -63,8 +67,8 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, tumorLog
       geom_rect(
         data = cytoband, 
         aes(
-          xmin = adjStart, 
-          xmax = adjEnd, 
+          xmin = chromStart, 
+          xmax = chromEnd, 
           ymin = -0.04*max(2, max(seg_df$ascat_ploidy, na.rm = TRUE)), 
           ymax = -0.02*max(2, max(seg_df$ascat_ploidy, na.rm = TRUE)), 
           fill = color
@@ -73,19 +77,22 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, tumorLog
   }
   
   BAF_plot <- ggplot(fai) +
-    geom_vline(aes(xintercept = start), col = "grey") +
     geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = '.', col = "#00000060") +
-    geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
     scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7,0.9), limits = c(0.05,0.95)) +
     theme(axis.title.x = element_blank())
   
   LogR_plot <- ggplot(fai) +
-    geom_vline(aes(xintercept = start), col = "grey") +
     geom_point(data = tumorLogR_df_adj, aes(pos, LogR), shape = '.', col = "#00000060") +
-    geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
     scale_y_continuous(limits = c(-2,2)) +
     theme(axis.title.x = element_blank())
   
+  if (is.null(chr)) {
+    BAF_plot <- BAF_plot +
+      geom_vline(aes(xintercept = start), col = "grey")
+    LogR_plot <- LogR_plot +
+      geom_vline(aes(xintercept = start), col = "grey")
+  }
+
   plot_grid(Segment_plot, BAF_plot, LogR_plot, 
             ncol = 1, align = "v", rel_heights = c(2,1,1))
 }
@@ -163,8 +170,8 @@ seg_df <- read.table(opt$segments, header = TRUE, sep = "\t")
 # Merge with fai to adjust positions
 seg_df <- merge(seg_df, fai, by = "chr") %>%
   mutate(
-    startpos = startpos + start,
-    endpos = endpos + start,
+    adjstartpos = startpos + start,
+    adjendpos = endpos + start,
     segment_size = endpos - startpos
   )%>%
   dplyr::rename(minor_allele = nMinor, major_allele = nMajor)%>%
@@ -201,7 +208,7 @@ setDT(ascat.bc$Tumor_BAF, keep.rownames = TRUE)[]%>%
 # Merge with fai to adjust positions
 tumorBAF_df_adj <- merge(tumorBAF_df, fai, by = "chr") %>%
   mutate(
-    pos = pos + start
+    adjpos = pos + start
   )
 # Reduce the number of points for the BAF plot
 tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
@@ -217,7 +224,7 @@ setDT(ascat.bc$Tumor_LogR, keep.rownames = T)[]%>%
 # Merge with fai to adjust positions
 tumorLogR_df_adj <- merge(tumorLogR_df, fai, by = "chr") %>%
   mutate(
-    pos = pos + start
+    adjpos = pos + start
   )
 # Reduce the number of points for the LogR plot
 tumorLogR_df_adj_plot <- tumorLogR_df_adj %>%
