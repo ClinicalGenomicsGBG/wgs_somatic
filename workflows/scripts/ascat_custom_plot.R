@@ -8,8 +8,10 @@ library(htmlwidgets)
 library(optparse)
 
 # Function to plot ascat panels
-plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels, chr = NULL, cytoband = NULL) {
+plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels, chr = NULL, cytoband = NULL) {
   if (!is.null(chr)) {
+    # Single chromosome plots
+    # Filter data for the specified chromosome
     fai <- fai %>% filter(chr == !!chr)
     seg_df <- seg_df %>% filter(chr == !!chr)
     tumorBAF_df_adj <- tumorBAF_df_adj %>% filter(chr == !!chr)
@@ -17,9 +19,28 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, br
     if (!is.null(cytoband)) {
       cytoband <- cytoband %>% filter(chrom == !!chr)
     }
-  }
-  
-  Segment_plot <- ggplot(fai) +
+
+    # Use unadjusted seg_df for the chromosome-specific plot
+    Segment_plot <- ggplot(fai) +
+      geom_vline(aes(xintercept = start), col = "grey") +
+      geom_linerange(data = seg_df, 
+                     aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
+                     linewidth = 2.5, position = position_dodge(width = -0.1)) +
+      geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
+      scale_y_continuous("Copy number",
+                         expand = expansion(mult = 0.1),
+                         limits = c(
+                          -0.04*max(seg_df$ascat_ploidy, na.rm = TRUE), 
+                          max(2, max(seg_df$ascat_ploidy, na.rm = TRUE))
+                          )) +
+      theme(legend.title=element_blank(), axis.title.x = element_blank())
+  } else {
+    # Whole genome plot
+    # Use adjusted seg_df for the whole genome plot
+    seg_df <- seg_df_adj
+
+    # Use breaks and labels for the y-axis
+    Segment_plot <- ggplot(fai) +
     geom_vline(aes(xintercept = start), col = "grey") +
     geom_linerange(data = seg_df, 
                    aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
@@ -29,12 +50,25 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, br
                        breaks = breaks,
                        labels = labels,
                        expand = expansion(mult = 0.1),
-                       limits = c(-0.03*max(breaks, na.rm = TRUE), max(2, max(breaks, na.rm = TRUE)))) +
+                       limits = c(
+                        -0.04*max(seg_df$ascat_ploidy, na.rm = TRUE), 
+                        max(2, max(seg_df$ascat_ploidy, na.rm = TRUE))
+                        )) +
     theme(legend.title=element_blank(), axis.title.x = element_blank())
-
+  }
+  
+  # Add cytoband if provided
   if (!is.null(cytoband)) {
     Segment_plot <- Segment_plot +
-      geom_rect(data = cytoband, aes(xmin = adjStart, xmax = adjEnd, ymin = -0.03*max(breaks, na.rm = TRUE), ymax = 0, fill = color), inherit.aes = FALSE) +
+      geom_rect(
+        data = cytoband, 
+        aes(
+          xmin = adjStart, 
+          xmax = adjEnd, 
+          ymin = -0.04*max(2, max(seg_df$ascat_ploidy, na.rm = TRUE)), 
+          ymax = -0.02*max(2, max(seg_df$ascat_ploidy, na.rm = TRUE)), 
+          fill = color
+        ), inherit.aes = FALSE) +
       scale_fill_identity()
   }
   
@@ -139,7 +173,7 @@ seg_df <- merge(seg_df, fai, by = "chr") %>%
 # If there are any segments with more than 3 times the median segment ploidy, cap them to 3 times the median
 max_ploidy <- median(seg_df$ascat_ploidy, na.rm = TRUE) * 3
 if (any(seg_df$ascat_ploidy > max_ploidy)) {
-  seg_df <- seg_df %>%
+  seg_df_adj <- seg_df %>%
     mutate(ascat_ploidy = ifelse(
       ascat_ploidy > max_ploidy,
       # If the ploidy is greater than max_ploidy, subtract the rounded difference from ascat_ploidy
@@ -150,7 +184,8 @@ if (any(seg_df$ascat_ploidy > max_ploidy)) {
   breaks <- seq(0, max_ploidy, by = 1)
   labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max_ploidy))
 } else {
-  breaks <- seq(0, max(seg_df$ascat_ploidy, na.rm = TRUE), by = 1)
+  seg_df_adj <- seg_df
+  breaks <- seq(0, max(seg_df_adj$ascat_ploidy, na.rm = TRUE), by = 1)
   labels <- as.character(breaks)
 }
 
@@ -217,9 +252,9 @@ if (!is.null(opt$cytoband) && file.exists(opt$cytoband)) {
 ## Plot segments, BAF, and LogR
 pdf(opt$`output-plot`, width = 18, height = 9)
 
-print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj_plot, tumorLogR_df_adj_plot, breaks, labels, cytoband = cytoband))
+print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, tumorLogR_df_adj_plot, breaks, labels, cytoband = cytoband))
 for (chr in unique(fai$chr)) {
-  print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj_plot, tumorLogR_df_adj_plot, breaks, labels, chr, cytoband = cytoband))
+  print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, tumorLogR_df_adj_plot, breaks, labels, chr, cytoband = cytoband))
 }
 
 dev.off()
