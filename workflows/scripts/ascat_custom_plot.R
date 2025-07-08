@@ -1,3 +1,4 @@
+# Load required libraries
 library(data.table)
 library(ggpubr)
 library(cowplot)
@@ -46,6 +47,8 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, br
             ncol = 1, align = "v", rel_heights = c(2,1,1))
 }
 
+# Set the theme for ggplot2
+theme_set(theme_pubclean())
 
 # Define command-line arguments
 option_list <- list(
@@ -63,6 +66,34 @@ option_list <- list(
 opt_parser <- OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 
+# Check if required arguments are provided
+if (is.null(opt$`genome-fai`) || opt$`genome-fai` == "") {
+  stop("Please provide a valid path to the genome FAI file using --genome-fai.")
+}
+if (is.null(opt$segments) || opt$segments == "") {
+  stop("Please provide a valid path to the segments file using --segments.")
+}
+if (is.null(opt$`Rdata-file`) || opt$`Rdata-file` == "") {
+  stop("Please provide a valid path to the ascat run Rdata file using --Rdata-file.")
+}
+if (is.null(opt$`output-plot`) || opt$`output-plot` == "") {
+  stop("Please provide a valid path to the output plot using --output-plot.")
+}
+
+# Handle default values for optional arguments
+if (is.null(opt$tumorname) || opt$tumorname == "") {
+  opt$tumorname <- "Tumor"
+}
+if (is.null(opt$gender) || opt$gender == "") {
+  opt$gender <- "XX"
+}
+if (is.null(opt$`output-seg`) || opt$`output-seg` == "") {
+  opt$`output-seg` <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_copynumber.seg"))
+}
+if (is.null(opt$`output-baf`) || opt$`output-baf` == "") {
+  opt$`output-baf` <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_baf.seg"))
+}
+
 # Map "male" and "female" to "XY" and "XX"
 # Added for compatibility with the calc_sex() function
 if (opt$gender == "male") {
@@ -71,14 +102,12 @@ if (opt$gender == "male") {
   opt$gender <- "XX"
 }
 
-theme_set(theme_pubclean())
-
 # The fai is used to get the chromosome lengths and plot them sequentially
 fai <- read.table(opt$`genome-fai`, header = FALSE, sep = "\t", 
                   col.names = c("chr", "length", "start", "value1", "value2")) %>%
   mutate(chr = substr(chr,4,30))%>%
   mutate(middle = start + (length / 2))
-if (opt$`gender` == "XY") {
+if (opt$gender == "XY") {
   fai <- fai[1:24,]
 } else {
   fai <- fai[1:23,]
@@ -86,7 +115,7 @@ if (opt$`gender` == "XY") {
 
 ## Segments
 # Read the segments table
-seg_df <- read.table(opt$`segments`, header = TRUE, sep = "\t")
+seg_df <- read.table(opt$segments, header = TRUE, sep = "\t")
 # Merge with fai to adjust positions
 seg_df <- merge(seg_df, fai, by = "chr") %>%
   mutate(
@@ -154,9 +183,6 @@ dev.off()
 
 # Write the segmentation data to a file for IGV visualization
 output_ratio_seg <- opt$`output-seg`
-if (is.null(output_ratio_seg)) {
-  output_ratio_seg <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_copynumber_IGV.seg"))
-}
 
 # Add IGV-compatible header
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_ratio_seg)
@@ -174,9 +200,6 @@ read.table(opt$`segments`, header = TRUE, sep = "\t") %>%
 
 # Write the BAF data to an IGV-compatible file
 output_baf_seg <- opt$`output-baf`
-if (is.null(output_baf_seg)) {
-  output_baf_seg <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_BAF_IGV.seg"))
-}
 
 # Add IGV-compatible header
 writeLines("#track graphType=points maxHeightPixels=100:100:100 color=0,0,255 altColor=255,0,0", con = output_baf_seg)
@@ -184,7 +207,7 @@ writeLines("#track graphType=points maxHeightPixels=100:100:100 color=0,0,255 al
 # Process the BAF data for IGV visualization
 tumorBAF_df %>%
   dplyr::rename(Chromosome = chr, Start = pos) %>%
-  mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$`tumorname`) %>%  # Add "chr" prefix for IGV compatibility
+  mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) %>%  # Add "chr" prefix for IGV compatibility
   dplyr::select(Sample, Chromosome, Start, End, BAF) %>%
   write.table(file = output_baf_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
 
