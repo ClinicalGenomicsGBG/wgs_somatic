@@ -8,12 +8,15 @@ library(htmlwidgets)
 library(optparse)
 
 # Function to plot ascat panels
-plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels, chr = NULL) {
+plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, breaks, labels, chr = NULL, cytoband = NULL) {
   if (!is.null(chr)) {
     fai <- fai %>% filter(chr == !!chr)
     seg_df <- seg_df %>% filter(chr == !!chr)
     tumorBAF_df_adj <- tumorBAF_df_adj %>% filter(chr == !!chr)
     tumorLogR_df_adj <- tumorLogR_df_adj %>% filter(chr == !!chr)
+    if (!is.null(cytoband)) {
+      cytoband <- cytoband %>% filter(chrom == !!chr)
+    }
   }
   
   Segment_plot <- ggplot(fai) +
@@ -26,8 +29,14 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, tumorLogR_df_adj, br
                        breaks = breaks,
                        labels = labels,
                        expand = expansion(mult = 0.1),
-                       limits = c(0, max(2, max(breaks, na.rm = TRUE)))) +
+                       limits = c(-0.03*max(breaks, na.rm = TRUE), max(2, max(breaks, na.rm = TRUE)))) +
     theme(legend.title=element_blank(), axis.title.x = element_blank())
+  
+  if (!is.null(cytoband)) {
+    Segment_plot <- Segment_plot +
+      geom_rect(data = cytoband, aes(xmin = adjStart, xmax = adjEnd, ymin = -0.03*max(breaks, na.rm = TRUE), ymax = 0, fill = color), inherit.aes = FALSE) +
+      scale_fill_identity()
+  }
   
   BAF_plot <- ggplot(fai) +
     geom_vline(aes(xintercept = start), col = "grey") +
@@ -57,6 +66,7 @@ option_list <- list(
   make_option("--genome-fai", type = "character", help = "Path to the genome FAI file", metavar = "character"),
   make_option("--segments", type = "character", help = "Path to the segments file", metavar = "character"),
   make_option("--Rdata-file", type = "character", help = "Path to the ascat run Rdata file", metavar = "character"),
+  make_option("--cytoband", type = "character", help = "Path to the cytoband file", metavar = "character"),
   make_option("--output-plot", type = "character", help = "Path to output plot", metavar = "character"),
   make_option("--output-seg", type = "character", help = "Path to output segments file", metavar = "character"),
   make_option("--output-baf", type = "character", help = "Path to output BAF file", metavar = "character")
@@ -170,6 +180,30 @@ tumorLogR_df_adj <- merge(tumorLogR_df, fai, by = "chr") %>%
   mutate(
     pos = pos + start
   )
+## Cytoband
+# Read the cytoband file if provided
+if (!is.null(opt$cytoband) && file.exists(opt$cytoband)) {
+  cytoband <- data.frame(read.table(opt$cytoband, header = TRUE)) %>%
+    mutate(chrom = substr(chrom, 4, 30)) %>%  # Remove the "chr" prefix from chromosome names
+    left_join(fai, by = c("chrom" = "chr")) %>%  # Join with FAI data
+    mutate(
+      adjStart = start + chromStart,       # Adjust start positions
+      adjEnd = start + chromEnd,           # Adjust end positions
+      color = case_when(                   # Assign colors based on band type
+        gieStain == "acen" ~ "#C00000",
+        gieStain == "gneg" ~ "#E0E0E0",
+        gieStain == "gpos25" ~ "#C0C0C0",
+        gieStain == "gpos50" ~ "#808080",
+        gieStain == "gpos75" ~ "#404040",
+        gieStain == "gpos100" ~ "#000000",
+        gieStain == "stalk" ~ "#000000",
+        gieStain == "gvar" ~ "#799FC7",
+        TRUE ~ "#FFFFFF"
+      )
+    )
+} else {
+  cytoband <- NULL
+}
 
 ## Plot segments, BAF, and LogR
 pdf(opt$`output-plot`, width = 18, height = 9)

@@ -133,6 +133,7 @@ rule ascat_plot:
         ),        
         genome_fai = pipeconfig["referencefai"],
         ascat_plot_script = f"{ROOT_DIR}/workflows/scripts/ascat_custom_plot.R",
+        cytoBandIdeo = pipeconfig["rules"]["ascat_run"]["cytoBandIdeo"],
     output:
         plot = "{stype}/ascat/{sname}_ascat_plot.pdf",
         seg = "{stype}/ascat/{sname}_ascat_copynumber_IGV.seg",
@@ -147,6 +148,7 @@ rule ascat_plot:
             --genome-fai {params.genome_fai} \
             --segments {input.segments} \
             --Rdata-file {input.rdata_file} \
+            --cytoband {params.cytoBandIdeo} \
             --output-plot {output.plot} \
             --output-seg {output.seg} \
             --output-baf {output.BAF}
