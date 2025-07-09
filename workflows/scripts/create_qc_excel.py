@@ -109,6 +109,29 @@ def get_msi_info(msi, msi_red):
     return msi_dict
 
 
+def get_ascat_tumorinfo(ascatstats):
+    """
+    Reads ASCAT statistics from a file and returns a dictionary with relevant metrics.
+    """
+    ascatdict = {}
+    ascat_filter_rows = ["ploidy", "purity", "goodness_of_fit"]
+    with open(ascatstats, mode='r') as file:
+        for line in file:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue  # Skip empty lines and comments
+            row = line.split("\t")
+            if len(row) < 2:
+                continue  # Skip rows that do not have at least two columns
+            metric = row[0].strip()
+            value = row[1].strip()
+            if metric in ascat_filter_rows:
+                try:
+                    ascatdict[metric] = float(value)
+                except ValueError:
+                    ascatdict[metric] = value
+    return ascatdict
+
 def read_sample_purities(info_files):
     """
     Reads Sample_Purity values from multiple pileup_info.txt files.
@@ -139,7 +162,7 @@ def read_sample_purities(info_files):
     return purities
 
 
-def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, canvasdict={}, sex='', tmb_dict={}, msi_dict={}, freec_purities={}):
+def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, canvasdict={}, sex='', tmb_dict={}, msi_dict={}, ascatdict={}, freec_purities={}):
     current_date = time.strftime("%Y-%m-%d")
     excelfile = xlsxwriter.Workbook(output)
     worksheet = excelfile.add_worksheet("qc_stats")
@@ -264,6 +287,16 @@ def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, 
             row += 1
 
     row += 2
+    worksheet.write(row, 0, "ASCAT-STATS", cellformat["section"])
+    worksheet.write(row, 1, tumorname, cellformat["tumorname"])
+    row += 1
+    if ascatdict:
+        for key in ascatdict:
+            worksheet.write(row, 0, key, cellformat["header"])
+            worksheet.write(row, 1, ascatdict[key])
+            row += 1
+
+    row += 2
     worksheet.write(row, 0, "FREEC-PURITIES", cellformat["section"])
     worksheet.write(row, 1, tumorname, cellformat["tumorname"])
     row += 1
@@ -277,7 +310,7 @@ def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, 
     excelfile.close()
 
 
-def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', msi='', msi_red='', tumor_info_files=[], output=''):
+def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normaldedup='', tumorvcf='', normalvcf='', canvasvcf='', tmb='', msi='', msi_red='', ascatstats='', tumor_info_files=[], output=''):
     statsdict = {}
     if tumorcov:
         tumorcovfile = os.path.basename(tumorcov)
@@ -285,6 +318,7 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         statsdict = extract_stats(tumorcov, "coverage",  "tumor", statsdict)
         statsdict = extract_stats(tumordedup, "dedup",  "tumor", statsdict)
         tmb_dict = read_tmb_file(tmb)
+        ascatdict = get_ascat_tumorinfo(ascatstats)
         freec_purities = read_sample_purities(tumor_info_files)
     if normalcov:
         normalcovfile = os.path.basename(normalcov)
@@ -304,11 +338,11 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         if normalcov:
             # Tumour + Normal
             calculated_sex = calc_sex(normalcov, ycov)
-            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict, freec_purities=freec_purities)
+            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict, ascatdict=ascatdict, freec_purities=freec_purities)
         else:
             # Tumour only
             calculated_sex = calc_sex(tumorcov, ycov)
-            create_excel(statsdict, output, tumorname=tumorname, sex=calculated_sex, tmb_dict=tmb_dict, freec_purities=freec_purities)
+            create_excel(statsdict, output, tumorname=tumorname, sex=calculated_sex, tmb_dict=tmb_dict, ascatdict=ascatdict, freec_purities=freec_purities)
     else:
         # Normal only
         calculated_sex = calc_sex(normalcov, ycov)
@@ -392,11 +426,12 @@ if __name__ == '__main__':
     parser.add_argument('--tmb', nargs='?', help='TMB file', required=False)
     parser.add_argument('--msi', nargs='?', help='MSI result file', required=False)
     parser.add_argument('--msi_red', nargs='?', help='MSI filtered to bed file result file', required=False)
+    parser.add_argument('-as', '--ascatstats', nargs='?', help='Somatic Ascat stats', required=False)
     parser.add_argument('--tumor_info_files', nargs='*', help='List of tumor pileup_info.txt files for different ploidies', required=False)
     parser.add_argument('-o', '--output', nargs='?', help='fullpath to file to be created (xlsx will be appended if not written)', required=True)
     args = parser.parse_args()
     create_excel_main(
         args.tumorcov, args.ycov, args.normalcov, args.tumordedup, args.normaldedup,
         args.tumorvcf, args.normalvcf, args.canvasvcf, args.tmb, args.msi, args.msi_red,
-        args.tumor_info_files, args.output
+        args.ascatstats, args.tumor_info_files, args.output
     )

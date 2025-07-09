@@ -49,6 +49,7 @@ if normalid:
             output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
             rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
             segments = temp("{stype}/ascat/{sname}.segments.txt"),
+            stats = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
         singularity:
             pipeconfig["singularities"]["ascat"]["sing"]
         threads:
@@ -72,6 +73,7 @@ if normalid:
                 --tumoronly FALSE
             mv {output.output_dir}/{wildcards.sname}_ascat_bc.Rdata {output.rdata_file}
             mv {output.output_dir}/{wildcards.sname}.segments.txt {output.segments}
+            mv {output.output_dir}/{wildcards.sname}_ascat_stats.tsv {output.stats}
             """
 
 else:
@@ -96,6 +98,7 @@ else:
             output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
             rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
             segments = temp("{stype}/ascat/{sname}.segments.txt"),
+            stats = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
         singularity:
             pipeconfig["singularities"]["ascat"]["sing"]
         threads:
@@ -117,6 +120,7 @@ else:
                 --tumoronly TRUE
             mv {output.output_dir}/{wildcards.sname}_ascat_bc.Rdata {output.rdata_file}
             mv {output.output_dir}/{wildcards.sname}.segments.txt {output.segments}
+            mv {output.output_dir}/{wildcards.sname}_ascat_stats.tsv {output.stats}
             """
 
 rule ascat_plot:
