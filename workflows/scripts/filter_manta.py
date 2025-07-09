@@ -20,7 +20,7 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
     - Removes duplicate breakends (reciprocal variants).
     """
     # Dictionary to track reciprocal breakends
-    bnd_pairs = {}
+    seen_bnd_ids = set()
 
     with pysam.VariantFile(input_vcf) as vcf_in, pysam.VariantFile(output_vcf, "w", header=vcf_in.header) as vcf_out:
         for record in vcf_in:
@@ -72,32 +72,13 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
 
             # Handle reciprocal breakends (BNDs)
             if record.info.get("SVTYPE") == "BND" and "MATEID" in record.info:
-                # Create a unique key for the variant
-                key = f"{record.chrom}:{record.pos}"
-                mate_key = None
-
-                # Extract the breakpoint coordinates from the ALT field
-                alt_field = str(record.alts[0])
-                if "[" in alt_field or "]" in alt_field:
-                    # Split by square brackets to extract the mate position
-                    parts = alt_field.replace("[", "]").split("]")
-                    for part in parts:
-                        if ":" in part:
-                            mate_key = part.strip()
-                            break
-
-                # Ensure mate_key is valid before proceeding
-                if mate_key is None:
-                    print(f"Warning: Unable to parse mate key for variant {key}. Skipping.")
-                    continue
-
-                # Check if the reciprocal pair already exists
-                if is_reciprocal_pair(bnd_pairs, key, mate_key):
-                    continue  # Skip this variant as its reciprocal pair has already been processed
-
-                # Add the current key and mate key to the dictionary
-                bnd_pairs[key] = mate_key
-                bnd_pairs[mate_key] = key
+                id1 = record.id
+                id2 = record.info["MATEID"]
+                # Create a sorted tuple so (a, b) and (b, a) are the same
+                pair = tuple(sorted([id1, id2]))
+                if pair in seen_bnd_ids:
+                    continue  # Skip duplicate
+                seen_bnd_ids.add(pair)
 
             # Write the record to the output VCF
             vcf_out.write(record)
