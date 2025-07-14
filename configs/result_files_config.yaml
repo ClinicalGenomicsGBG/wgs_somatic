@@ -50,7 +50,7 @@ tumor-normal:
     - "{normal}/canvas/{normalid}_germline_CNV_observed.seg"
     - "{normal}/reports/{normalid}_baf.igv"
     ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_plot.png"
+    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     - "{tumor}/ascat/{tumorid}_ascat_copynumber_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
     ## Control-FREEC
@@ -99,7 +99,7 @@ tumor-only:
     - "{tumor}/canvas/{tumorid}_germline_CNV_observed.seg"
     - "{tumor}/reports/{tumorid}_baf.igv"
     ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_plot.png"
+    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     - "{tumor}/ascat/{tumorid}_ascat_copynumber_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
     ## Control-FREEC
