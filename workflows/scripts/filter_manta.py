@@ -74,7 +74,8 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
             if record.info.get("SVTYPE") == "BND" and "MATEID" in record.info:
                 id1 = record.id
                 id2 = record.info["MATEID"]
-                # Create a sorted tuple so (a, b) and (b, a) are the same
+                if isinstance(id2, (tuple, list)):
+                    id2 = id2[0]
                 pair = tuple(sorted([id1, id2]))
                 if pair in seen_bnd_ids:
                     continue  # Skip duplicate
