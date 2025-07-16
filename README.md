@@ -79,7 +79,7 @@ python launch_snakemake.py \
 - Make sure the FASTQ file names follow the [FASTQ requirements](#fastq-requirements).
 - For normal-only analysis (run only germline steps of pipeline), simply don't use arguments tumorsample and tumorfastqs.
 - For tumor-only analysis, omit the `--normalsample` and `--normalfastqs` arguments.
-- If you include `--development` the pipeline will keep intermediate files, allows rerunning / continuing crashed runs
+- If you include `--notemp` the pipeline will keep intermediate files, allows rerunning parts of completed runs
 - If the pipeline was run without `--copyresults`, but you want to copy the results afterwards you can run the command below:
 
     ```{bash}
