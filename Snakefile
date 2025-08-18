@@ -138,6 +138,14 @@ all_result_files = []
 for result in resultsconf.values():
     all_result_files.extend(result)
 
-rule all:
-    input: 
+rule workflow_finished:
+    input:
         all_result_files
+    output:
+        "workflow_finished.txt"
+    shell:
+        "echo 'Workflow finished successfully.' > {output}"
+
+rule all:
+    input:
+        "workflow_finished.txt"

@@ -90,7 +90,7 @@ def call_script(**kwargs):
 def check_ok(outputdir):
     '''Function to check if analysis has finished correctly'''
 
-    if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+    if os.path.isfile(f"{outputdir}/workflow_finished.txt"):
         return True
     else:
         return False
@@ -99,7 +99,7 @@ def check_ok(outputdir):
 def analysis_end(outputdir, tumorsample=None, normalsample=None):
     '''Function to check if analysis has finished correctly and add to yearly stats and copy results'''
 
-    if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+    if check_ok(outputdir):
         if tumorsample:
             if normalsample:
                 # these functions are only executed if snakemake workflow has finished successfully
@@ -351,7 +351,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False)
 
     threads[0].join()  # Wait for the thread to finish
 
-    if copyresults and os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+    if copyresults and check_ok(outputdir):
         copy_results(outputdir)
     return
 
