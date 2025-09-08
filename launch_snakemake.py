@@ -14,7 +14,7 @@ import stat
 import yaml
 import random
 import string
-from definitions import LAUNCHER_CONFIG_PATH
+from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
 
 
 def get_time():
@@ -399,6 +399,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "--bind", "/apps",
             "--bind", "/clinical",
             "--bind", "/webstore",
+            "--bind", ROOT_DIR
         ]
 
         cluster_args = [
