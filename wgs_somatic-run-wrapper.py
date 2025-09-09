@@ -319,7 +319,7 @@ def wrapper(instrument=None, outpath=None):
         # and don't need to be added as arguments
         try:
             logger.info(f'Combining qc stats for run {Rctx_run.run_name}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, runtag_results=Rctx_run.run_name, logger=logger, regex=config['outfolder_regex'])
+            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=outputdirs, runname=Rctx_run.run_name, logger=logger)
             logger.info(f'Done with combining qc stats for run {Rctx_run.run_name}')
         except Exception as e:
             logger.error(f"Error combining qc stats: {e}")
