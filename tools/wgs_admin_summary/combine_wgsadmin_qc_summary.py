@@ -108,7 +108,7 @@ def cli(launcher_config, outputdirs, runname, qc_summary_directory):
     """
     Combine the first *_qc_stats_wgsadmin.xlsx file found in each output directory into a single summary Excel and TSV file.
 
-    For each output directory, searches for qc_report/*_qc_stats_wgsadmin.xlsx, or if not found, */*_qc_stats_wgsadmin.xlsx.
+    For each output directory, searches for qc_report/*_qc_stats_wgsadmin.xlsx, or elsewhere if not found.
     Reads the first matching file into a DataFrame and combines all found DataFrames into a single summary file.
     Output files are written to the specified QC summary directory, the launcher config's wgsadmin_dir, or the current directory.
     """
