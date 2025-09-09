@@ -35,8 +35,12 @@ def collect_wgsadmin_qc(outputdirs, logger):
             logger.info(f"No qc_report directory or no matching files in {outputdir}. Searching all subdirectories...")
             found_files = glob.glob(os.path.join(outputdir, "*", "*_qc_stats_wgsadmin.xlsx"))
             if not found_files:
-                logger.warning(f"No matching files found in any subdirectory of {outputdir}. Skipping...")
-                continue
+                logger.warning(f"No matching files found in any subdirectory of {outputdir}. Searching directly in {outputdir}...")
+                found_files = glob.glob(os.path.join(outputdir, "*_qc_stats_wgsadmin.xlsx"))
+                if not found_files:
+                    logger.error(f"No qc_admin files found in {outputdir}. Skipping...")
+                    qc_data[outputdir] = None
+                    continue
         logger.info(f"Found qc_admin file(s) in {outputdir}: {found_files}")
         if len(found_files) > 1:
             logger.warning(f"Multiple qc_admin files found in {outputdir}. Only {found_files[0]} will be processed.")
@@ -96,10 +100,10 @@ def combine_qc_stats(launcher_config, outputdirs, runname=None, qc_summary_direc
     logger.info(f"Combined QC summary saved to {output_file_xlsx} and {output_file_tsv}")
 
 @click.command()
-@click.option('--launcher-config', required=False, help='Path to launcher config JSON file (optional).')
-@click.option('--outputdirs', required=True, multiple=True, help='List of output directories to search for QC files. Can be specified multiple times.')
+@click.option('--launcher-config', required=False, type=click.Path(exists=True, dir_okay=False), help='Path to launcher config JSON file (optional).')
+@click.option('-o', '--outputdirs', required=True, multiple=True, type=click.Path(exists=True, file_okay=False), help='List of output directories to search for QC files. Can be specified multiple times.')
 @click.option('--runname', required=False, help='Optional run name for output file naming.')
-@click.option('--qc-summary-directory', required=False, help='Directory to save combined summary files. If not set, uses wgsadmin_dir from launcher config or current directory.')
+@click.option('--qc-summary-directory', required=False, type=click.Path(file_okay=False), help='Directory to save combined summary files. If not set, uses wgsadmin_dir from launcher config or current directory.')
 def cli(launcher_config, outputdirs, runname, qc_summary_directory):
     """
     Combine the first *_qc_stats_wgsadmin.xlsx file found in each output directory into a single summary Excel and TSV file.
