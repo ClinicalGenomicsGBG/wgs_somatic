@@ -16,6 +16,10 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
     seg_df <- seg_df %>% filter(chr == !!chr)
     tumorBAF_df_adj <- tumorBAF_df_adj %>% filter(chr == !!chr)
     CNs_adj_plot <- CNs_adj_plot %>% filter(chr == !!chr)
+    x_limits <- range(
+      c(0, CNs_adj_plot$pos, tumorBAF_df_adj$pos, seg_df$endpos),
+      na.rm = TRUE
+    )
     if (!is.null(cytoband)) {
       cytoband <- cytoband %>% filter(chrom == !!chr)
     }
@@ -29,6 +33,7 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
     geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_call"), aes(x = pos, y = CN_seg, col = track), shape = 20) +
     scale_y_continuous("Copy number",
                          expand = expansion(mult = 0.1)) +
+    xlim(x_limits) +
       scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
       theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
       labs(title = chr)
@@ -40,6 +45,10 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
     cytoband$chromEnd <- cytoband$adjEnd
     tumorBAF_df_adj$pos <- tumorBAF_df_adj$adjpos
     CNs_adj_plot$pos <- CNs_adj_plot$adjpos
+    x_limits <- range(
+      c(0, CNs_adj_plot$pos, tumorBAF_df_adj$pos, seg_df$endpos),
+      na.rm = TRUE
+    )
 
     # Use breaks and labels for the y-axis
     Segment_plot <- ggplot(fai) +
@@ -58,6 +67,7 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
                         -0.04*max(2, max(seg_df$ascat_ploidy, na.rm = TRUE)), 
                         max(2, max(seg_df$ascat_ploidy, na.rm = TRUE))
                         )) +
+    xlim(x_limits) +
       scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
     theme(legend.title=element_blank(), axis.title.x = element_blank())
   }
@@ -78,8 +88,9 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
   }
   
   BAF_plot <- ggplot(fai) +
-    geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = 20, col = "#00000060") +
-    scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7,0.9), limits = c(0.05,0.95)) +
+    geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = 20, size = 0.5, col = "#009E73") +
+    scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7,0.9), limits = c(0.01,0.99)) +
+    xlim(x_limits) +
     theme(axis.title.x = element_blank())
   
   if (is.null(chr)) {
