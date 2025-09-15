@@ -23,11 +23,11 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
     # Use unadjusted seg_df for the chromosome-specific plot
     Segment_plot <- ggplot(fai) +
     geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_obs"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
-      geom_linerange(data = seg_df, 
-                     aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
-                     linewidth = 2.5, position = position_dodge(width = -0.1)) +
+    geom_linerange(data = seg_df, 
+                  aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
+                  linewidth = 2.5, position = position_dodge(width = -0.1)) +
     geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_call"), aes(x = pos, y = CN_seg, col = track), shape = 20) +
-      scale_y_continuous("Copy number",
+    scale_y_continuous("Copy number",
                          expand = expansion(mult = 0.1)) +
       scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
       theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
@@ -282,13 +282,10 @@ output_ratio_seg <- opt$`output-seg`
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_ratio_seg)
 
 # Process the segments file to output nMajor and nMinor as separate rows
-read.table(opt$`segments`, header = TRUE, sep = "\t") %>%
-  dplyr::rename(Sample = sample, Chromosome = chr, Start = startpos, End = endpos) %>%
-  mutate(
-    Chromosome = paste0("chr", Chromosome),
-    Copynumber = nMajor + nMinor,
-  ) %>%  # Add "chr" prefix for IGV compatibility
-  dplyr::select(Sample, Chromosome, Start, End, Copynumber) %>%
+CNs %>%
+  dplyr::rename(Chromosome = chr, Start = pos) %>%
+  mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) %>%  # Add "chr" prefix for IGV compatibility
+  dplyr::select(Sample, Chromosome, Start, End, CN_smooth) %>%
   write.table(file = output_ratio_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
 
 
