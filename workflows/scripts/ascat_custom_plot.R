@@ -34,9 +34,9 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
     scale_y_continuous("Copy number",
                          expand = expansion(mult = 0.1)) +
     xlim(x_limits) +
-      scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
-      theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
-      labs(title = chr)
+    scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
+    theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
+    labs(title = chr)
   } else {
     # Whole genome plot
     # Use adjusted seg_df for the whole genome plot
@@ -68,7 +68,7 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
                         max(2, max(seg_df$ascat_ploidy, na.rm = TRUE))
                         )) +
     xlim(x_limits) +
-      scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
+    scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
     theme(legend.title=element_blank(), axis.title.x = element_blank())
   }
   
