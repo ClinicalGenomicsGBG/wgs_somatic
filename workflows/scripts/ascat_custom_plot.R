@@ -232,9 +232,7 @@ CNs_adj <- merge(CNs, fai, by = "chr") %>%
   mutate(
     adjpos = pos + start
   )
-# Reduce the number of points for the LogR plot
-CNs_adj_plot <- CNs_adj %>%
-  slice(which(row_number() %% floor(n() / show_points) == 1))
+
 
 ## BAF
 # Extract BAF from the ascat.bc object
@@ -247,9 +245,7 @@ tumorBAF_df_adj <- merge(tumorBAF_df, fai, by = "chr") %>%
   mutate(
     adjpos = pos + start
   )
-# Reduce the number of points for the BAF plot
-tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
-  slice(which(row_number() %% floor(n() / show_points) == 1))
+
 
 ## Cytoband
 # Read the cytoband file if provided
@@ -279,7 +275,20 @@ if (!is.null(opt$cytoband) && file.exists(opt$cytoband)) {
 ## Plot segments, BAF, and LogR
 pdf(opt$`output-plot`, width = 18, height = 9)
 
+# Reduce the number of points for the whole genome plot
+CNs_adj_plot <- CNs_adj %>%
+  slice(which(row_number() %% floor(n() / (show_points/5)) == 1))
+tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
+  slice(which(row_number() %% floor(n() / (show_points/5)) == 1))
+
 print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, CNs_adj_plot, breaks, labels, cytoband = cytoband))
+
+# Reduce the number of points for chromosome-specific plots
+CNs_adj_plot <- CNs_adj %>%
+  slice(which(row_number() %% floor(n() / show_points) == 1))
+tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
+  slice(which(row_number() %% floor(n() / show_points) == 1))
+
 for (chr in unique(fai$chr)) {
   print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, CNs_adj_plot, breaks, labels, chr, cytoband = cytoband))
 }
