@@ -257,14 +257,14 @@ if (!is.null(opt$cytoband) && file.exists(opt$cytoband)) {
       adjStart = start + chromStart,       # Adjust start positions
       adjEnd = start + chromEnd,           # Adjust end positions
       color = case_when(                   # Assign colors based on band type
-        gieStain == "acen" ~ "#C00000",
+        gieStain == "acen" ~ "#D55E00",
         gieStain == "gneg" ~ "#E0E0E0",
         gieStain == "gpos25" ~ "#C0C0C0",
         gieStain == "gpos50" ~ "#808080",
         gieStain == "gpos75" ~ "#404040",
         gieStain == "gpos100" ~ "#000000",
         gieStain == "stalk" ~ "#000000",
-        gieStain == "gvar" ~ "#799FC7",
+        gieStain == "gvar" ~ "#56B4E9",
         TRUE ~ "#FFFFFF"
       )
     )
