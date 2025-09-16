@@ -47,12 +47,19 @@ For paired tumor and normal FASTQs, the results contain:
 module load micromamba
 micromamba activate /clinical/exec/wgs_somatic/env/wgs_somatic_env/
 
-python wgs_somatic-run-wrapper.py --tumorsample DNAtumor [--normalsample DNAnormal] [-o outpath] [--copyresults]
+python wgs_somatic-run-wrapper.py \
+  -t DNAtumor \
+  [-n DNAnormal] \
+  [-o outpath] \
+  [--copyresults] \
+  [--qcsummary]
 ```
 
 - The wrapper will automatically download and decompress fastqs where necessary
 - The output will be in `/clinical/data/wgs_somatic/manual/` unless specified with `-o`
-- The output is not copied to webstore, unless `--copyresults` is added to the command
+- If you only specify -t or -n a tumor-only or normal-only run will be performed, respectively
+- If `--copyresults` is included, the results will be copied to webstore `configs/launcher_config.json: "resultdir_hg38"`
+- if `--qcsummary` is included, a QCsummary of the run is provided on webstore for the laboratory `configs/launcher_config.json: "wgsadmin_dir"`
 
 ### Standalone snakemake run
 
@@ -72,21 +79,22 @@ python launch_snakemake.py \
     --normalfastqs <directory containing normal fastqs> \
     --tumorsample <e.g. "DNA654321", should match beginning of tumor fastqs> \
     --tumorfastqs <path to directory containing tumor fastqs> \
-    --hg38ref yes \
     --copyresults <copy results to resultdir_hg38 in launcher_config.json> \
-    --development <save intermediate files; allows for resuming of crashed runs>
+    --notemp <Run the pipeline in notemp mode; all intermediate files kept>
 ```
 
 - Make sure the FASTQ file names follow the [FASTQ requirements](#fastq-requirements).
 - For normal-only analysis (run only germline steps of pipeline), simply don't use arguments tumorsample and tumorfastqs.
 - For tumor-only analysis, omit the `--normalsample` and `--normalfastqs` arguments.
-- If you include `--development` the pipeline will keep intermediate files, allows rerunning / continuing crashed runs
+- If you include `--notemp` the pipeline will keep intermediate files, allows rerunning parts of completed runs
 - If the pipeline was run without `--copyresults`, but you want to copy the results afterwards you can run the command below:
 
     ```{bash}
     python launch_snakemake.py \
       --outputdir <Same directory as specified when running the pipeline> \
-      --onlycopyresults
+      --onlycopyresults \
+      --tumorsample <[Optional] e.g. "DNA654321" to match config with resultdir path> \
+      --normalsample <[Optional] If neither tumorsample or normalsample are given, will match with DNA*_config.json>
     ```
 
 ### Dependencies
@@ -120,6 +128,23 @@ The pipeline is started automatically when new runs with GMS-BT/AL samples appea
 Cron runs every 30 minutes (in crontab of cronuser)
 
 Wrapper script `wgs_somatic-run-wrapper.py` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file `/clinical/exec/wgs_somatic/runlists/novaseq_runlist.txt` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory `/clinical/data/wgs_somatic/cron/` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
+
+## wgsadmin QC stats
+
+A summary of the QC stats is generated for WGSadmin, who will check to make sure the completed run adheres to the required specifications (e.g. coverage, match check). By default the wrapper generates a combined summary for all runs in the batch.
+
+When running the wrapper manually it is also possible to specify `-q`|`--qcsummary` to generate the QCsummary.
+
+For standalone snakemake runs you can run the `combine_wgsadmin_summary` module on the outputdirs:
+
+```{bash}
+module load micromamba
+micromamba activate /clinical/exec/wgs_somatic/env/wgs_somatic_env
+
+python -m tools.wgs_admin_summary.combine_wgsadmin_qc_summary \
+  --qc-summary-directory /path/to/qc_summary_outputdir \
+  -o outputdir1 -o outputdir2 -o outputdir3
+```
 
 ## Yearly statistics
 

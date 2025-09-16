@@ -4,11 +4,10 @@
     "commandlogs": "/clinical/exec/wgs_somatic/logs/commandlogs",
     "configdir": "configs",
     "hg38conf": "config_hg38.json",
-    "hg19conf": "config_hg19.json",
     "clusterconf": "cluster.yaml",
     "filterconf": "filters.yaml",
+    "resultfilesconf": "result_files_config.yaml",
     "resultdir_hg38": "/webstore/clinical/routine/wgs_somatic/current",
-    "resultdir_hg19": "/seqstore/webfolders/wgs/neuroblastom",
     "testresultdir" : "/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", 
     "wgsadmin_dir": "/webstore/clinical/routine/laboratory/current/quality_reports/", 
     "singularitybinddirs":
@@ -27,38 +26,6 @@
         {
             "source": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/",
             "destination": "/gatk"
-        },
-        "databases_hg19":
-        {
-            "source": "/apps/bio/dependencies/wgs_somatic/hg19/sentieon/",
-            "destination": "/databases"
-        },
-        "canvasfiles_hg19":
-        {
-            "source": "/medstore/External_References/Canvas_CLC_HG19_Dataset/hs37d5/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta",
-            "destination": "/medstore/External_References/Canvas_CLC_HG19_Dataset/hs37d5/Homo_sapiens/UCSC/hg19/Sequence/WholeGenomeFasta"
-        },
-        "canvassequence_hg19":
-        {
-            "source": "/apps/bio/dependencies/wgs_somatic/hg19/canvas/Sequence",
-            "destination": "/Sequence"
-        }
-    },
-    "insilicopanels":
-    {
-        "ChiCap_Clinical_v5.0":
-        {
-            "bed": "/apps/bio/dependencies/wgs_somatic/hg38/insilico/ChiCap_Clinical.bed",
-            "genelist": "/apps/bio/dependencies/wgs_somatic/hg38/insilico/ChiCap_Clinical_v5.0/ChiCap_Clinical_v5.0",
-            "version": "5.0",
-            "levels": 2
-        },
-        "ChiCap_Actionable_v2.0":
-        {
-            "bed": "/apps/bio/dependencies/wgs_somatic/hg38/insilico/ChiCap_Actionable.bed",
-            "genelist": "/apps/bio/dependencies/wgs_somatic/hg38/insilico/ChiCap_Actionable_v2.0/ChiCap_Actionable_v2.0",
-            "version": "2.0",
-            "levels": 2
         }
     }
 }

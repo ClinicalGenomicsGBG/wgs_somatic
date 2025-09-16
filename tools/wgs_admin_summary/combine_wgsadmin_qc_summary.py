@@ -4,7 +4,9 @@ import click
 import json
 import logging
 from collections import defaultdict
-import re
+import glob
+from launch_snakemake import get_timestamp
+
 
 def setup_logging(log_dir):
     os.makedirs(log_dir, exist_ok=True)
@@ -17,137 +19,100 @@ def setup_logging(log_dir):
         ]
     )
 
-def combine_qc_stats(launcher_config, runtag_results, base_directory=None, output_directory=None, logger=None,regex=None):
+
+def collect_wgsadmin_qc(outputdirs, logger):
     """
-    Command-line tool to combine '_qc_stats_wgsadmin.xlsx' files for each runtag in the given BASE_DIRECTORY.
+    For each outputdir, find the first *_qc_stats_wgsadmin.xlsx in qc_report or subdirs,
+    read into a DataFrame, and return a dict: {outputdir: df}
     """
-    # Load launcher_config once and parse it
-    try:
-        with open(launcher_config, 'r') as launcher_config_file:
-            config_data = json.load(launcher_config_file)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        raise FileNotFoundError(f"Launcher config not found or invalid: {e}")
-    
+    qc_data = {}
+    for outputdir in outputdirs:
+        if not os.path.exists(outputdir):
+            logger.warning(f"Output directory does not exist: {outputdir}. Skipping...")
+            continue
+        found_files = glob.glob(os.path.join(outputdir, "qc_report", "*_qc_stats_wgsadmin.xlsx"))
+        if not found_files:
+            logger.info(f"No qc_report directory or no matching files in {outputdir}. Searching all subdirectories...")
+            found_files = glob.glob(os.path.join(outputdir, "*", "*_qc_stats_wgsadmin.xlsx"))
+            if not found_files:
+                logger.warning(f"No matching files found in any subdirectory of {outputdir}. Searching directly in {outputdir}...")
+                found_files = glob.glob(os.path.join(outputdir, "*_qc_stats_wgsadmin.xlsx"))
+                if not found_files:
+                    logger.error(f"No qc_admin files found in {outputdir}. Skipping...")
+                    continue
+        logger.info(f"Found qc_admin file(s) in {outputdir}: {found_files}")
+        if len(found_files) > 1:
+            logger.warning(f"Multiple qc_admin files found in {outputdir}. Only {found_files[0]} will be processed.")
+        try:
+            df = pd.read_excel(found_files[0])
+            qc_data[outputdir] = df
+        except Exception as e:
+            logger.error(f"Error reading {found_files[0]}: {e}")
+            continue
+    return qc_data
+
+
+def combine_qc_stats(launcher_config, outputdirs, runname=None, qc_summary_directory=None, logger=None):
+    """
+    Combine the first *_qc_stats_wgsadmin.xlsx file found in each output directory into a single summary Excel and TSV file.
+    """
+    config_data = {}
+    if launcher_config:
+        try:
+            with open(launcher_config, 'r') as launcher_config_file:
+                config_data = json.load(launcher_config_file)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            raise FileNotFoundError(f"Launcher config not found or invalid: {e}")
+
     if not logger:
-        setup_logging(config_data.get('logdir'))
+        logdir = config_data.get('logdir', os.getcwd())
+        setup_logging(logdir)
         logger = logging.getLogger(__name__)
-    
+
     logger.info("Starting WGS admin QC summary per run")
-    
-    # If output_directory is not provided, read it from the launcher_config
-    # If base_directory is not provided, read it from the launcher_config
-    try:
-        if output_directory is None:
-            output_directory = config_data.get('wgsadmin_dir')
-            if output_directory is None:
-                raise KeyError("Key 'wgsadmin_dir' not found in launcher_config.")
-        if base_directory is None:
-            base_directory = config_data.get('resultdir_hg38')
-            if base_directory is None:
-                raise KeyError("Key 'resultdir_hg38' not found in launcher_config.")
-    except KeyError as e:
-        raise FileNotFoundError(f"Launcher config missing required key: {e}")
-        
-    logger.info(f"Base directory: {base_directory}")
-    logger.info(f"Output directory: {output_directory}")
-    
-    # Dictionary to store dataframes for each runtag
-    runtag_dataframes = defaultdict(list)
 
-    if runtag_results:
-        runtag_parts = runtag_results.split("+")[0].split("_")
-        input_runtag = f"{runtag_parts[0]}_{runtag_parts[3]}"
+    # Prepare output directories and files
+    if qc_summary_directory is None:
+        qc_summary_directory = config_data.get('wgsadmin_dir', os.getcwd())
+    if runname:
+        outputfile_prefix = os.path.join(qc_summary_directory, f"{runname}_wgs_somatic_qc_summary_{get_timestamp()}")
     else:
-        input_runtag = None
+        outputfile_prefix = os.path.join(qc_summary_directory, f"wgs_somatic_qc_summary_{get_timestamp()}")
+    output_file_xlsx = f"{outputfile_prefix}.xlsx"
+    if os.path.exists(output_file_xlsx):
+        raise FileExistsError(f"Output file already exists: {output_file_xlsx}")
+    logger.info(f"QC summary directory: {qc_summary_directory}")
+    os.makedirs(qc_summary_directory, exist_ok=True)
 
-    # Walk through all subdirectories in the base directory
-    for root, dirs, files in os.walk(base_directory):
-        # Extract the runtag (second and third parts of the current directory name)
-        parent_dir = os.path.basename(root)
-        if regex and re.match(regex, parent_dir):
-            parts = parent_dir.split('_')
-            current_runtag = f"{parts[1]}_{parts[2]}"
-            # If a specific runtag is provided, skip directories that don't match exactly
-            if input_runtag and current_runtag != input_runtag:
-                # logger.info(f"Skipping directory: {root} as it does not match the specified runtag: {input_runtag}")
-                continue
+    # Collect QC data from each outputdir
+    qc_data = collect_wgsadmin_qc(outputdirs, logger)
 
-            logger.info(f"Processing directory: {root} for runtag: {current_runtag}")
-
-            # Find all matching files in the current directory
-            matching_files = [file for file in files if file.endswith("_qc_stats_wgsadmin.xlsx")]
-
-            # Skip the directory if no matching files are found
-            if not matching_files:
-                logger.warning(f"No '_qc_stats_wgsadmin.xlsx' files found in {root}. Skipping...")
-                continue
-
-            # Process each matching file
-            for file in matching_files:
-                file_path = os.path.join(root, file)
-                try:
-                    df = pd.read_excel(file_path)
-                    runtag_dataframes[current_runtag].append((file_path, df))
-                    logger.info(f"Successfully read file: {file_path}")
-                except Exception as e:
-                    logger.error(f"Error reading {file_path}: {e}")
-
-    if not runtag_dataframes:
-        raise RuntimeError(f"No QC summary files found for runtag {input_runtag}")
-    
-    os.makedirs(output_directory, exist_ok=True)
-
-    # Combine and save the dataframes for each runtag
-    for runtag, file_dataframes in runtag_dataframes.items():
-        logger.info(f"Processing runtag: {runtag} with {len(file_dataframes)} files")
-        
-        output_file_xlsx = os.path.join(output_directory, f"{runtag}_wgs_somatic_qc_summary.xlsx")
-        output_file_tsv = os.path.join(output_directory, f"{runtag}_wgs_somatic_qc_summary.tsv")
-        
-        if os.path.exists(output_file_xlsx):
-            logger.info(f"Existing combined file found for runtag {runtag}: {output_file_xlsx}")
-            # Read the existing combined file
-            existing_df = pd.read_excel(output_file_xlsx)
-            combined_df = existing_df
-            # newer_file_detected = False
-            new_content_detected = False
-            for file_path, new_df in file_dataframes:
-                # check if the content of the files in the directory is already in the combined file
-                if not new_df.isin(existing_df.to_dict(orient='list')).all().all():
-                    logger.info(f"New content detected in file: {file_path}. Combining with existing summary.")
-                    combined_df = pd.concat([combined_df, new_df], ignore_index=True).drop_duplicates()
-                    new_content_detected = True
-                else:
-                    logger.info(f"Skipping {file_path} as its content is already present in the existing combined file.")
-            
-            if not new_content_detected:
-                logger.info(f"No new content detected for runtag {runtag}. Skipping...")
-                continue
-        else:
-            logger.info(f"No existing combined file found for runtag {runtag}. Creating a new one.")
-            # Combine all new dataframes if no existing file
-            combined_df = pd.concat([df for _, df in file_dataframes], ignore_index=True).drop_duplicates()
-        
-        # Save the combined file
-        combined_df.to_excel(output_file_xlsx, index=False)
-        combined_df.to_csv(output_file_tsv, sep='\t', index=False)
-        logger.info(f"Combined files saved for runtag {runtag}: {output_file_xlsx} and {output_file_tsv}")
-
-    logger.info("Finished WGS admin QC summary summary per run.")
+    # Combine all DataFrames into one and save
+    if not qc_data:
+        logger.warning("No QC data collected from any output directories.")
+        return
+    combined_df = pd.concat(qc_data.values(), ignore_index=True)
+    combined_df.to_excel(output_file_xlsx, index=False)
+    logger.info(f"Combined QC summary saved to {output_file_xlsx}")
 
 @click.command()
-@click.option('--launcher_config', required=True, help='Path to launcher config JSON file.')
-@click.option('--runtag_results', required=False, help='Runtag of the directories to process.')
-@click.option('--base_directory', required=False, help='Base directory to search for QC files.')
-@click.option('--output_directory', required=False, help='Directory to save combined summary files.')
-@click.option('--regex', required=False, help='Regex to match directory names.')
-def cli(launcher_config, runtag_results, base_directory, output_directory, regex):
+@click.option('--launcher-config', required=False, type=click.Path(exists=True, dir_okay=False), help='Path to launcher config JSON file (optional).')
+@click.option('-o', '--outputdirs', required=True, multiple=True, type=click.Path(exists=True, file_okay=False), help='List of output directories to search for QC files. Can be specified multiple times.')
+@click.option('--runname', required=False, help='Optional run name for output file naming.')
+@click.option('--qc-summary-directory', required=False, type=click.Path(file_okay=False), help='Directory to save combined summary files. If not set, uses wgsadmin_dir from launcher config or current directory.')
+def cli(launcher_config, outputdirs, runname, qc_summary_directory):
+    """
+    Combine the first *_qc_stats_wgsadmin.xlsx file found in each output directory into a single summary Excel and TSV file.
+
+    For each output directory, searches for qc_report/*_qc_stats_wgsadmin.xlsx, or elsewhere if not found.
+    Reads the first matching file into a DataFrame and combines all found DataFrames into a single summary file.
+    Output files are written to the specified QC summary directory, the launcher config's wgsadmin_dir, or the current directory.
+    """
     combine_qc_stats(
         launcher_config=launcher_config,
-        runtag_results=runtag_results,
-        base_directory=base_directory,
-        output_directory=output_directory,
-        regex=regex
+        outputdirs=outputdirs,
+        runname=runname,
+        qc_summary_directory=qc_summary_directory
     )
 
 if __name__ == "__main__":

@@ -15,8 +15,8 @@ rule dnascope:
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
-        vcf = temp("{stype}/dnascope/{sname}_DNAscope.vcf"),
-        idx = temp("{stype}/dnascope/{sname}_DNAscope.vcf.idx")
+        vcf = temp("{stype}/dnascope/{sname}_DNAscope.vcf"), 
+        idx = temp("{stype}/dnascope/{sname}_DNAscope.vcf.idx"),
     shadow:
         pipeconfig["rules"].get("dnascope", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
@@ -38,7 +38,7 @@ rule dnascope_modelfilter:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
         vcf = temp("{stype}/dnascope/{sname}_DNAscope_modelfiltered.vcf"),
-        idx = temp("{stype}/dnascope/{sname}_DNAscope_modelfiltered.vcf.idx")
+        idx = temp("{stype}/dnascope/{sname}_DNAscope_modelfiltered.vcf.idx"),
     shadow:
         pipeconfig["rules"].get("dnascope_modelfilter", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
@@ -55,8 +55,8 @@ rule dnascope_vcffilter:
         vcftools = pipeconfig["rules"]["dnascope_vcffilter"]["vcftools"],
         passfilter = "'FILTER=\"PASS\"'"
     output:
-        germline_vcf = temp("{stype}/dnascope/{sname}_germline.vcf"),
-        germline_snv_vcf = temp("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf")
+        germline_vcf = "{stype}/dnascope/{sname}_germline.vcf", 
+        germline_snv_vcf = temp("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf"),
     shadow:
         pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
     run:

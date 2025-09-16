@@ -19,16 +19,13 @@ tumorid = config["tumorid"]
 
 reference = config["reference"]
 
-insilico_panels = config["insilico"]
-
 # It uses the following configs from the working directory
 pipeconfig = read_config(config["pipeconfig"])  # In launch_snakemake.py the pipeconfig is adjusted to the genome (hg19/hg38)
 clusterconf = read_config(config["clusterconfig"])
 filterconfig = read_config(config["filterconfig"])
+resultsconf = read_config(config["resultfilesconf"])
 
 shell.executable("/bin/bash")
-
-analysistime = time.strftime("%Y-%m-%d-%H-%M-%S")
 
 sampleconfig = {}
 sampleconfig[normalname] = {}
@@ -39,7 +36,6 @@ sampleconfig["normal"] = normalid
 sampleconfig["tumor"] = tumorid
 sampleconfig["normalname"] = normalname
 sampleconfig["tumorname"] = tumorname
-sampleconfig["insilico"] = insilico_panels #What should this be?
 
 ####################################################
 # Prepare Fastq Variables 
@@ -95,77 +91,40 @@ if tumorfastqdirs:
 ###########################################################
 # Defining Non Cluster Rules
 if tumorid:
-    if normalid:
-        # Runs tn_workflow / paired if tumorid and normalid
-        localrules: all, upload_to_iva, tn_workflow, share_to_resultdir, excel_qc, tmb_calculation, qcstats_wgs_admin
-    else:
-        # Runs tumoronly_workflow if tumorid but not normalid
-        localrules: all, upload_to_iva, tumoronly_workflow, share_to_resultdir, excel_qc, tmb_calculation, qcstats_wgs_admin
+        localrules: all, excel_qc, tmb_calculation, qcstats_wgs_admin, workflow_finished
 else: 
-    # Runs normalonly_workflow if normalid but not tumorid
-    localrules: all, upload_to_iva, normalonly_workflow, share_to_resultdir, excel_qc, qcstats_wgs_admin
+    localrules: all, excel_qc, qcstats_wgs_admin, workflow_finished
 ###########################################################
 
-########################################
-# Workflows
-if tumorid:
-    if normalid:
-        include:        "workflows/tn_workflow.smk"
-    else:
-        include:        "workflows/tumoronly_workflow.smk"
-else:
-    include:        "workflows/normalonly_workflow.smk"
+#########################################
+# Mapping
+include:    "workflows/rules/mapping/mapping.smk"
+include:    "workflows/rules/mapping/cram.smk"
+include:    "workflows/rules/mapping/generate_tdf.smk"
 
 #########################################
 # VariantCalling
 if tumorid:
     include:        "workflows/rules/variantcalling/tnscope.smk"
     include:        "workflows/rules/variantcalling/pindel.smk"
-    include:        "workflows/rules/small_tools/tmb_calculation.smk"
-    include:        "workflows/rules/small_tools/msi.smk"
     include:        "workflows/rules/variantcalling/control-freec.smk"
     include:        "workflows/rules/variantcalling/ascat.smk"
 include:        "workflows/rules/variantcalling/dnascope.smk"
-include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"
+include:        "workflows/rules/variantcalling/manta.smk"
+
+#########################################
+# Small Tools
+if tumorid:
+    include:        "workflows/rules/small_tools/tmb_calculation.smk"
+    include:        "workflows/rules/small_tools/msi.smk"
+include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/small_tools/bgzip.smk"
 
 #########################################
 # QC
-include:        "workflows/rules/qc/aggregate_qc.smk"
-include:        "workflows/rules/qc/insilico_coverage.smk"
-
-#########################################
-# ResultSharing:
-include:        "workflows/rules/results_sharing/share_to_resultdir.smk"
-include:        "workflows/rules/results_sharing/upload_to_iva.smk"
-
-
-if reference == "hg38":
-    ###########################################################
-    # HG38 rules
-    ###########################################################
-    # Mapping
-    include:    "workflows/rules/mapping/mapping_hg38.smk"
-    include:    "workflows/rules/mapping/cram.smk"
-    # Variantcalling
-    include:    "workflows/rules/variantcalling/manta_hg38.smk"
-    # Coverage
-    include:    "workflows/rules/qc/coverage_hg38.smk"
-    # Generate tdf
-    include:    "workflows/rules/mapping/generate_tdf_hg38.smk"
-else:
-    ###########################################################
-    # HG19 rules
-    ###########################################################
-    # Mapping
-    include:        "workflows/rules/mapping/mapping.smk"
-    # VariantCalling
-    include:        "workflows/rules/variantcalling/manta.smk"
-    # Coverage
-    include:        "workflows/rules/qc/coverage.smk"
-    # Generate tdf
-    include:    "workflows/rules/mapping/generate_tdf.smk"
+include:       "workflows/rules/qc/aggregate_qc.smk"
+include:       "workflows/rules/qc/coverage.smk"
 
 
 ruleorder: merge_snvs_cnvs > dnascope_vcffilter
@@ -174,10 +133,19 @@ ruleorder: canvas_germline > bgzip_vcf
 if tumorid and normalid:
     ruleorder: canvas_somatic > bgzip_vcf
 
-def insilico_coverage(wildcards):
-    if tumorid:
-        return expand("{sname}_insilicostuffplaceholder", sname=normalid)
+
+all_result_files = []
+for result in resultsconf.values():
+    all_result_files.extend(result)
+
+rule workflow_finished:
+    input:
+        all_result_files
+    output:
+        "workflow_finished.txt"
+    shell:
+        "echo 'Workflow finished successfully.' > {output}"
 
 rule all:
-    input: 
-        "reporting/workflow_finished.txt"
+    input:
+        "workflow_finished.txt"

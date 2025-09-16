@@ -68,12 +68,8 @@
             "loci_prefix": "/clinical/exec/wgs_somatic/dependencies/ascat/G1000_loci_hg38_chr",
             "genome_version": "hg38",
             "gc_content_file": "/clinical/exec/wgs_somatic/dependencies/ascat/GC_G1000_hg38.txt",
-            "replic_timing_file": "/clinical/exec/wgs_somatic/dependencies/ascat/RT_G1000_hg38.txt"
-        },
-        "insilico":
-        {
-        "samtools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/samtools",
-        "python": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/python"
+            "replic_timing_file": "/clinical/exec/wgs_somatic/dependencies/ascat/RT_G1000_hg38.txt",
+            "cytoBandIdeo": "/clinical/exec/wgs_somatic/dependencies/control_freec/cytoBandIdeo.txt"
         },
         "tnscope":
         {
@@ -141,19 +137,6 @@
             "mantaconf": "/clinical/exec/wgs_somatic/dependencies/software/manta-1.6.0.centos6_x86_64/bin/configManta.py",
             "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf",
             "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools"
-        },
-        "upload_to_iva":
-        {
-            "clcserver": "medair.sahlgrenska.gu.se",
-            "clcport": "7777",
-            "clcqueue": "clinical-production",
-            "clcuser": "cmduser",
-            "clccmd": "/apps/clcservercmdline/clcserver", 
-            "passwords": "/root/password_config.json",
-            "clusterclcdir": "/medstore/Development/Sentieon/ingenuity_upload_directory/barncancer",
-            "clcref": "clc://server/CLC_References/homo_sapiens/sequence/hg19/Homo_sapiens_sequence_hg19",
-            "clcivadir": "clc://server/CLC_Data_Folders/Admin/Mathias/Trashcan/IVA_waitingroom",
-            "clcivadir_servpath": "/medstore/CLC_Data_Folders/Admin/Mathias/Trashcan/IVA_waitingroom"
         },
         "convert_to_alissaformat":
         {

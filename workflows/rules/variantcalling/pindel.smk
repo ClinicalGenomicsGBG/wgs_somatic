@@ -108,7 +108,7 @@ rule fixPindelDPoAF:
     input:
         "{stype}/pindel/{sname}_pindel_noDP.vcf"
     output:
-        temp("{stype}/pindel/{sname}_pindel.vcf")
+        "{stype}/pindel/{sname}_pindel.vcf"
     params:
         python = pipeconfig["rules"]["pindel"]["python"],
         fix_DPoAF = pipeconfig["rules"]["pindel"].get("fix_DPoAF", f"{ROOT_DIR}/workflows/scripts/fix_pindelDPoAF.py") 
@@ -121,7 +121,7 @@ rule pindel_xlsx:
     input:
         "{stype}/pindel/{sname}_pindel.vcf"
     output:
-        temp("{stype}/pindel/{sname}_pindel.xlsx")
+        "{stype}/pindel/{sname}_pindel.xlsx"
     params:
         python = pipeconfig["rules"]["pindel"]["python"],
         bed = pipeconfig["rules"]["pindel"]["bed"],

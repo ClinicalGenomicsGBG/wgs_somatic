@@ -90,7 +90,7 @@ def call_script(**kwargs):
 def check_ok(outputdir):
     '''Function to check if analysis has finished correctly'''
 
-    if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+    if os.path.isfile(f"{outputdir}/workflow_finished.txt"):
         return True
     else:
         return False
@@ -99,7 +99,7 @@ def check_ok(outputdir):
 def analysis_end(outputdir, tumorsample=None, normalsample=None):
     '''Function to check if analysis has finished correctly and add to yearly stats and copy results'''
 
-    if os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+    if check_ok(outputdir):
         if tumorsample:
             if normalsample:
                 # these functions are only executed if snakemake workflow has finished successfully
@@ -114,7 +114,6 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None):
 
 
 def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads):
-    hg38ref = config['hg38ref']['GMS-BT']
     timestamp = get_timestamp()
     if tumorsample and normalsample:
         logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
@@ -129,8 +128,7 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
-                         'tumorfastqs': f'{tumor_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'tumorfastqs': f'{tumor_fastq_dir}'}
 
     elif tumorsample:
         logger.info(f'Preparing run: Tumor-only {tumorsample}')
@@ -143,8 +141,7 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
         tumor_fastq_dir = link_fastqs_to_outputdir(fastq_dict_tumor, outputdir, logger)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
-                         'tumorfastqs': f'{tumor_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'tumorfastqs': f'{tumor_fastq_dir}'}
 
     elif normalsample:
         logger.info(f'Preparing run: Normal-only {normalsample}')
@@ -157,8 +154,7 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
         normal_fastq_dir = link_fastqs_to_outputdir(fastq_dict_normal, outputdir, logger)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
-                         'normalfastqs': f'{normal_fastq_dir}',
-                         'hg38ref': f'{hg38ref}'}
+                         'normalfastqs': f'{normal_fastq_dir}'}
 
     threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
     logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
@@ -323,7 +319,7 @@ def wrapper(instrument=None, outpath=None):
         # and don't need to be added as arguments
         try:
             logger.info(f'Combining qc stats for run {Rctx_run.run_name}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, runtag_results=Rctx_run.run_name, logger=logger, regex=config['outfolder_regex'])
+            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=outputdirs, runname=Rctx_run.run_name, logger=logger)
             logger.info(f'Done with combining qc stats for run {Rctx_run.run_name}')
         except Exception as e:
             logger.error(f"Error combining qc stats: {e}")
@@ -335,7 +331,7 @@ def wrapper(instrument=None, outpath=None):
     # only considers barncancer hg38 (GMS-AL + GMS-BT samples) right now.
 
 
-def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False):
+def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False):
     '''Manual pipeline submission'''
     config = read_config(WRAPPER_CONFIG_PATH)
     wrapper_log_path = config["wrapper_log_path"]
@@ -355,18 +351,27 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False)
 
     threads[0].join()  # Wait for the thread to finish
 
-    if copyresults and os.path.isfile(f"{outputdir}/reporting/workflow_finished.txt"):
+    if copyresults and check_ok(outputdir):
         copy_results(outputdir)
+
+    if qcsummary and check_ok(outputdir):
+        try:
+            logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
+            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
+            logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
+        except Exception as e:
+            logger.error(f"Error combining qc stats: {e}")
     return
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736', required=False)
-    parser.add_argument('--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
-    parser.add_argument('--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-t','--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-n','--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
-    parser.add_argument('-cr', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
+    parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
+    parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
     args = parser.parse_args()
 
     if args.instrument:
@@ -374,7 +379,7 @@ def main():
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
         wrapper(args.instrument, args.outpath)
     elif args.tumorsample or args.normalsample:
-        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults)
+        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary)
     else:
         parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
 
