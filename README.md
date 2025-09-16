@@ -47,12 +47,19 @@ For paired tumor and normal FASTQs, the results contain:
 module load micromamba
 micromamba activate /clinical/exec/wgs_somatic/env/wgs_somatic_env/
 
-python wgs_somatic-run-wrapper.py --tumorsample DNAtumor [--normalsample DNAnormal] [-o outpath] [--copyresults]
+python wgs_somatic-run-wrapper.py \
+  -t DNAtumor \
+  [-n DNAnormal] \
+  [-o outpath] \
+  [--copyresults] \
+  [--qcsummary]
 ```
 
 - The wrapper will automatically download and decompress fastqs where necessary
 - The output will be in `/clinical/data/wgs_somatic/manual/` unless specified with `-o`
-- The output is not copied to webstore, unless `--copyresults` is added to the command
+- If you only specify -t or -n a tumor-only or normal-only run will be performed, respectively
+- If `--copyresults` is included, the results will be copied to webstore `configs/launcher_config.json: "resultdir_hg38"`
+- if `--qcsummary` is included, a QCsummary of the run is provided on webstore for the laboratory `configs/launcher_config.json: "wgsadmin_dir"`
 
 ### Standalone snakemake run
 
@@ -121,6 +128,23 @@ The pipeline is started automatically when new runs with GMS-BT/AL samples appea
 Cron runs every 30 minutes (in crontab of cronuser)
 
 Wrapper script `wgs_somatic-run-wrapper.py` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file `/clinical/exec/wgs_somatic/runlists/novaseq_runlist.txt` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory `/clinical/data/wgs_somatic/cron/` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
+
+## wgsadmin QC stats
+
+A summary of the QC stats is generated for WGSadmin, who will check to make sure the completed run adheres to the required specifications (e.g. coverage, match check). By default the wrapper generates a combined summary for all runs in the batch.
+
+When running the wrapper manually it is also possible to specify `-q`|`--qcsummary` to generate the QCsummary.
+
+For standalone snakemake runs you can run the `combine_wgsadmin_summary` module on the outputdirs:
+
+```{bash}
+module load micromamba
+micromamba activate /clinical/exec/wgs_somatic/env/wgs_somatic_env
+
+python -m tools.wgs_admin_summary.combine_wgsadmin_qc_summary \
+  --qc-summary-directory /path/to/qc_summary_outputdir \
+  -o outputdir1 -o outputdir2 -o outputdir3
+```
 
 ## Yearly statistics
 

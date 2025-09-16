@@ -319,7 +319,7 @@ def wrapper(instrument=None, outpath=None):
         # and don't need to be added as arguments
         try:
             logger.info(f'Combining qc stats for run {Rctx_run.run_name}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, runtag_results=Rctx_run.run_name, logger=logger, regex=config['outfolder_regex'])
+            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=outputdirs, runname=Rctx_run.run_name, logger=logger)
             logger.info(f'Done with combining qc stats for run {Rctx_run.run_name}')
         except Exception as e:
             logger.error(f"Error combining qc stats: {e}")
@@ -331,7 +331,7 @@ def wrapper(instrument=None, outpath=None):
     # only considers barncancer hg38 (GMS-AL + GMS-BT samples) right now.
 
 
-def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False):
+def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False):
     '''Manual pipeline submission'''
     config = read_config(WRAPPER_CONFIG_PATH)
     wrapper_log_path = config["wrapper_log_path"]
@@ -353,16 +353,25 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False)
 
     if copyresults and check_ok(outputdir):
         copy_results(outputdir)
+
+    if qcsummary and check_ok(outputdir):
+        try:
+            logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
+            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
+            logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
+        except Exception as e:
+            logger.error(f"Error combining qc stats: {e}")
     return
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736', required=False)
-    parser.add_argument('--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
-    parser.add_argument('--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-t','--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-n','--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
-    parser.add_argument('-cr', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
+    parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
+    parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
     args = parser.parse_args()
 
     if args.instrument:
@@ -370,7 +379,7 @@ def main():
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
         wrapper(args.instrument, args.outpath)
     elif args.tumorsample or args.normalsample:
-        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults)
+        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary)
     else:
         parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
 

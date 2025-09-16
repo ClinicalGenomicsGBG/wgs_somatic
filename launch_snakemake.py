@@ -155,6 +155,11 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                             logger(f"Skipping copy of {src_path} as it is a .cram or .crai file.")
                             continue
 
+                        # Do not copy wgsadmin qc stats file
+                        if src_path.endswith('_qc_stats_wgsadmin.xlsx'):
+                            logger(f"Skipping copy of {src_path} as it is a wgsadmin qc stats file.")
+                            continue
+
                         copyfile(src_path, dest_path)
                         logger(f"Copied {src_path} to {dest_path}")
 
