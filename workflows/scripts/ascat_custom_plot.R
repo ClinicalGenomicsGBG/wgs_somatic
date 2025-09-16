@@ -122,7 +122,8 @@ option_list <- list(
   make_option("--Rdata-file", type = "character", help = "Path to the ascat run Rdata file", metavar = "character"),
   make_option("--cytoband", type = "character", help = "Path to the cytoband file", metavar = "character"),
   make_option("--output-plot", type = "character", help = "Path to output plot", metavar = "character"),
-  make_option("--output-seg", type = "character", help = "Path to output segments file", metavar = "character"),
+  make_option("--output-seg-smooth", type = "character", help = "Path to output segments file with smoothed copynumbers", metavar = "character"),
+  make_option("--output-seg-call", type = "character", help = "Path to output segments file with ascat calls", metavar = "character"),
   make_option("--output-baf", type = "character", help = "Path to output BAF file", metavar = "character")
 )
 
@@ -148,11 +149,14 @@ if (is.null(opt$tumorname) || opt$tumorname == "") {
 if (is.null(opt$gender) || opt$gender == "") {
   opt$gender <- "XX"
 }
-if (is.null(opt$`output-seg`) || opt$`output-seg` == "") {
-  opt$`output-seg` <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_copynumber.seg"))
+if (is.null(opt$`output-seg-smooth`) || opt$`output-seg-smooth` == "") {
+  opt$`output-seg-smooth` <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_CN_smooth.seg"))
+}
+if (is.null(opt$`output-seg-call`) || opt$`output-seg-call` == "") {
+  opt$`output-seg-call` <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_CN_call.seg"))
 }
 if (is.null(opt$`output-baf`) || opt$`output-baf` == "") {
-  opt$`output-baf` <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_baf.seg"))
+  opt$`output-baf` <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_BAF_IGV.seg"))
 }
 
 ## Load ascat.bc from the Rdata file

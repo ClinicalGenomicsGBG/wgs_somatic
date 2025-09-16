@@ -135,7 +135,8 @@ rule ascat_plot:
         cytoBandIdeo = pipeconfig["rules"]["ascat_run"]["cytoBandIdeo"],
     output:
         plot = "{stype}/ascat/{sname}_ascat_plot.pdf",
-        seg = "{stype}/ascat/{sname}_ascat_copynumber_IGV.seg",
+        seg_smooth = "{stype}/ascat/{sname}_ascat_CN_smooth_IGV.seg",
+        seg_call = "{stype}/ascat/{sname}_ascat_CN_call_IGV.seg",
         BAF = "{stype}/ascat/{sname}_ascat_BAF_IGV.seg",
     singularity:
         pipeconfig["singularities"]["ascat"]["sing"]
@@ -148,6 +149,7 @@ rule ascat_plot:
             --Rdata-file {input.rdata_file} \
             --cytoband {params.cytoBandIdeo} \
             --output-plot {output.plot} \
-            --output-seg {output.seg} \
+            --output-seg-smooth {output.seg_smooth} \
+            --output-seg-call {output.seg_call} \
             --output-baf {output.BAF}
         """
