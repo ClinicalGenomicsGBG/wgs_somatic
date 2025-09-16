@@ -23,7 +23,7 @@ def setup_logging(log_dir):
 def collect_wgsadmin_qc(outputdirs, logger):
     """
     For each outputdir, find the first *_qc_stats_wgsadmin.xlsx in qc_report or subdirs,
-    read into a DataFrame, and return a dict: {outputdir: df or None}
+    read into a DataFrame, and return a dict: {outputdir: df}
     """
     qc_data = {}
     for outputdir in outputdirs:
@@ -39,7 +39,6 @@ def collect_wgsadmin_qc(outputdirs, logger):
                 found_files = glob.glob(os.path.join(outputdir, "*_qc_stats_wgsadmin.xlsx"))
                 if not found_files:
                     logger.error(f"No qc_admin files found in {outputdir}. Skipping...")
-                    qc_data[outputdir] = None
                     continue
         logger.info(f"Found qc_admin file(s) in {outputdir}: {found_files}")
         if len(found_files) > 1:
@@ -49,7 +48,7 @@ def collect_wgsadmin_qc(outputdirs, logger):
             qc_data[outputdir] = df
         except Exception as e:
             logger.error(f"Error reading {found_files[0]}: {e}")
-            qc_data[outputdir] = None
+            continue
     return qc_data
 
 
@@ -80,12 +79,10 @@ def combine_qc_stats(launcher_config, outputdirs, runname=None, qc_summary_direc
     else:
         outputfile_prefix = os.path.join(qc_summary_directory, f"wgs_somatic_qc_summary_{get_timestamp()}")
     output_file_xlsx = f"{outputfile_prefix}.xlsx"
-    output_file_tsv = f"{outputfile_prefix}.tsv"
-    if os.path.exists(output_file_xlsx) or os.path.exists(output_file_tsv):
-        raise FileExistsError(f"Output file(s) already exist: {output_file_xlsx} or {output_file_tsv}")
+    if os.path.exists(output_file_xlsx):
+        raise FileExistsError(f"Output file already exists: {output_file_xlsx}")
     logger.info(f"QC summary directory: {qc_summary_directory}")
     os.makedirs(qc_summary_directory, exist_ok=True)
-    logger.info(f"Output files will be: {output_file_xlsx} and {output_file_tsv}")
 
     # Collect QC data from each outputdir
     qc_data = collect_wgsadmin_qc(outputdirs, logger)
@@ -96,8 +93,7 @@ def combine_qc_stats(launcher_config, outputdirs, runname=None, qc_summary_direc
         return
     combined_df = pd.concat(qc_data.values(), ignore_index=True)
     combined_df.to_excel(output_file_xlsx, index=False)
-    combined_df.to_csv(output_file_tsv, sep='\t', index=False)
-    logger.info(f"Combined QC summary saved to {output_file_xlsx} and {output_file_tsv}")
+    logger.info(f"Combined QC summary saved to {output_file_xlsx}")
 
 @click.command()
 @click.option('--launcher-config', required=False, type=click.Path(exists=True, dir_okay=False), help='Path to launcher config JSON file (optional).')

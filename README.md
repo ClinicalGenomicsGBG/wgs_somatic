@@ -58,8 +58,8 @@ python wgs_somatic-run-wrapper.py \
 - The wrapper will automatically download and decompress fastqs where necessary
 - The output will be in `/clinical/data/wgs_somatic/manual/` unless specified with `-o`
 - If you only specify -t or -n a tumor-only or normal-only run will be performed, respectively
-- The output is not copied to webstore, unless `--copyresults` is added to the command
-- A QCsummary of the run is provided on webstore for the laboratory if `--qcsummary` is provided
+- If `--copyresults` is included, the results will be copied to webstore `configs/launcher_config.json: "resultdir_hg38"`
+- if `--qcsummary` is included, a QCsummary of the run is provided on webstore for the laboratory `configs/launcher_config.json: "wgsadmin_dir"`
 
 ### Standalone snakemake run
 
