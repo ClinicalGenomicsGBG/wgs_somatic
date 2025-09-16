@@ -119,7 +119,6 @@ option_list <- list(
   make_option("--tumorname", type = "character", help = "Tumor sample name", metavar = "character"),
   make_option("--gender", type = "character", help = "Gender of the sample (e.g., XX or XY)", metavar = "character"),
   make_option("--genome-fai", type = "character", help = "Path to the genome FAI file", metavar = "character"),
-  make_option("--segments", type = "character", help = "Path to the segments file", metavar = "character"),
   make_option("--Rdata-file", type = "character", help = "Path to the ascat run Rdata file", metavar = "character"),
   make_option("--cytoband", type = "character", help = "Path to the cytoband file", metavar = "character"),
   make_option("--output-plot", type = "character", help = "Path to output plot", metavar = "character"),
@@ -134,9 +133,6 @@ opt <- parse_args(opt_parser)
 # Check if required arguments are provided
 if (is.null(opt$`genome-fai`) || opt$`genome-fai` == "") {
   stop("Please provide a valid path to the genome FAI file using --genome-fai.")
-}
-if (is.null(opt$segments) || opt$segments == "") {
-  stop("Please provide a valid path to the segments file using --segments.")
 }
 if (is.null(opt$`Rdata-file`) || opt$`Rdata-file` == "") {
   stop("Please provide a valid path to the ascat run Rdata file using --Rdata-file.")

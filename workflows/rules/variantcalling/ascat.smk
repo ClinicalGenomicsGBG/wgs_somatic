@@ -48,7 +48,6 @@ if normalid:
             # The Rdata and segments files are moved to the below output locations for further processing.
             output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
             rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
-            segments = temp("{stype}/ascat/{sname}.segments.txt"),
             stats = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
         singularity:
             pipeconfig["singularities"]["ascat"]["sing"]
@@ -72,7 +71,6 @@ if normalid:
                 --output-dir {output.output_dir} \
                 --tumoronly FALSE
             mv {output.output_dir}/{wildcards.sname}_ascat_bc.Rdata {output.rdata_file}
-            mv {output.output_dir}/{wildcards.sname}.segments.txt {output.segments}
             mv {output.output_dir}/{wildcards.sname}_ascat_stats.tsv {output.stats}
             """
 
@@ -97,7 +95,6 @@ else:
         output:
             output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
             rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
-            segments = temp("{stype}/ascat/{sname}.segments.txt"),
             stats = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
         singularity:
             pipeconfig["singularities"]["ascat"]["sing"]
@@ -119,14 +116,12 @@ else:
                 --output-dir {output.output_dir} \
                 --tumoronly TRUE
             mv {output.output_dir}/{wildcards.sname}_ascat_bc.Rdata {output.rdata_file}
-            mv {output.output_dir}/{wildcards.sname}.segments.txt {output.segments}
             mv {output.output_dir}/{wildcards.sname}_ascat_stats.tsv {output.stats}
             """
 
 rule ascat_plot:
     input:
         rdata_file = "{stype}/ascat/{sname}_ascat_bc.Rdata",
-        segments = "{stype}/ascat/{sname}.segments.txt",
         wgscov = lambda wildcards: get_cov_files(wildcards)["wgscov"],
         ycov = lambda wildcards: get_cov_files(wildcards)["ycov"]
     params:
@@ -150,7 +145,6 @@ rule ascat_plot:
             --tumorname {params.tumorname} \
             --gender {params.gender} \
             --genome-fai {params.genome_fai} \
-            --segments {input.segments} \
             --Rdata-file {input.rdata_file} \
             --cytoband {params.cytoBandIdeo} \
             --output-plot {output.plot} \
