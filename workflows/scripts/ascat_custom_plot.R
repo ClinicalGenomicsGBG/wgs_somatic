@@ -26,15 +26,15 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
 
     # Use unadjusted seg_df for the chromosome-specific plot
     Segment_plot <- ggplot(fai) +
-    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_obs"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
+    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_smooth"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
     geom_linerange(data = seg_df, 
                   aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
                   linewidth = 2.5, position = position_dodge(width = -0.1)) +
-    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_call"), aes(x = pos, y = CN_seg, col = track), shape = 20) +
+    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_call"), aes(x = pos, y = CN_call, col = track), shape = 20) +
     scale_y_continuous("Copy number",
                          expand = expansion(mult = 0.1)) +
     xlim(x_limits) +
-    scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
+    scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
     theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
     labs(title = chr)
   } else {
@@ -52,12 +52,12 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
 
     # Use breaks and labels for the y-axis
     Segment_plot <- ggplot(fai) +
-    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_obs"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
+    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_smooth"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
     geom_vline(aes(xintercept = start), col = "grey") +
     geom_linerange(data = seg_df, 
                    aes(xmin = adjstartpos, xmax = adjendpos, y = ascat_ploidy, col = allele), 
                    linewidth = 2.5, position = position_dodge(width = -0.1)) +
-    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_call"), aes(x = pos, y = CN_seg, col = track), shape = 20) +
+    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_call"), aes(x = pos, y = CN_call, col = track), shape = 20) +
     geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
     scale_y_continuous("Copy number",
                        breaks = breaks,
@@ -68,7 +68,7 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
                         max(2, max(seg_df$ascat_ploidy, na.rm = TRUE))
                         )) +
     xlim(x_limits) +
-    scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_obs" = "#B0B0B0", "CN_call" = "#000000")) +
+    scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
     theme(legend.title=element_blank(), axis.title.x = element_blank())
   }
   
@@ -224,7 +224,7 @@ CNs <- data.frame(
   logR_raw = ascat.bc$Tumor_LogR[,1])%>%
   mutate(
     logR_smooth = runmed(logR_raw, k = window, endrule = "median"),
-    CN_seg = logR_to_CN(logR_seg, purity = ascat.output$purity, round_to_integer = FALSE),
+    CN_call = logR_to_CN(logR_seg, purity = ascat.output$purity, round_to_integer = FALSE),
     CN_smooth = logR_to_CN(logR_smooth, purity = ascat.output$purity, round_to_integer = FALSE)
   )
 # Merge with fai to adjust positions
@@ -295,18 +295,32 @@ for (chr in unique(fai$chr)) {
 
 dev.off()
 
-# Write the segmentation data to a file for IGV visualization
-output_ratio_seg <- opt$`output-seg`
+## Generate IGV-compatible segmentation and BAF files
+# Write the smooth segmentation data to a file for IGV visualization
+output_seg_smooth <- opt$`output-seg-smooth`
 
 # Add IGV-compatible header
-writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_ratio_seg)
+writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_seg_smooth)
 
 # Process the segments file to output nMajor and nMinor as separate rows
 CNs %>%
   dplyr::rename(Chromosome = chr, Start = pos) %>%
   mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) %>%  # Add "chr" prefix for IGV compatibility
   dplyr::select(Sample, Chromosome, Start, End, CN_smooth) %>%
-  write.table(file = output_ratio_seg, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
+  write.table(file = output_seg_smooth, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
+
+# Write the call segmentation data to a file for IGV visualization
+output_seg_call <- opt$`output-seg-call`
+
+# Add IGV-compatible header
+writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_seg_call)
+
+# Process the segments file to output nMajor and nMinor as separate rows
+CNs %>%
+  dplyr::rename(Chromosome = chr, Start = pos) %>%
+  mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) %>%  # Add "chr" prefix for IGV compatibility
+  dplyr::select(Sample, Chromosome, Start, End, CN_call) %>%
+  write.table(file = output_seg_call, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
 
 
 # Write the BAF data to an IGV-compatible file
