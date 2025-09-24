@@ -251,20 +251,20 @@ pdf(opt$`output-plot`, width = 18, height = 9)
 
 # Reduce the number of points for the whole genome plot
 CNs_df_adj <- CNs_df %>%
-  slice(which(row_number() %% floor(n() / opt$`whole-genome-points`) == 1))
+  slice(which(row_number() %% ceiling(n() / opt$`whole-genome-points`) == 1))
 tumorBAF_df_adj <- tumorBAF_df %>%
-  slice(which(row_number() %% floor(n() / opt$`whole-genome-points`) == 1))
+  slice(which(row_number() %% ceiling(n() / opt$`whole-genome-points`) == 1))
 
 print(plot_ascat_panels(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, max_scale = opt$`default-y-scale`, tumorname = opt$tumorname, cytoband = cytoband))
 
 # Reduce the number of points for chromosome-specific plots
 CNs_df_adj <- CNs_df %>%
   group_by(chr) %>%
-  slice(which(row_number() %% floor(n() / opt$`chromosome-points`) == 1)) %>%
+  slice(which(row_number() %% ceiling(n() / opt$`chromosome-points`) == 1)) %>%
   ungroup()
 tumorBAF_df_adj <- tumorBAF_df %>%
   group_by(chr) %>%
-  slice(which(row_number() %% floor(n() / opt$`chromosome-points`) == 1)) %>%
+  slice(which(row_number() %% ceiling(n() / opt$`chromosome-points`) == 1)) %>%
   ungroup()
 
 for (chr in unique(fai$chr)) {
