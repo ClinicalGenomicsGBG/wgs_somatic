@@ -77,14 +77,14 @@ tumor-only:
     # SNV/INDEL calling
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"
 
   SV:
     # SV calling
     ## Manta
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
+    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
+    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"
     ## Pindel
     - "{tumor}/pindel/{tumorid}_pindel.xlsx"
 

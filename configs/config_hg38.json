@@ -1,6 +1,6 @@
 {
-    "referencegenome": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
-    "referencefai": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai",
+    "referencegenome": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set_masked.fna",
+    "referencefai": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set_masked.fna.fai",
     "singularities":
     {
         "ascat":
@@ -34,13 +34,13 @@
         },
         "sentieon":
         {
-            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v201911_250128.sif",
-            "tool_path": "/sentieon-genomics-201911/bin/sentieon",
-            "reference": "/ncbi/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna",
-            "mills": "/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
-            "dbsnp": "/ncbi/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
-            "dnascope_m": "/sentieon/SentieonDNAscopeModelBeta0.5.model",
-            "tnscope_m": "/sentieon/Sentieon_GiAB_201711.model"
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v202503_250423.sif",
+            "tool_path": "/sentieon-genomics-202503/bin/sentieon",
+            "reference": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set_masked.fna",
+            "mills": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
+            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156_common.vcf.gz",
+            "dnascope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model",
+            "tnscope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonTNscopeModelWGS0.2.model"
         }
     },
     "shadow": "copy-minimal",
@@ -74,7 +74,6 @@
         "tnscope":
         {
             "outputdir": "tumor/tnscope",
-            "settings": "--min_init_normal_lod 0.5 --min_normal_lod 3.0 --min_init_tumor_lod 1.0 --min_tumor_lod 3 --trim_soft_clip",
             "pon": "/clinical/exec/wgs_somatic/dependencies/pon/hg38/wgs-somatic-panel_of_normal.vcf.gz "
         },
         "tnscope_modelfilter":
@@ -89,11 +88,11 @@
         "dnascope":
         {
             "settings": "--pcr_indel_model NONE",
-            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModelBeta0.5.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model"
         },
         "dnascope_modelfilter":
         {
-            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonDNAscopeModelBeta0.5.model"
+            "modelpath": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model"
         },
         "dnascope_vcffilter":
         {
@@ -102,7 +101,7 @@
         },
         "ballele_plot":
         {
-            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/Homo_sapiens_assembly38.dbsnp138.vcf.gz",
+            "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156.vcf.gz",
             "hg38ref": "yes"
         },
        "generate_tdf":
