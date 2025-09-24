@@ -112,19 +112,22 @@ logR_to_CN <- function(logR_vector, purity = 1, round_to_integer = FALSE) {
 }
 
 theme_set(theme_pubclean())
-show_points = 5E5  # Number of points to show in the BAF/LogR plots
 
 # Define command-line arguments
 option_list <- list(
-  make_option("--tumorname", type = "character", help = "Tumor sample name", metavar = "character"),
-  make_option("--gender", type = "character", help = "Gender of the sample (e.g., XX or XY)", metavar = "character"),
+  make_option("--tumorname", type = "character", default = "Tumor", help = "Tumor sample name [default %default]", metavar = "character"),
+  make_option("--gender", type = "character", default = "XY", help = "Gender of the sample (e.g., XX or XY) [default %default]", metavar = "character"),
   make_option("--genome-fai", type = "character", help = "Path to the genome FAI file", metavar = "character"),
   make_option("--Rdata-file", type = "character", help = "Path to the ascat run Rdata file", metavar = "character"),
   make_option("--cytoband", type = "character", help = "Path to the cytoband file", metavar = "character"),
   make_option("--output-plot", type = "character", help = "Path to output plot", metavar = "character"),
   make_option("--output-seg-smooth", type = "character", help = "Path to output segments file with smoothed copynumbers", metavar = "character"),
   make_option("--output-seg-call", type = "character", help = "Path to output segments file with ascat calls", metavar = "character"),
-  make_option("--output-baf", type = "character", help = "Path to output BAF file", metavar = "character")
+  make_option("--output-baf", type = "character", help = "Path to output BAF file", metavar = "character"),
+  make_option("--whole-genome-points", type = "integer", default = 1E5, help = "Number of points to show in the whole genome BAF/LogR plots [default %default]", metavar = "integer"),
+  make_option("--chromosome-points", type = "integer", default = 2E4, help = "Number of points to show in the chromosome-specific BAF/LogR plots [default %default]", metavar = "integer"),
+  make_option("--default-y-scale", type = "integer", default = 6, help = "Default maximum y-scale for the copy number plot [default %default]", metavar = "integer"),
+  make_option("--help", action = "help", help = "Show this help message and exit")
 )
 
 # Parse command-line arguments
@@ -143,12 +146,6 @@ if (is.null(opt$`output-plot`) || opt$`output-plot` == "") {
 }
 
 # Handle default values for optional arguments
-if (is.null(opt$tumorname) || opt$tumorname == "") {
-  opt$tumorname <- "Tumor"
-}
-if (is.null(opt$gender) || opt$gender == "") {
-  opt$gender <- "XX"
-}
 if (is.null(opt$`output-seg-smooth`) || opt$`output-seg-smooth` == "") {
   opt$`output-seg-smooth` <- file.path(dirname(opt$`output-plot`), paste0(basename(opt$`output-plot`), "_ascat_CN_smooth.seg"))
 }
