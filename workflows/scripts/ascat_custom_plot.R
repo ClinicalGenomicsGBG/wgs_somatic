@@ -8,7 +8,7 @@ library(htmlwidgets)
 library(optparse)
 
 # Function to plot ascat panels
-plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_plot, breaks, labels, chr = NULL, cytoband = NULL) {
+plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_plot, breaks, labels, tumorname = NULL, chr = NULL, cytoband = NULL) {
   if (!is.null(chr)) {
     # Single chromosome plots
     # Filter data for the specified chromosome
@@ -69,7 +69,8 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
                         )) +
     xlim(x_limits) +
     scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
-    theme(legend.title=element_blank(), axis.title.x = element_blank())
+    theme(legend.title=element_blank(), axis.title.x = element_blank()) +
+    labs(title = tumorname)
   }
   
   # Add cytoband if provided
@@ -278,7 +279,7 @@ CNs_adj_plot <- CNs_adj %>%
 tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
   slice(which(row_number() %% floor(n() / opt$`whole-genome-points`) == 1))
 
-print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, CNs_adj_plot, breaks, labels, cytoband = cytoband))
+print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, CNs_adj_plot, breaks, labels, tumorname = opt$tumorname, cytoband = cytoband))
 
 # Reduce the number of points for chromosome-specific plots
 CNs_adj_plot <- CNs_adj %>%
@@ -291,7 +292,7 @@ tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
   ungroup()
 
 for (chr in unique(fai$chr)) {
-  print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, CNs_adj_plot, breaks, labels, chr, cytoband = cytoband))
+  print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, CNs_adj_plot, breaks, labels, chr = chr, cytoband = cytoband))
 }
 
 dev.off()
