@@ -126,6 +126,7 @@ option_list <- list(
   make_option("--output-baf", type = "character", help = "Path to output BAF file", metavar = "character"),
   make_option("--whole-genome-points", type = "integer", default = 1E5, help = "Number of points to show in the whole genome BAF/LogR plots [default %default]", metavar = "integer"),
   make_option("--chromosome-points", type = "integer", default = 2E4, help = "Number of points to show in the chromosome-specific BAF/LogR plots [default %default]", metavar = "integer"),
+  make_option("--smoothing-window", type = "integer", default = 51, help = "Window size for smoothing the LogR values [default %default]", metavar = "integer"),
   make_option("--default-y-scale", type = "integer", default = 6, help = "Default maximum y-scale for the copy number plot [default %default]", metavar = "integer"),
   make_option("--help", action = "help", help = "Show this help message and exit")
 )
@@ -213,14 +214,13 @@ if (any(seg_df$ascat_ploidy > max_ploidy)) {
 
 ## Copynumbers
 # Extract LogRs from the ascat.bc object and transform to CN
-window <- 51
 CNs <- data.frame(
   chr = ascat.bc$SNPpos$Chromosome,
   pos = ascat.bc$SNPpos$Position,
   logR_seg = ascat.bc$Tumor_LogR_segmented[,1],
   logR_raw = ascat.bc$Tumor_LogR[,1])%>%
   mutate(
-    logR_smooth = runmed(logR_raw, k = window, endrule = "median"),
+    logR_smooth = runmed(logR_raw, k = opt$`smoothing-window`, endrule = "median"),
     CN_call = logR_to_CN(logR_seg, purity = ascat.output$purity, round_to_integer = FALSE),
     CN_smooth = logR_to_CN(logR_smooth, purity = ascat.output$purity, round_to_integer = FALSE)
   )
