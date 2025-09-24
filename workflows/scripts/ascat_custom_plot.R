@@ -300,7 +300,7 @@ dev.off()
 output_seg_smooth <- opt$`output-seg-smooth`
 
 # Add IGV-compatible header
-writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_seg_smooth)
+writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0 viewLimits=0:10", con = output_seg_smooth)
 
 # Process the segments file to output nMajor and nMinor as separate rows
 CNs %>%
@@ -313,7 +313,7 @@ CNs %>%
 output_seg_call <- opt$`output-seg-call`
 
 # Add IGV-compatible header
-writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0", con = output_seg_call)
+writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0 viewLimits=0:10", con = output_seg_call)
 
 # Process the segments file to output nMajor and nMinor as separate rows
 CNs %>%
