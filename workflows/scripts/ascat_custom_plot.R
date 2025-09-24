@@ -8,56 +8,28 @@ library(htmlwidgets)
 library(optparse)
 
 # Function to plot ascat panels
-plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_plot, breaks, labels, tumorname = NULL, chr = NULL, cytoband = NULL) {
-  if (!is.null(chr)) {
-    # Single chromosome plots
-    # Filter data for the specified chromosome
-    fai <- fai %>% filter(chr == !!chr)
-    seg_df <- seg_df %>% filter(chr == !!chr)
-    tumorBAF_df_adj <- tumorBAF_df_adj %>% filter(chr == !!chr)
-    CNs_adj_plot <- CNs_adj_plot %>% filter(chr == !!chr)
-    x_limits <- range(
-      c(0, CNs_adj_plot$pos, tumorBAF_df_adj$pos, seg_df$endpos),
-      na.rm = TRUE
-    )
-    if (!is.null(cytoband)) {
-      cytoband <- cytoband %>% filter(chrom == !!chr)
-    }
-
-    # Use unadjusted seg_df for the chromosome-specific plot
-    Segment_plot <- ggplot(fai) +
-    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_smooth"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
-    geom_linerange(data = seg_df, 
-                  aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
-                  linewidth = 2.5, position = position_dodge(width = -0.1)) +
-    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_call"), aes(x = pos, y = CN_call, col = track), shape = 20) +
-    scale_y_continuous("Copy number",
-                         expand = expansion(mult = 0.1)) +
-    xlim(x_limits) +
-    scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
-    theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
-    labs(title = chr)
-  } else {
+plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_df_adj, breaks, labels, tumorname = NULL, chr = NULL, cytoband = NULL) {
+  if (is.null(chr)) {
     # Whole genome plot
     # Use adjusted seg_df for the whole genome plot
     seg_df <- seg_df_adj
     cytoband$chromStart <- cytoband$adjStart
     cytoband$chromEnd <- cytoband$adjEnd
     tumorBAF_df_adj$pos <- tumorBAF_df_adj$adjpos
-    CNs_adj_plot$pos <- CNs_adj_plot$adjpos
+    CNs_df_adj$pos <- CNs_df_adj$adjpos
     x_limits <- range(
-      c(0, CNs_adj_plot$pos, tumorBAF_df_adj$pos, seg_df$endpos),
+      c(0, CNs_df_adj$pos, tumorBAF_df_adj$pos, seg_df$endpos),
       na.rm = TRUE
     )
 
     # Use breaks and labels for the y-axis
     Segment_plot <- ggplot(fai) +
-    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_smooth"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
+    geom_point(data = dplyr::mutate(CNs_df_adj, track = "CN_smooth"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
     geom_vline(aes(xintercept = start), col = "grey") +
     geom_linerange(data = seg_df, 
                    aes(xmin = adjstartpos, xmax = adjendpos, y = ascat_ploidy, col = allele), 
                    linewidth = 2.5, position = position_dodge(width = -0.1)) +
-    geom_point(data = dplyr::mutate(CNs_adj_plot, track = "CN_call"), aes(x = pos, y = CN_call, col = track), shape = 20) +
+    geom_point(data = dplyr::mutate(CNs_df_adj, track = "CN_call"), aes(x = pos, y = CN_call, col = track), shape = 20) +
     geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
     scale_y_continuous("Copy number",
                        breaks = breaks,
@@ -71,6 +43,36 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
     scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
     theme(legend.title=element_blank(), axis.title.x = element_blank()) +
     labs(title = tumorname)
+    
+    } else {
+    # Single chromosome plots
+    # Filter data for the specified chromosome
+    fai <- fai %>% filter(chr == !!chr)
+    seg_df <- seg_df %>% filter(chr == !!chr)
+    tumorBAF_df_adj <- tumorBAF_df_adj %>% filter(chr == !!chr)
+    CNs_df_adj <- CNs_df_adj %>% filter(chr == !!chr)
+    x_limits <- range(
+      c(0, CNs_df_adj$pos, tumorBAF_df_adj$pos, seg_df$endpos),
+      na.rm = TRUE
+    )
+    if (!is.null(cytoband)) {
+      cytoband <- cytoband %>% filter(chrom == !!chr)
+    }
+
+    # Use unadjusted seg_df for the chromosome-specific plot
+    Segment_plot <- ggplot(fai) +
+    geom_point(data = dplyr::mutate(CNs_df_adj, track = "CN_smooth"), aes(x = pos, y = CN_smooth, col = track), shape = 20) +
+    geom_linerange(data = seg_df, 
+                  aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
+                  linewidth = 2.5, position = position_dodge(width = -0.1)) +
+    geom_point(data = dplyr::mutate(CNs_df_adj, track = "CN_call"), aes(x = pos, y = CN_call, col = track), shape = 20) +
+    scale_y_continuous("Copy number",
+                         expand = expansion(mult = 0.1)) +
+    xlim(x_limits) +
+    scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
+    theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
+    labs(title = chr)
+    
   }
   
   # Add cytoband if provided
@@ -88,6 +90,7 @@ plot_ascat_panels <- function(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_adj_
       scale_fill_identity()
   }
   
+  # BAF plot
   BAF_plot <- ggplot(fai) +
     geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = 20, size = 0.5, col = "#009E73") +
     scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7,0.9), limits = c(0.01,0.99)) +
@@ -193,57 +196,32 @@ seg_df <- merge(seg_df, fai, by = "chr") %>%
   dplyr::rename(minor_allele = nMinor, major_allele = nMajor)%>%
   pivot_longer(cols = c(major_allele, minor_allele), names_to = "allele", values_to = "ascat_ploidy")
 
-# If there are any segments with more than 3 times the median segment ploidy, cap them to 3 times the median
-max_ploidy <- median(seg_df$ascat_ploidy, na.rm = TRUE) * 3
-if (any(seg_df$ascat_ploidy > max_ploidy)) {
-  seg_df_adj <- seg_df %>%
-    mutate(ascat_ploidy = ifelse(
-      ascat_ploidy > max_ploidy,
-      # If the ploidy is greater than max_ploidy, subtract the rounded difference from ascat_ploidy
-      ascat_ploidy - (round(ascat_ploidy - max_ploidy, 0)),
-      ascat_ploidy
-    ))
-  # If the ploidy is capped, make it clear in the plot with the labels
-  breaks <- seq(0, max_ploidy, by = 1)
-  labels <- c(as.character(breaks[-length(breaks)]), paste0(">", max_ploidy))
-} else {
-  seg_df_adj <- seg_df
-  breaks <- seq(0, max(seg_df_adj$ascat_ploidy, na.rm = TRUE), by = 1)
-  labels <- as.character(breaks)
-}
-
-
 ## Copynumbers
 # Extract LogRs from the ascat.bc object and transform to CN
-CNs <- data.frame(
+CNs_df <- data.frame(
   chr = ascat.bc$SNPpos$Chromosome,
   pos = ascat.bc$SNPpos$Position,
   logR_seg = ascat.bc$Tumor_LogR_segmented[,1],
   logR_raw = ascat.bc$Tumor_LogR[,1])%>%
+  merge(., fai, by = "chr") %>%
   mutate(
     logR_smooth = runmed(logR_raw, k = opt$`smoothing-window`, endrule = "median"),
     CN_call = logR_to_CN(logR_seg, purity = ascat.output$purity, round_to_integer = FALSE),
-    CN_smooth = logR_to_CN(logR_smooth, purity = ascat.output$purity, round_to_integer = FALSE)
-  )
-# Merge with fai to adjust positions
-CNs_adj <- merge(CNs, fai, by = "chr") %>%
-  mutate(
+    CN_smooth = logR_to_CN(logR_smooth, purity = ascat.output$purity, round_to_integer = FALSE),
     adjpos = pos + start
   )
 
 
 ## BAF
 # Extract BAF from the ascat.bc object
-setDT(ascat.bc$Tumor_BAF, keep.rownames = TRUE)[]%>%
-  separate_wider_delim(rn, "_", names = c("chr","pos"))%>%
-  mutate(pos = as.numeric(pos))%>%
-  dplyr::select(1,2,"BAF"= 3)->tumorBAF_df
-# Merge with fai to adjust positions
-tumorBAF_df_adj <- merge(tumorBAF_df, fai, by = "chr") %>%
-  mutate(
-    adjpos = pos + start
-  )
-
+tumorBAF_df <- 
+  setDT(ascat.bc$Tumor_BAF, keep.rownames = TRUE)[] %>%
+  separate_wider_delim(rn, "_", names = c("chr","pos")) %>%
+  merge(., fai, by = "chr") %>%
+  mutate(pos = as.numeric(pos),
+         adjpos = pos + start) %>%
+  dplyr::select(1,2,"BAF"= 3, adjpos)
+ 
 
 ## Cytoband
 # Read the cytoband file if provided
@@ -274,25 +252,25 @@ if (!is.null(opt$cytoband) && file.exists(opt$cytoband)) {
 pdf(opt$`output-plot`, width = 18, height = 9)
 
 # Reduce the number of points for the whole genome plot
-CNs_adj_plot <- CNs_adj %>%
+CNs_df_adj <- CNs_df %>%
   slice(which(row_number() %% floor(n() / opt$`whole-genome-points`) == 1))
-tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
+tumorBAF_df_adj <- tumorBAF_df %>%
   slice(which(row_number() %% floor(n() / opt$`whole-genome-points`) == 1))
 
-print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, CNs_adj_plot, breaks, labels, tumorname = opt$tumorname, cytoband = cytoband))
+print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_df_adj, breaks, labels, tumorname = opt$tumorname, cytoband = cytoband))
 
 # Reduce the number of points for chromosome-specific plots
-CNs_adj_plot <- CNs_adj %>%
+CNs_df_adj <- CNs_df %>%
   group_by(chr) %>%
   slice(which(row_number() %% floor(n() / opt$`chromosome-points`) == 1)) %>%
   ungroup()
-tumorBAF_df_adj_plot <- tumorBAF_df_adj %>%
+tumorBAF_df_adj <- tumorBAF_df %>%
   group_by(chr) %>%
   slice(which(row_number() %% floor(n() / opt$`chromosome-points`) == 1)) %>%
   ungroup()
 
 for (chr in unique(fai$chr)) {
-  print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj_plot, CNs_adj_plot, breaks, labels, chr = chr, cytoband = cytoband))
+  print(plot_ascat_panels(fai, seg_df_adj, seg_df, tumorBAF_df_adj, CNs_df_adj, breaks, labels, chr = chr, cytoband = cytoband))
 }
 
 dev.off()
@@ -305,7 +283,7 @@ output_seg_smooth <- opt$`output-seg-smooth`
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0 viewLimits=0:10", con = output_seg_smooth)
 
 # Process the segments file to output nMajor and nMinor as separate rows
-CNs %>%
+CNs_df %>%
   dplyr::rename(Chromosome = chr, Start = pos) %>%
   mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) %>%  # Add "chr" prefix for IGV compatibility
   dplyr::select(Sample, Chromosome, Start, End, CN_smooth) %>%
@@ -318,7 +296,7 @@ output_seg_call <- opt$`output-seg-call`
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0 viewLimits=0:10", con = output_seg_call)
 
 # Process the segments file to output nMajor and nMinor as separate rows
-CNs %>%
+CNs_df %>%
   dplyr::rename(Chromosome = chr, Start = pos) %>%
   mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) %>%  # Add "chr" prefix for IGV compatibility
   dplyr::select(Sample, Chromosome, Start, End, CN_call) %>%
