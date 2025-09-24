@@ -28,9 +28,9 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, scaled =
                    linewidth = 2.5, position = position_dodge(width = -0.1)) +
     geom_point(data = dplyr::mutate(CNs_df_adj, track = "CN_call"), aes(x = pos, y = CN_call_plot, col = track), shape = 20) +
     geom_text(aes(label = chr, x = middle, y = Inf), vjust = 1, size = 3.5) +
-    xlim(x_limits) +
+    scale_x_continuous(limits = x_limits) +
     scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
-    theme(legend.title=element_blank(), axis.title.x = element_blank()) +
+    theme(legend.title=element_blank(), axis.title.x = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
     labs(title = tumorname, y = "Copy number")
     
     } else {
@@ -42,6 +42,8 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, scaled =
     CNs_df_adj <- CNs_df_adj %>% filter(chr == !!chr)
     chr_title <- paste0("chr", chr)
     x_limits <- range(c(0, CNs_df_adj$pos, tumorBAF_df_adj$pos, seg_df$endpos), na.rm = TRUE)
+    x_breaks <- seq(chr_start, chr_end, by = 1e7)
+    x_labels <- paste0(x_breaks / 1e6, "Mb")
 
     if (!scaled) {
       seg_df$ascat_ploidy_plot <- seg_df$ascat_ploidy
@@ -59,12 +61,10 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, scaled =
                   aes(xmin = startpos, xmax = endpos, y = ascat_ploidy, col = allele), 
                   linewidth = 2.5, position = position_dodge(width = -0.1)) +
     geom_point(data = dplyr::mutate(CNs_df_adj, track = "CN_call"), aes(x = pos, y = CN_call, col = track), shape = 20) +
-    scale_y_continuous("Copy number",
-                         expand = expansion(mult = 0.1)) +
-    xlim(x_limits) +
+    scale_x_continuous(limits = x_limits, breaks = x_breaks, labels = x_labels) +
     scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
     theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
-    labs(title = chr_title)
+    labs(title = chr_title, y = "Copy number")
 
   }
   
@@ -88,7 +88,7 @@ plot_ascat_panels <- function(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, scaled =
     geom_point(data = tumorBAF_df_adj, aes(pos, BAF), shape = 20, size = 0.5, col = "#009E73") +
     scale_y_continuous(breaks = c(0.1,0.3,0.5,0.7,0.9), limits = c(0,1)) +
     xlim(x_limits) +
-    theme(axis.title.x = element_blank())
+    theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
   
   if (is.null(chr)) {
     BAF_plot <- BAF_plot +
