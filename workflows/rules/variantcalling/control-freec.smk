@@ -1,3 +1,4 @@
+
 if normalid:
     rule control_freec_run:
         input:
@@ -74,8 +75,8 @@ rule control_freec_plot:
     singularity:
         pipeconfig["singularities"]["control-freec"]["sing"]
     output:
-        ratio_plot = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png"),
-        ratio_seg = temp("{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg"),
+        ratio_plot = "{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.png",
+        ratio_seg = "{stype}/control-freec_{ploidy}/{sname}_controlfreec_ploidy{ploidy}.seg",
     shell:
         # The Rscript accepts empty input files, so we can run it even if the previous step failed
         """

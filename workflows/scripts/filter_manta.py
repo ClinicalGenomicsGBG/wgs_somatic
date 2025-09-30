@@ -20,7 +20,7 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
     - Removes duplicate breakends (reciprocal variants).
     """
     # Dictionary to track reciprocal breakends
-    bnd_pairs = {}
+    seen_bnd_ids = set()
 
     with pysam.VariantFile(input_vcf) as vcf_in, pysam.VariantFile(output_vcf, "w", header=vcf_in.header) as vcf_out:
         for record in vcf_in:
@@ -40,8 +40,12 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                     continue
 
                 # Extract PR and SR values for the tumor sample
-                tumor_pr, tumor_sr = tumor_sample["PR"], tumor_sample["SR"]
-                tumor_support = tumor_pr[1] + tumor_sr[1]
+                tumor_pr, tumor_sr = tumor_sample["PR"][1], tumor_sample["SR"][1]
+
+                # Require both PR and SR supporting the variant
+                if tumor_pr == 0 or tumor_sr == 0:
+                    continue
+                tumor_support = tumor_pr + tumor_sr
 
                 # Apply the tumor support filter
                 if tumor_support < min_tumor_support:
@@ -54,13 +58,12 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                 except KeyError:
                     continue  # Skip if normal sample is missing
 
-                # Ensure both PR and SR are present in the normal sample
-                if "PR" not in normal_sample or "SR" not in normal_sample:
-                    continue
-
-                # Extract PR and SR values for the normal sample
-                normal_pr, normal_sr = normal_sample["PR"], normal_sample["SR"]
-                normal_support = normal_pr[1] + normal_sr[1]
+                # Combine PR and SR support from the normal sample
+                normal_support = 0
+                if "PR" in normal_sample:
+                    normal_support += normal_sample["PR"][1]
+                if "SR" in normal_sample:
+                    normal_support += normal_sample["SR"][1]
 
                 if tumor_name:
                     # Apply the normal support filter
@@ -69,32 +72,14 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
 
             # Handle reciprocal breakends (BNDs)
             if record.info.get("SVTYPE") == "BND" and "MATEID" in record.info:
-                # Create a unique key for the variant
-                key = f"{record.chrom}:{record.pos}"
-                mate_key = None
-
-                # Extract the breakpoint coordinates from the ALT field
-                alt_field = str(record.alts[0])
-                if "[" in alt_field or "]" in alt_field:
-                    # Split by square brackets to extract the mate position
-                    parts = alt_field.replace("[", "]").split("]")
-                    for part in parts:
-                        if ":" in part:
-                            mate_key = part.strip()
-                            break
-
-                # Ensure mate_key is valid before proceeding
-                if mate_key is None:
-                    print(f"Warning: Unable to parse mate key for variant {key}. Skipping.")
-                    continue
-
-                # Check if the reciprocal pair already exists
-                if is_reciprocal_pair(bnd_pairs, key, mate_key):
-                    continue  # Skip this variant as its reciprocal pair has already been processed
-
-                # Add the current key and mate key to the dictionary
-                bnd_pairs[key] = mate_key
-                bnd_pairs[mate_key] = key
+                id1 = record.id
+                id2 = record.info["MATEID"]
+                if isinstance(id2, (tuple, list)):
+                    id2 = id2[0]
+                pair = tuple(sorted([id1, id2]))
+                if pair in seen_bnd_ids:
+                    continue  # Skip duplicate
+                seen_bnd_ids.add(pair)
 
             # Write the record to the output VCF
             vcf_out.write(record)

@@ -7,6 +7,6 @@ sv_filter:
   min_tumor_support: 3
   max_normal_support: 2
   # Other filters in filter_manta.py:
-  ## Need both paired and split reads
+  ## Need both paired and split reads in the tumor supporting the alternate allele
   ## Remove duplicate (reciprocal) SVs
   ## Filter to only keep "PASS"

@@ -11,6 +11,6 @@ rule generate_tdf:
     shadow:
         pipeconfig["rules"].get("generate_tdf", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
-        temp("{stype}/reports/{sname}_REALIGNED.bam.tdf")
+        "{stype}/realign/{sname}_REALIGNED.bam.tdf"
     run:
-        shell("nohup java -Xmx{params.igvtools_memory_limit} -jar {params.igvtools_jar_path} count {input.bam} {output} hg19")
+        shell("nohup java -Xmx{params.igvtools_memory_limit} -jar {params.igvtools_jar_path} count {input.bam} {output} hg38")
