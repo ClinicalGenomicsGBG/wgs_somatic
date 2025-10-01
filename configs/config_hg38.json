@@ -34,7 +34,7 @@
         },
         "sentieon":
         {
-            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v202503_250423.sif",
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/sentieon_v202503_251001.sif",
             "tool_path": "/sentieon-genomics-202503/bin/sentieon",
             "reference": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GCA_000001405.15_GRCh38_no_alt_analysis_set_masked.fna",
             "mills": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz",
