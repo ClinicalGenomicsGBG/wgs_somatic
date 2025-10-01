@@ -23,6 +23,7 @@ For paired tumor and normal FASTQs, the results contain:
 - Germline SNV/indels ([DNAscope; Sentieon](https://support.sentieon.com/manual/DNAscope_usage/dnascope/))
 - Breakpoints from large deletions and SVs ([Pindel](https://github.com/genome/pindel))
 - Tumor mutation burden (in-house script; see [Wadensten et al., (2023)](https://doi.org/10.1200/PO.23.00039))
+- Microsatellite instability detection ([msisensor-pro](https://github.com/xjtu-omics/msisensor-pro))
 
 ## Manual Usage
 
@@ -120,6 +121,10 @@ For the pipeline to be able to run the following is required for the naming of t
 - The pipeline will use the first three parts seperated by `_` to generate the output files
   - e.g, `DNA123456_250101_CHIPCHIP_S12_R{1|2}_001.fastq.gz` becomes `DNA123456_250101_CHIPCHIP`
 - The FASTQ filenames cannot contain non-ASCII characters (å, ä, ö, etc.)
+
+### Running only part of the pipeline
+
+By defining which result files you want in the [result_files_config.yaml](configs/result_files_config.yaml), wgs-somatic will only run the rules required for that output. For example, if you remove all lines except for `- "{tumor}/realign/{tumorid}_REALIGNED.bam"` it will only run the mapping (and realignment) of the tumor fastq.
 
 ## Automatic start of pipeline
 
