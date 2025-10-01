@@ -8,24 +8,6 @@
     "filterconf": "filters.yaml",
     "resultfilesconf": "result_files_config.yaml",
     "resultdir_hg38": "/webstore/clinical/routine/wgs_somatic/current",
-    "testresultdir" : "/medstore/projects/P23-075/wgs_somatic/local_repo/unit_tests/testoutput/resultdir", 
-    "wgsadmin_dir": "/webstore/clinical/routine/laboratory/current/quality_reports/", 
-    "singularitybinddirs":
-    {
-        "sentieon":
-        {
-            "source": "/clinical/exec/wgs_somatic/dependencies/sentieon/",
-            "destination": "/sentieon"
-        },
-        "databases_hg38":
-        {
-            "source": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/",
-            "destination": "/ncbi"
-        },
-        "gatk_hg38":
-        {
-            "source": "/clinical/exec/wgs_somatic/dependencies/gatk/hg38/",
-            "destination": "/gatk"
-        }
-    }
+    "webstore_api_url": "http://webstore.sa.gu.se/api/paths",
+    "wgsadmin_dir": "/webstore/clinical/routine/laboratory/current/quality_reports/"
 }
