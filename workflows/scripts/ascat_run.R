@@ -110,9 +110,9 @@ ascat.bc <- ascat.correctLogR(
 )
 if (opt$tumoronly) {
   gg <- ascat.predictGermlineGenotypes(ascat.bc, platform = "WGS_hg38_50X")
-  ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg)
+  ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg, penalty = 25)
 } else {
-  ascat.bc <- ascat.aspcf(ascat.bc)
+  ascat.bc <- ascat.aspcf(ascat.bc, penalty = 25)
 }
 
 # Restore the original working directory
