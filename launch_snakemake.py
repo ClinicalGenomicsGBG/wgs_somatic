@@ -8,10 +8,11 @@ from tools.helpers import read_config
 import sys
 import time
 import traceback
-from shutil import copyfile, copy
+from shutil import copyfile
 import subprocess
 import stat
 import yaml
+import requests
 import random
 import string
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
@@ -124,6 +125,12 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                 except KeyError:
                     logger(f"Key 'resultfilesconf' not found in config file {runconfig}")
                     raise KeyError("Key 'resultfilesconf' not found in config file")
+                try:
+                    webstore_api_url = config_data.get('webstore_api_url')
+                    logger(f"Webstore API URL found in config file: {webstore_api_url}")
+                except KeyError:
+                    logger(f"Key 'webstore_api_url' not found in config file {runconfig}")
+                    raise KeyError("Key 'webstore_api_url' not found in config file")
         except Exception as e:
             logger(f"Error reading config file {runconfig}: {e}")
             raise
@@ -174,6 +181,17 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                         logger(f"Error copying {src_path} to {dest_path}: {e}")
                 else:
                     logger(f"Warning: Source file {src_path} does not exist, skipping copy.")
+
+        try:
+            # webstore API call to make path searchable
+            json_payload = {"path": resultdir}
+            response = requests.post(webstore_api_url, json=json_payload)
+            if response.status_code == 200:
+                logger(f"Successfully notified webstore about new files in {resultdir}")
+            else:
+                logger(f"Failed to notify webstore about new files in {resultdir}. Status code: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            logger(f"Error occurred while notifying webstore: {e}")
 
     except Exception as e:
         logger(f"Unhandled error in copy_results: {e}")
@@ -339,7 +357,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         analysisdict["reference"] = "hg38"
         if tumorname:
             if normalname:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'  # Use f'{config["testresultdir"]}/{tumorname}'for testing
+                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'
             else:
                 analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_outputdir}'
             snakemake_config = f"{runconfigs}/{tumorid}_config.json"
