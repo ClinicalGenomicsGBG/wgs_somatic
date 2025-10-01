@@ -125,12 +125,6 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                 except KeyError:
                     logger(f"Key 'resultfilesconf' not found in config file {runconfig}")
                     raise KeyError("Key 'resultfilesconf' not found in config file")
-                try:
-                    webstore_api_url = config_data.get('webstore_api_url')
-                    logger(f"Webstore API URL found in config file: {webstore_api_url}")
-                except KeyError:
-                    logger(f"Key 'webstore_api_url' not found in config file {runconfig}")
-                    raise KeyError("Key 'webstore_api_url' not found in config file")
         except Exception as e:
             logger(f"Error reading config file {runconfig}: {e}")
             raise
@@ -184,6 +178,8 @@ def copy_results(outputdir, tumorname=None, normalname=None):
 
         try:
             # webstore API call to make path searchable
+            config = read_config(LAUNCHER_CONFIG_PATH)
+            webstore_api_url = config.get("webstore_api_url")
             json_payload = {"path": resultdir}
             response = requests.post(webstore_api_url, json=json_payload)
             if response.status_code == 200:
