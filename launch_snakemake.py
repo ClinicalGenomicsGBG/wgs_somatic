@@ -350,28 +350,6 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         with open(snakemake_config, 'w') as analysisconf:
             json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
 
-        ###################################################################
-        # Prepare Singularity Binddirs
-        ###################################################################
-        binddirs = config["singularitybinddirs"]
-        binddir_string = ""
-        for binddir in binddirs:
-            source = binddirs[binddir]["source"]
-            if not analysisdict["reference"] in source:
-                if "sentieon" not in source:
-                    continue
-            destination = binddirs[binddir]["destination"]
-            logger(f"preparing binddir variable {binddir} source: {source} destination: {destination}")
-            binddir_string = f"{binddir_string}{source}:{destination},"
-            if normalname:
-                for normalfastqdir in analysisdict["normalfastqs"]:
-                    binddir_string = f"{binddir_string}{normalfastqdir},"
-            if tumorname:
-                for tumorfastqdir in analysisdict["tumorfastqs"]:
-                    binddir_string = f"{binddir_string}{tumorfastqdir},"
-        binddir_string = f"{binddir_string}{outputdir}"
-        print(binddir_string)
-
     except Exception as e:
         tb = traceback.format_exc()
         logger("Error in setting up the snakemake run:")
@@ -398,7 +376,6 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
 
         singularity_args = [
             "-e",
-            "--bind", binddir_string,
             "--bind", "/medstore",
             "--bind", "/seqstore",
             "--bind", "/apps",
