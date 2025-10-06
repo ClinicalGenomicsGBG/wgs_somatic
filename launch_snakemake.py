@@ -8,10 +8,11 @@ from tools.helpers import read_config
 import sys
 import time
 import traceback
-from shutil import copyfile, copy
+from shutil import copyfile
 import subprocess
 import stat
 import yaml
+import requests
 import random
 import string
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
@@ -174,6 +175,19 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                         logger(f"Error copying {src_path} to {dest_path}: {e}")
                 else:
                     logger(f"Warning: Source file {src_path} does not exist, skipping copy.")
+
+        try:
+            # webstore API call to make path searchable
+            config = read_config(LAUNCHER_CONFIG_PATH)
+            webstore_api_url = config.get("webstore_api_url")
+            json_payload = {"path": resultdir}
+            response = requests.post(webstore_api_url, json=json_payload)
+            if response.status_code == 200:
+                logger(f"Successfully notified webstore about new files in {resultdir}")
+            else:
+                logger(f"Failed to notify webstore about new files in {resultdir}. Status code: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            logger(f"Error occurred while notifying webstore: {e}")
 
     except Exception as e:
         logger(f"Unhandled error in copy_results: {e}")
@@ -339,7 +353,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         analysisdict["reference"] = "hg38"
         if tumorname:
             if normalname:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'  # Use f'{config["testresultdir"]}/{tumorname}'for testing
+                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'
             else:
                 analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_outputdir}'
             snakemake_config = f"{runconfigs}/{tumorid}_config.json"
@@ -349,28 +363,6 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
 
         with open(snakemake_config, 'w') as analysisconf:
             json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
-
-        ###################################################################
-        # Prepare Singularity Binddirs
-        ###################################################################
-        binddirs = config["singularitybinddirs"]
-        binddir_string = ""
-        for binddir in binddirs:
-            source = binddirs[binddir]["source"]
-            if not analysisdict["reference"] in source:
-                if "sentieon" not in source:
-                    continue
-            destination = binddirs[binddir]["destination"]
-            logger(f"preparing binddir variable {binddir} source: {source} destination: {destination}")
-            binddir_string = f"{binddir_string}{source}:{destination},"
-            if normalname:
-                for normalfastqdir in analysisdict["normalfastqs"]:
-                    binddir_string = f"{binddir_string}{normalfastqdir},"
-            if tumorname:
-                for tumorfastqdir in analysisdict["tumorfastqs"]:
-                    binddir_string = f"{binddir_string}{tumorfastqdir},"
-        binddir_string = f"{binddir_string}{outputdir}"
-        print(binddir_string)
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -398,7 +390,6 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
 
         singularity_args = [
             "-e",
-            "--bind", binddir_string,
             "--bind", "/medstore",
             "--bind", "/seqstore",
             "--bind", "/apps",
