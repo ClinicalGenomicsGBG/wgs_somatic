@@ -155,8 +155,8 @@ option_list <- list(
   make_option("--output-seg-smooth", type = "character", help = "Path to output segments file with smoothed copynumbers", metavar = "character"),
   make_option("--output-seg-call", type = "character", help = "Path to output segments file with ascat calls", metavar = "character"),
   make_option("--output-baf", type = "character", help = "Path to output BAF file", metavar = "character"),
-  make_option("--whole-genome-points", type = "integer", default = 1E5, help = "Number of points to show in the whole genome BAF/LogR plots [default %default]", metavar = "integer"),
-  make_option("--chromosome-points", type = "integer", default = 2E4, help = "Number of points to show in the chromosome-specific BAF/LogR plots [default %default]", metavar = "integer"),
+  make_option("--whole-genome-points", type = "integer", default = 2E4, help = "Number of points to show in the whole genome BAF/LogR plots [default %default]", metavar = "integer"),
+  make_option("--chromosome-points", type = "integer", default = 4E3, help = "Number of points to show in the chromosome-specific BAF/LogR plots [default %default]", metavar = "integer"),
   make_option("--smoothing-window", type = "integer", default = 51, help = "Window size for smoothing the LogR values [default %default]", metavar = "integer"),
   make_option("--default-y-scale", type = "integer", default = 6, help = "Default maximum y-scale for the copy number plot [default %default]", metavar = "integer")
   )
@@ -284,6 +284,7 @@ pdf(opt$`output-plot`, width = 18, height = 9)
 CNs_df_adj <- CNs_df %>%
   slice(which(row_number() %% ceiling(n() / opt$`whole-genome-points`) == 1))
 tumorBAF_df_adj <- tumorBAF_df %>%
+  dplyr::filter(BAF > 0 & BAF < 1) %>%
   slice(which(row_number() %% ceiling(n() / opt$`whole-genome-points`) == 1))
 
 # Whole genome plot
@@ -302,6 +303,7 @@ CNs_df_adj <- CNs_df %>%
   slice(which(row_number() %% ceiling(n() / opt$`chromosome-points`) == 1)) %>%
   ungroup()
 tumorBAF_df_adj <- tumorBAF_df %>%
+  dplyr::filter(BAF > 0 & BAF < 1) %>%
   group_by(chr) %>%
   slice(which(row_number() %% ceiling(n() / opt$`chromosome-points`) == 1)) %>%
   ungroup()
