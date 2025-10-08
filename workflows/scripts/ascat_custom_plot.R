@@ -28,7 +28,8 @@ plot_panel_wgs <- function(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, max_scale =
 
   # Customize x-axis for whole genome
   Segment_plot <- Segment_plot +
-    scale_x_continuous(limits = x_limits, breaks = x_breaks, labels = x_labels, position = "top") 
+    scale_x_continuous(limits = x_limits, breaks = x_breaks, labels = x_labels, position = "top") +
+    theme(axis.title.x = element_blank())
 
   # Add vertical lines for chromosome starts
   Segment_plot <- Segment_plot + 
@@ -62,14 +63,14 @@ plot_panel_chr <- function(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, max_scale =
   # Define x-axis limits and breaks
   x_limits <- range(c(0, CNs_df_adj$pos, tumorBAF_df_adj$pos, seg_df$endpos), na.rm = TRUE)
   x_breaks <- seq(x_limits[1], x_limits[2], by = 1e7)
-  x_labels <- paste0(x_breaks / 1e6, "Mb")
+  x_labels <- x_breaks / 1e6
 
   # Create CNV plot
   Segment_plot <- plot_cnv(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, max_scale = max_scale, title = chr_title)
 
   # Customize x-axis for chromosome-specific plot
   Segment_plot <- Segment_plot +
-    scale_x_continuous(limits = x_limits, breaks = x_breaks, labels = x_labels, minor_breaks = seq(x_limits[1], x_limits[2], by = 1e6)) +
+    scale_x_continuous(limits = x_limits, breaks = x_breaks, labels = x_labels, minor_breaks = seq(x_limits[1], x_limits[2], by = 1e6), name = "Genomic position (Mb)") +
     guides(x = guide_axis(minor.ticks = TRUE)) +
     theme(axis.minor.ticks.x.bottom = element_line(color = "grey60"))
 
@@ -104,7 +105,7 @@ plot_cnv <- function(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, max_scale = NULL,
     geom_point(data = dplyr::mutate(CNs_df_adj, track = "CN_call"), aes(x = pos, y = CN_call_plot, col = track), shape = 20) +
     scale_y_continuous(limits = c(-0.15, max_scale+0.1)) +
     scale_color_manual(values = c("major_allele" = "#E69F00", "minor_allele" = "#0072B2", "CN_smooth" = "#B0B0B0", "CN_call" = "#000000")) +
-    theme(legend.title=element_blank(), axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5)) +
+    theme(legend.title=element_blank(), plot.title = element_text(hjust = 0.5)) +
     labs(title = title, y = "Copy number")
   
   return(CNV_plot)
