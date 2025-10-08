@@ -21,10 +21,13 @@ tumor-normal:
 
   SNV_INDEL:
     # SNV/INDEL calling
+    ## TNscope
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
     - "{normal}/dnascope/{normalid}_germline.vcf.gz"
     - "{normal}/dnascope/{normalid}_germline.vcf.gz.csi"
+    ## Pindel
+    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
 
   SV:
     # SV calling
@@ -33,8 +36,6 @@ tumor-normal:
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"  
-    ## Pindel
-    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
 
   CNV:
     # CNV calling
@@ -76,8 +77,11 @@ tumor-only:
 
   SNV_INDEL:
     # SNV/INDEL calling
+    ## TNscope
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
+    ## Pindel
+    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
 
   SV:
     # SV calling
@@ -86,8 +90,6 @@ tumor-only:
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"
-    ## Pindel
-    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
 
   CNV:
     # CNV calling
