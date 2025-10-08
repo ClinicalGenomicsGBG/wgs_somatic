@@ -1,13 +1,11 @@
 tumor-normal:
   toplevel:
+    # Note: the cram and wgsadmin files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for these files is in copy_results() function in launch_snakemake.py
     # QC reports
     - "qc_report/{tumorid}_qc_stats.xlsx"
     - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
-
-  mapped_reads:
     # Read mapping
-    # Note: the cram files are not copied to webstore but are added as a target to include them in the workdir
-    # The exception for the cram files is in copy_results() function in launch_snakemake.py
     - "{tumor}/realign/{tumorid}_REALIGNED.bam"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
@@ -18,6 +16,17 @@ tumor-normal:
     - "{normal}/realign/{normalid}_REALIGNED.bam.tdf"
     - "{normal}/realign/{normalid}_REALIGNED.cram"
     - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
+    # CNV_seg
+    ## Ascat
+    - "{tumor}/ascat/{tumorid}_ascat_copynumber_IGV.seg"
+    - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
+    ## Canvas
+    - "{tumor}/canvas/{tumorid}_canvas_somatic_called.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic_observed.seg"
+    - "{tumor}/reports/{tumorid}_baf.igv"
+    - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
+    - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
+    - "{normal}/reports/{normalid}_baf.igv"
 
   SNV_INDEL:
     # SNV/INDEL calling
@@ -42,15 +51,9 @@ tumor-normal:
     ## Canvas
     - "{tumor}/canvas/{tumorid}_canvas_somatic.vcf.gz"
     - "{tumor}/canvas/{tumorid}_canvas_somatic.vcf.gz.csi"
-    - "{tumor}/canvas/{tumorid}_canvas_somatic_called.seg"
-    - "{tumor}/canvas/{tumorid}_canvas_somatic_observed.seg"
     - "{tumor}/canvas/{tumorid}_canvas_somatic_filt.vcf.xlsx"
-    - "{tumor}/reports/{tumorid}_baf.igv"
     - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz"
     - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz.csi"
-    - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
-    - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
-    - "{normal}/reports/{normalid}_baf.igv"
     ## Ascat
     - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     - "{tumor}/ascat/{tumorid}_ascat_CN_smooth_IGV.seg"
@@ -62,14 +65,21 @@ tumor-only:
   toplevel:
     # QC reports
     - "qc_report/{tumorid}_qc_stats.xlsx"
-
-  mapped_reads:
+    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
     # Read mapping
     - "{tumor}/realign/{tumorid}_REALIGNED.bam"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
     - "{tumor}/realign/{tumorid}_REALIGNED.cram"
     - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
+    # CNV_seg
+    ## Ascat
+    - "{tumor}/ascat/{tumorid}_ascat_copynumber_IGV.seg"
+    - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
+    ## Canvas
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_called.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_observed.seg"
+    - "{tumor}/reports/{tumorid}_baf.igv"
 
   SNV_INDEL:
     # SNV/INDEL calling
@@ -89,6 +99,8 @@ tumor-only:
 
   CNV:
     # CNV calling
+    ## Ascat
+    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     ## Canvas
     - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz"
     - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz.csi"
@@ -106,14 +118,18 @@ normal-only:
   toplevel:
     # QC reports
     - "qc_report/{normalid}_qc_stats.xlsx"
-
-  mapped_reads:
+    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
     # Read mapping
     - "{normal}/realign/{normalid}_REALIGNED.bam"
     - "{normal}/realign/{normalid}_REALIGNED.bam.bai"
     - "{normal}/realign/{normalid}_REALIGNED.bam.tdf"
     - "{normal}/realign/{normalid}_REALIGNED.cram"
     - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
+    # CNV_seg
+    ## Canvas
+    - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
+    - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
+    - "{normal}/reports/{normalid}_baf.igv"
 
   SNV_INDEL:
     # SNV/INDEL calling
@@ -125,6 +141,4 @@ normal-only:
     ## Canvas
     - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz"
     - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz.csi"
-    - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
-    - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
-    - "{normal}/reports/{normalid}_baf.igv"
+
