@@ -9,6 +9,7 @@ from tools.git_versions import get_git_commit, get_git_tag, get_git_reponame
 from workflows.scripts.sex import calc_sex
 import time
 import pandas as pd
+import gzip
 
 
 def extract_stats(statsfile, statstype, sampletype, statsdict):
@@ -39,7 +40,7 @@ def extract_stats(statsfile, statstype, sampletype, statsdict):
 def get_canvas_tumorinfo(canvasvcf):
     canvasdict = {}
     canvas_infofields = ["##OverallPloidy", "##DiploidCoverage", "##EstimatedTumorPurity", "##PurityModelFit", "##InterModelDistance", "##LocalSDmetric", "##EvennessScore", "##HeterogeneityProportion", "##EstimatedChromosomeCount"]
-    with open(canvasvcf, 'r') as vcf:
+    with gzip.open(canvasvcf, 'rt') as vcf:
         for variant in vcf:
             variant = variant.rstrip('\n')
             variant_info = variant.split('\t')

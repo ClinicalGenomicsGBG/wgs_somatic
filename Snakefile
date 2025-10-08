@@ -126,14 +126,6 @@ include:        "workflows/rules/small_tools/bgzip.smk"
 include:       "workflows/rules/qc/aggregate_qc.smk"
 include:       "workflows/rules/qc/coverage.smk"
 
-
-ruleorder: merge_snvs_cnvs > dnascope_vcffilter
-ruleorder: canvas_germline > bgzip_vcf
-
-if tumorid and normalid:
-    ruleorder: canvas_somatic > bgzip_vcf
-
-
 all_result_files = []
 for result in resultsconf.values():
     all_result_files.extend(result)

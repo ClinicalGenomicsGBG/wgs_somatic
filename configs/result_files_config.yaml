@@ -40,15 +40,16 @@ tumor-normal:
   CNV:
     # CNV calling
     ## Canvas
-    - "{tumor}/canvas/{tumorid}_CNV_somatic.vcf.gz"
-    - "{tumor}/canvas/{tumorid}_CNV_somatic.vcf.gz.csi"
-    - "{tumor}/canvas/{tumorid}_somatic_CNV_called.seg"
-    - "{tumor}/canvas/{tumorid}_somatic_CNV_observed.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic.vcf.gz"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic.vcf.gz.csi"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic_called.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic_observed.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic_filt.vcf.xlsx"
     - "{tumor}/reports/{tumorid}_baf.igv"
-    - "{normal}/canvas/{normalid}_CNV_germline.vcf.gz"
-    - "{normal}/canvas/{normalid}_CNV_germline.vcf.gz.csi"
-    - "{normal}/canvas/{normalid}_germline_CNV_called.seg"
-    - "{normal}/canvas/{normalid}_germline_CNV_observed.seg"
+    - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz"
+    - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz.csi"
+    - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
+    - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
     - "{normal}/reports/{normalid}_baf.igv"
     ## Ascat
     - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
@@ -94,12 +95,10 @@ tumor-only:
   CNV:
     # CNV calling
     ## Canvas
-    # Note: The canvas output for tumor-only is called germline
-    # We can fix it or remove canvas entirely
-    - "{tumor}/canvas/{tumorid}_CNV_germline.vcf.gz"
-    - "{tumor}/canvas/{tumorid}_CNV_germline.vcf.gz.csi"
-    - "{tumor}/canvas/{tumorid}_germline_CNV_called.seg"
-    - "{tumor}/canvas/{tumorid}_germline_CNV_observed.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz.csi"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_called.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_observed.seg"
     - "{tumor}/reports/{tumorid}_baf.igv"
     ## Ascat
     - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
@@ -134,8 +133,8 @@ normal-only:
   CNV:
     # CNV calling
     ## Canvas
-    - "{normal}/canvas/{normalid}_CNV_germline.vcf.gz"
-    - "{normal}/canvas/{normalid}_CNV_germline.vcf.gz.csi"
-    - "{normal}/canvas/{normalid}_germline_CNV_called.seg"
-    - "{normal}/canvas/{normalid}_germline_CNV_observed.seg"
+    - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz"
+    - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz.csi"
+    - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
+    - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
     - "{normal}/reports/{normalid}_baf.igv"
