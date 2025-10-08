@@ -56,11 +56,6 @@ tumor-normal:
     - "{tumor}/ascat/{tumorid}_ascat_CN_smooth_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_CN_call_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
-    ## Control-FREEC
-    - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.png"
-    - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.seg"
-    - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.png"
-    - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.seg"
 
 
 tumor-only:
@@ -105,11 +100,6 @@ tumor-only:
     - "{tumor}/ascat/{tumorid}_ascat_CN_smooth_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_CN_call_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
-    ## Control-FREEC
-    - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.png"
-    - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.seg"
-    - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.png"
-    - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.seg"
 
 
 normal-only:

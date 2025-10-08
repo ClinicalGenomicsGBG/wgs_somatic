@@ -163,7 +163,7 @@ def read_sample_purities(info_files):
     return purities
 
 
-def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, canvasdict={}, sex='', tmb_dict={}, msi_dict={}, ascatdict={}, freec_purities={}):
+def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, canvasdict={}, sex='', tmb_dict={}, msi_dict={}, ascatdict={}):
     current_date = time.strftime("%Y-%m-%d")
     excelfile = xlsxwriter.Workbook(output)
     worksheet = excelfile.add_worksheet("qc_stats")
@@ -298,15 +298,6 @@ def create_excel(statsdict, output, normalname='', tumorname='', match_dict={}, 
             row += 1
 
     row += 2
-    worksheet.write(row, 0, "FREEC-PURITIES", cellformat["section"])
-    worksheet.write(row, 1, tumorname, cellformat["tumorname"])
-    row += 1
-    if freec_purities:
-        for ploidy, purities in freec_purities.items():
-            for purity in purities:  # Iterate over the list of purities for each ploidy
-                worksheet.write(row, 0, f"Ploidy {ploidy}", cellformat["header"])
-                worksheet.write(row, 1, purity)
-                row += 1
 
     excelfile.close()
 
@@ -320,7 +311,6 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         statsdict = extract_stats(tumordedup, "dedup",  "tumor", statsdict)
         tmb_dict = read_tmb_file(tmb)
         ascatdict = get_ascat_tumorinfo(ascatstats)
-        freec_purities = read_sample_purities(tumor_info_files)
     if normalcov:
         normalcovfile = os.path.basename(normalcov)
         normalname = normalcovfile.replace("_WGScov.tsv", "")
@@ -339,11 +329,11 @@ def create_excel_main(tumorcov='', ycov='', normalcov='', tumordedup='', normald
         if normalcov:
             # Tumour + Normal
             calculated_sex = calc_sex(normalcov, ycov)
-            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict, ascatdict=ascatdict, freec_purities=freec_purities)
+            create_excel(statsdict, output, normalname, tumorname, match_dict, canvas_dict, sex=calculated_sex, tmb_dict=tmb_dict, msi_dict=msi_dict, ascatdict=ascatdict)
         else:
             # Tumour only
             calculated_sex = calc_sex(tumorcov, ycov)
-            create_excel(statsdict, output, tumorname=tumorname, sex=calculated_sex, tmb_dict=tmb_dict, ascatdict=ascatdict, freec_purities=freec_purities)
+            create_excel(statsdict, output, tumorname=tumorname, sex=calculated_sex, tmb_dict=tmb_dict, ascatdict=ascatdict)
     else:
         # Normal only
         calculated_sex = calc_sex(normalcov, ycov)

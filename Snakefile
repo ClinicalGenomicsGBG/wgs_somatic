@@ -107,7 +107,6 @@ include:    "workflows/rules/mapping/generate_tdf.smk"
 if tumorid:
     include:        "workflows/rules/variantcalling/tnscope.smk"
     include:        "workflows/rules/variantcalling/pindel.smk"
-    include:        "workflows/rules/variantcalling/control-freec.smk"
     include:        "workflows/rules/variantcalling/ascat.smk"
 include:        "workflows/rules/variantcalling/dnascope.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"

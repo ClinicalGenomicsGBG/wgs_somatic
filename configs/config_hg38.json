@@ -16,10 +16,6 @@
             "kmerfile": "/canvasfiles/canvasfiles/kmer.fa",
             "filter13": "/canvasfiles/canvasfiles/filter13.bed"
         },
-        "control-freec":
-        {
-            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/control-freec-11.6.sif"
-        },
         "msi":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/msisensor-pro-1.3.0.sif"
@@ -69,7 +65,7 @@
             "genome_version": "hg38",
             "gc_content_file": "/clinical/exec/wgs_somatic/dependencies/ascat/GC_G1000_hg38.txt",
             "replic_timing_file": "/clinical/exec/wgs_somatic/dependencies/ascat/RT_G1000_hg38.txt",
-            "cytoBandIdeo": "/clinical/exec/wgs_somatic/dependencies/control_freec/cytoBandIdeo.txt"
+            "cytoBandIdeo": "/clinical/exec/wgs_somatic/dependencies/ascat/cytoBandIdeo.txt"
         },
         "tnscope":
         {
@@ -113,15 +109,6 @@
         {
             "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf"            
         },
-        "control-freec":
-        {
-            "ploidy": ["free","2"],
-            "chrLenFile": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs.fai",
-            "chrFiles": "/clinical/exec/wgs_somatic/dependencies/control_freec/hg38_chrs/",
-            "mappability": "/clinical/exec/wgs_somatic/dependencies/control_freec/out100m2_hg38.gem",
-            "cytoBandIdeo": "/clinical/exec/wgs_somatic/dependencies/control_freec/cytoBandIdeo.txt",
-            "shadow": "minimal"
-        },
         "share_to_resultdir":
         {
         },
@@ -135,14 +122,6 @@
             "svdb": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/svdb",
             "mantaconf": "/clinical/exec/wgs_somatic/dependencies/software/manta-1.6.0.centos6_x86_64/bin/configManta.py",
             "annotate_ref": "/clinical/exec/wgs_somatic/dependencies/refseq/hg38/RefseqAll_ncbiRefSeq_hg38_GenesGenepredictions.gtf",
-            "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools"
-        },
-        "convert_to_alissaformat":
-        {
-            "python": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/python"
-        },
-        "merge_snvs_cnvs":
-        {
             "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools"
         },
         "manta_summary":
