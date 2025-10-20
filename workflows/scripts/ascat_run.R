@@ -16,7 +16,8 @@ option_list <- list(
   make_option("--gc-content-file", type = "character", help = "Path to GC content file", metavar = "character"),
   make_option("--replic-timing-file", type = "character", help = "Path to replication timing file", metavar = "character"),
   make_option("--output-dir", type = "character", help = "Directory for output images and files", metavar = "character"),
-  make_option("--tumoronly", type = "logical", default = TRUE, help = "Set to TRUE for tumor-only analysis, FALSE for tumor-and-normal analysis", metavar = "logical")
+  make_option("--tumoronly", type = "logical", default = TRUE, help = "Set to TRUE for tumor-only analysis, FALSE for tumor-and-normal analysis", metavar = "logical"),
+  make_option("--penalty", type = "integer", default = 25, help = "Penalty parameter for ascat.aspcf", metavar = "integer")
 )
 
 # Parse command-line arguments
@@ -110,9 +111,9 @@ ascat.bc <- ascat.correctLogR(
 )
 if (opt$tumoronly) {
   gg <- ascat.predictGermlineGenotypes(ascat.bc, platform = "WGS_hg38_50X")
-  ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg)
+  ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg, penalty = opt$penalty)
 } else {
-  ascat.bc <- ascat.aspcf(ascat.bc)
+  ascat.bc <- ascat.aspcf(ascat.bc, penalty = opt$penalty)
 }
 
 # Restore the original working directory
