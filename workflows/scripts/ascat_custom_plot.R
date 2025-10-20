@@ -327,13 +327,16 @@ dev.off()
 # Write the smooth segmentation data to a file for IGV visualization
 output_seg_smooth <- opt$`output-seg-smooth`
 
+# Prepare CNs_df for output
+CNs_df_adj <- CNs_df %>%
+  dplyr::rename(Chromosome = chr, Start = pos) %>%
+  mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) # Add "chr" prefix for IGV compatibility
+
 # Add IGV-compatible header
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0 viewLimits=0:10", con = output_seg_smooth)
 
 # Process the segments file to output nMajor and nMinor as separate rows
-CNs_df %>%
-  dplyr::rename(Chromosome = chr, Start = pos) %>%
-  mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) %>%  # Add "chr" prefix for IGV compatibility
+CNs_df_adj %>%
   dplyr::select(Sample, Chromosome, Start, End, CN_smooth) %>%
   write.table(file = output_seg_smooth, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
 
@@ -344,9 +347,7 @@ output_seg_call <- opt$`output-seg-call`
 writeLines("#track graphType=points maxHeightPixels=300:300:300 color=0,0,0 altColor=0,0,0 viewLimits=0:10", con = output_seg_call)
 
 # Process the segments file to output nMajor and nMinor as separate rows
-CNs_df %>%
-  dplyr::rename(Chromosome = chr, Start = pos) %>%
-  mutate(Chromosome = paste0("chr", Chromosome), End = Start, Sample = opt$tumorname) %>%  # Add "chr" prefix for IGV compatibility
+CNs_df_adj %>%
   dplyr::select(Sample, Chromosome, Start, End, CN_call) %>%
   write.table(file = output_seg_call, sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE, append = TRUE)
 
