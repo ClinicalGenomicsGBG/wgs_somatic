@@ -137,6 +137,9 @@ def copy_results(outputdir, tumorname=None, normalname=None):
 
         # Read the results into the subdirectories unless they are marked toplevel
         for category, relpaths in results.items():
+            if category == "not_copied":
+                logger("Skipping 'not_copied' category as per configuration.")
+                continue
             dest_dir = resultdir if category == "toplevel" else os.path.join(resultdir, category)
 
             try:
@@ -151,16 +154,6 @@ def copy_results(outputdir, tumorname=None, normalname=None):
 
                 if os.path.exists(src_path):
                     try:
-                        # Do not copy .cram and .crai files
-                        if src_path.endswith('.cram') or src_path.endswith('.cram.crai'):
-                            logger(f"Skipping copy of {src_path} as it is a .cram or .crai file.")
-                            continue
-
-                        # Do not copy wgsadmin qc stats file
-                        if src_path.endswith('_qc_stats_wgsadmin.xlsx'):
-                            logger(f"Skipping copy of {src_path} as it is a wgsadmin qc stats file.")
-                            continue
-
                         copyfile(src_path, dest_path)
                         logger(f"Copied {src_path} to {dest_path}")
 

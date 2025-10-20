@@ -1,24 +1,34 @@
 tumor-normal:
   toplevel:
-    # Note: the cram and wgsadmin files are not copied to webstore but are added as a target to include them in the workdir
-    # The exception for these files is in copy_results() function in launch_snakemake.py
     # QC reports
     - "qc_report/{tumorid}_qc_stats.xlsx"
-    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
+    # CNV report
+    ## Ascat
+    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
+    # SNV/INDEL calling
+    ## TNscope
+    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
+    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
+    ## Pindel
+    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
+    # SV calling
+    ## Manta
+    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
+    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
+    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"  
+
+  IGV_files:
     # Read mapping
     - "{tumor}/realign/{tumorid}_REALIGNED.bam"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
     - "{normal}/realign/{normalid}_REALIGNED.bam"
     - "{normal}/realign/{normalid}_REALIGNED.bam.bai"
     - "{normal}/realign/{normalid}_REALIGNED.bam.tdf"
-    - "{normal}/realign/{normalid}_REALIGNED.cram"
-    - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
     # CNV_seg
     ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_copynumber_IGV.seg"
+    - "{tumor}/ascat/{tumorid}_ascat_CN_smooth_IGV.seg"
+    - "{tumor}/ascat/{tumorid}_ascat_CN_call_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
     ## Canvas
     - "{tumor}/canvas/{tumorid}_canvas_somatic_called.seg"
@@ -28,25 +38,13 @@ tumor-normal:
     - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
     - "{normal}/reports/{normalid}_baf.igv"
 
-  SNV_INDEL:
+  SNV_INDEL_germline:
     # SNV/INDEL calling
     ## TNscope
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
     - "{normal}/dnascope/{normalid}_germline.vcf.gz"
     - "{normal}/dnascope/{normalid}_germline.vcf.gz.csi"
-    ## Pindel
-    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
 
-  SV:
-    # SV calling
-    ## Manta
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"  
-
-  CNV:
+  CNV_vcf:
     # CNV calling
     ## Canvas
     - "{tumor}/canvas/{tumorid}_canvas_somatic.vcf.gz"
@@ -54,91 +52,102 @@ tumor-normal:
     - "{tumor}/canvas/{tumorid}_canvas_somatic_filt.vcf.xlsx"
     - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz"
     - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz.csi"
-    ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
-    - "{tumor}/ascat/{tumorid}_ascat_CN_smooth_IGV.seg"
-    - "{tumor}/ascat/{tumorid}_ascat_CN_call_IGV.seg"
-    - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
+
+  not_copied:
+    # Note: the following files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for these files is in copy_results() function in launch_snakemake.py
+    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
+    - "{normal}/realign/{normalid}_REALIGNED.cram"
+    - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
 
 
 tumor-only:
   toplevel:
     # QC reports
     - "qc_report/{tumorid}_qc_stats.xlsx"
-    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
-    # Read mapping
-    - "{tumor}/realign/{tumorid}_REALIGNED.bam"
-    - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
-    - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
-    # CNV_seg
+    # CNV report
     ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_copynumber_IGV.seg"
-    - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
-    ## Canvas
-    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_called.seg"
-    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_observed.seg"
-    - "{tumor}/reports/{tumorid}_baf.igv"
-
-  SNV_INDEL:
+    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     # SNV/INDEL calling
     ## TNscope
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
     ## Pindel
     - "{tumor}/pindel/{tumorid}_pindel.xlsx"
-
-  SV:
     # SV calling
     ## Manta
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"
 
-  CNV:
-    # CNV calling
+  IGV_files:
+    # Read mapping
+    - "{tumor}/realign/{tumorid}_REALIGNED.bam"
+    - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
+    - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
+    # CNV_seg
     ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
-    ## Canvas
-    - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz"
-    - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz.csi"
-    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_called.seg"
-    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_observed.seg"
-    - "{tumor}/reports/{tumorid}_baf.igv"
-    ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     - "{tumor}/ascat/{tumorid}_ascat_CN_smooth_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_CN_call_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
+    ## Canvas
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_called.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_observed.seg"
+    - "{tumor}/reports/{tumorid}_baf.igv"
+
+  CNV_vcf:
+    # CNV calling
+    ## Canvas
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz.csi"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_filt.vcf.xlsx"
+
+  not_copied:
+    # Note: the following files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for these files is in copy_results() function in launch_snakemake.py
+    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
+
+  not_copied:
+    # Note: the following files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for these files is in copy_results() function in launch_snakemake.py
+    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
 
 
 normal-only:
   toplevel:
     # QC reports
     - "qc_report/{normalid}_qc_stats.xlsx"
-    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
+    # SNV/INDEL calling
+    ## DNAScope
+    - "{normal}/dnascope/{normalid}_germline.vcf.gz"
+    - "{normal}/dnascope/{normalid}_germline.vcf.gz.csi"
+
+  IGV_files:
     # Read mapping
     - "{normal}/realign/{normalid}_REALIGNED.bam"
     - "{normal}/realign/{normalid}_REALIGNED.bam.bai"
     - "{normal}/realign/{normalid}_REALIGNED.bam.tdf"
-    - "{normal}/realign/{normalid}_REALIGNED.cram"
-    - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
     # CNV_seg
     ## Canvas
     - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
     - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
     - "{normal}/reports/{normalid}_baf.igv"
 
-  SNV_INDEL:
-    # SNV/INDEL calling
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz"
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz.csi"
-
-  CNV:
+  CNV_vcf:
     # CNV calling
     ## Canvas
     - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz"
     - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz.csi"
 
+  not_copied:
+    # Note: the following files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for these files is in copy_results() function in launch_snakemake.py
+    - "qc_report/{normalid}_qc_stats_wgsadmin.xlsx"
+    - "{normal}/realign/{normalid}_REALIGNED.cram"
+    - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
