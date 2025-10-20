@@ -19,8 +19,9 @@ rule filter_canvas:
     shadow:
         pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
+        vcf_unzipped = input.vcf[:-3]
         shell("gunzip {input.vcf}")
-        shell("grep -v 'Canvas:REF' {input.vcf[:-3]} > {output.vcf_out}")
+        shell("grep -v 'Canvas:REF' {vcf_unzipped} > {output.vcf_out}")
         shell("{params.annotate} -v {output.vcf_out} -g {params.annotate_ref} -o {wildcards.stype}/canvas/")
 
 if tumorid:
