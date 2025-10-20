@@ -111,13 +111,6 @@ tumor-only:
     - "{tumor}/realign/{tumorid}_REALIGNED.cram"
     - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
 
-  not_copied:
-    # Note: the following files are not copied to webstore but are added as a target to include them in the workdir
-    # The exception for these files is in copy_results() function in launch_snakemake.py
-    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
-
 
 normal-only:
   toplevel:
