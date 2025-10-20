@@ -54,8 +54,8 @@ rule dnascope_vcffilter:
         bcftools = pipeconfig["rules"]["dnascope_vcffilter"]["bcftools"],
         vcftools = pipeconfig["rules"]["dnascope_vcffilter"]["vcftools"],
     output:
-        germline_vcf = "{stype}/dnascope/{sname}_germline.vcf", 
-        germline_snv_vcf = temp("{stype}/dnascope/{sname}_germline_SNVsOnly.recode.vcf"),
+        germline_vcf = "{stype}/dnascope/{sname}_DNAscope_germline.vcf", 
+        germline_snv_vcf = temp("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf"),
     #shadow:
         #pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:

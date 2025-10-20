@@ -20,8 +20,8 @@ if normalid:
             min_tumor_support = filterconfig["sv_filter"]["min_tumor_support"],
             max_normal_support = filterconfig["sv_filter"]["max_normal_support"],
         output:
-            sv_vcf = "{stype}/manta/{sname}_somatic_mantaSV.vcf",
-            sv_xlsx = "{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx",
+            sv_vcf = "{stype}/manta/{sname}_manta_somatic.vcf",
+            sv_xlsx = "{stype}/manta/{sname}_manta_somatic.vcf.xlsx",
         shadow:
             pipeconfig["rules"].get("manta", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -53,8 +53,8 @@ else:
             annotate_ref = pipeconfig["rules"]["manta"]["annotate_ref"],
             min_tumor_support = filterconfig["sv_filter"]["min_tumor_support"],
         output:
-            sv_vcf = "{stype}/manta/{sname}_somatic_mantaSV.vcf",
-            sv_xlsx = "{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx",
+            sv_vcf = "{stype}/manta/{sname}_manta_somatic.vcf",
+            sv_xlsx = "{stype}/manta/{sname}_manta_somatic.vcf.xlsx",
         shadow:
             pipeconfig["rules"].get("manta", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -75,11 +75,11 @@ else:
 if normalid:
     rule manta_summary:
         input:
-            "{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx"
+            "{stype}/manta/{sname}_manta_somatic.vcf.xlsx"
         params:
             genelist = pipeconfig["rules"]["manta_summary"]["genelist"]
         output:
-            "{stype}/manta/{sname}_somatic_mantaSV_Summary.xlsx"
+            "{stype}/manta/{sname}_manta_somatic_Summary.xlsx"
         shadow:
             pipeconfig["rules"].get("manta_summary", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -88,11 +88,11 @@ if normalid:
 else:
     rule manta_summary:
         input:
-            "{stype}/manta/{sname}_somatic_mantaSV.vcf.xlsx"
+            "{stype}/manta/{sname}_manta_somatic.vcf.xlsx"
         params:
             genelist = pipeconfig["rules"]["manta_summary"]["genelist_tumoronly"]
         output:
-            "{stype}/manta/{sname}_somatic_mantaSV_Summary.xlsx"
+            "{stype}/manta/{sname}_manta_somatic_Summary.xlsx"
         shadow:
             pipeconfig["rules"].get("manta_summary", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
