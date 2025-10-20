@@ -7,15 +7,15 @@ tumor-normal:
     - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     # SNV/INDEL calling
     ## TNscope
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz"
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz.csi"
     ## Pindel
     - "{tumor}/pindel/{tumorid}_pindel.xlsx"
     # SV calling
     ## Manta
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"  
+    - "{tumor}/manta/{tumorid}_manta_somatic.vcf.gz"
+    - "{tumor}/manta/{tumorid}_manta_somatic.vcf.gz.csi"
+    - "{tumor}/manta/{tumorid}_manta_somatic_Summary.xlsx"
 
   IGV_files:
     # Read mapping
@@ -41,8 +41,8 @@ tumor-normal:
   SNV_INDEL_germline:
     # SNV/INDEL calling
     ## TNscope
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz"
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz.csi"
+    - "{normal}/dnascope/{normalid}_DNAscope_germline.vcf.gz"
+    - "{normal}/dnascope/{normalid}_DNAscope_germline.vcf.gz.csi"
 
   CNV_vcf:
     # CNV calling
@@ -72,15 +72,15 @@ tumor-only:
     - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     # SNV/INDEL calling
     ## TNscope
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz"
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz.csi"
     ## Pindel
     - "{tumor}/pindel/{tumorid}_pindel.xlsx"
     # SV calling
     ## Manta
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"
+    - "{tumor}/manta/{tumorid}_manta_somatic.vcf.gz"
+    - "{tumor}/manta/{tumorid}_manta_somatic.vcf.gz.csi"
+    - "{tumor}/manta/{tumorid}_manta_somatic_Summary.xlsx"
 
   IGV_files:
     # Read mapping
@@ -118,8 +118,8 @@ normal-only:
     - "qc_report/{normalid}_qc_stats.xlsx"
     # SNV/INDEL calling
     ## DNAScope
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz"
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz.csi"
+    - "{normal}/dnascope/{normalid}_DNAscope_germline.vcf.gz"
+    - "{normal}/dnascope/{normalid}_DNAscope_germline.vcf.gz.csi"
 
   IGV_files:
     # Read mapping
