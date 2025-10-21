@@ -1,7 +1,7 @@
 
 rule tmb_calculation:
     input:
-        somatic_vcf = "{stype}/tnscope/{sname}_somatic_w_normal.vcf"
+        somatic_vcf = "{stype}/tnscope/{sname}_TNscope_somatic_w_normal.vcf"
     params:
         calculate_tmb = os.path.join(workflow.basedir, "workflows/scripts/calculate_tmb.sh"),
         bcftools = pipeconfig["rules"]["tmb_calculation"]["bcftools"],

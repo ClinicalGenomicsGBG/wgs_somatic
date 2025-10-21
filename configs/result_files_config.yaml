@@ -2,138 +2,137 @@ tumor-normal:
   toplevel:
     # QC reports
     - "qc_report/{tumorid}_qc_stats.xlsx"
-    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
+    # CNV report
+    ## Ascat
+    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
+    # SNV/INDEL calling
+    ## TNscope
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz"
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz.csi"
+    ## Pindel
+    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
+    # SV calling
+    ## Manta
+    - "{tumor}/manta/{tumorid}_manta_somatic.vcf.gz"
+    - "{tumor}/manta/{tumorid}_manta_somatic.vcf.gz.csi"
+    - "{tumor}/manta/{tumorid}_manta_somatic_Summary.xlsx"
 
-  mapped_reads:
+  IGV_files:
     # Read mapping
-    # Note: the cram files are not copied to webstore but are added as a target to include them in the workdir
-    # The exception for the cram files is in copy_results() function in launch_snakemake.py
     - "{tumor}/realign/{tumorid}_REALIGNED.bam"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
     - "{normal}/realign/{normalid}_REALIGNED.bam"
     - "{normal}/realign/{normalid}_REALIGNED.bam.bai"
     - "{normal}/realign/{normalid}_REALIGNED.bam.tdf"
-    - "{normal}/realign/{normalid}_REALIGNED.cram"
-    - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
-
-  SNV_INDEL:
-    # SNV/INDEL calling
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz"
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz.csi"
-
-  SV:
-    # SV calling
-    ## Manta
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"  
-    ## Pindel
-    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
-
-  CNV:
-    # CNV calling
-    ## Canvas
-    - "{tumor}/canvas/{tumorid}_CNV_somatic.vcf.gz"
-    - "{tumor}/canvas/{tumorid}_CNV_somatic.vcf.gz.csi"
-    - "{tumor}/canvas/{tumorid}_somatic_CNV_called.seg"
-    - "{tumor}/canvas/{tumorid}_somatic_CNV_observed.seg"
-    - "{tumor}/reports/{tumorid}_baf.igv"
-    - "{normal}/canvas/{normalid}_CNV_germline.vcf.gz"
-    - "{normal}/canvas/{normalid}_CNV_germline.vcf.gz.csi"
-    - "{normal}/canvas/{normalid}_germline_CNV_called.seg"
-    - "{normal}/canvas/{normalid}_germline_CNV_observed.seg"
-    - "{normal}/reports/{normalid}_baf.igv"
+    # CNV_seg
     ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     - "{tumor}/ascat/{tumorid}_ascat_CN_smooth_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_CN_call_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
-    ## Control-FREEC
-    - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.png"
-    - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.seg"
-    - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.png"
-    - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.seg"
+    ## Canvas
+    - "{tumor}/canvas/{tumorid}_canvas_somatic_called.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic_observed.seg"
+    - "{tumor}/reports/{tumorid}_baf.igv"
+    - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
+    - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
+    - "{normal}/reports/{normalid}_baf.igv"
+
+  SNV_INDEL_germline:
+    # SNV/INDEL calling
+    ## TNscope
+    - "{normal}/dnascope/{normalid}_DNAscope_germline.vcf.gz"
+    - "{normal}/dnascope/{normalid}_DNAscope_germline.vcf.gz.csi"
+
+  CNV_vcf:
+    # CNV calling
+    ## Canvas
+    - "{tumor}/canvas/{tumorid}_canvas_somatic.vcf.gz"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic.vcf.gz.csi"
+    - "{tumor}/canvas/{tumorid}_canvas_somatic_filt.vcf.xlsx"
+    - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz"
+    - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz.csi"
+
+  not_copied:
+    # Note: the following files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for these files is in copy_results() function in launch_snakemake.py
+    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
 
 
 tumor-only:
   toplevel:
     # QC reports
     - "qc_report/{tumorid}_qc_stats.xlsx"
+    # CNV report
+    ## Ascat
+    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
+    # SNV/INDEL calling
+    ## TNscope
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz"
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz.csi"
+    ## Pindel
+    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
+    # SV calling
+    ## Manta
+    - "{tumor}/manta/{tumorid}_manta_somatic.vcf.gz"
+    - "{tumor}/manta/{tumorid}_manta_somatic.vcf.gz.csi"
+    - "{tumor}/manta/{tumorid}_manta_somatic_Summary.xlsx"
 
-  mapped_reads:
+  IGV_files:
     # Read mapping
     - "{tumor}/realign/{tumorid}_REALIGNED.bam"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
-    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
-
-  SNV_INDEL:
-    # SNV/INDEL calling
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
-    - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
-
-  SV:
-    # SV calling
-    ## Manta
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"
-    ## Pindel
-    - "{tumor}/pindel/{tumorid}_pindel.xlsx"
-
-  CNV:
-    # CNV calling
-    ## Canvas
-    # Note: The canvas output for tumor-only is called germline
-    # We can fix it or remove canvas entirely
-    - "{tumor}/canvas/{tumorid}_CNV_germline.vcf.gz"
-    - "{tumor}/canvas/{tumorid}_CNV_germline.vcf.gz.csi"
-    - "{tumor}/canvas/{tumorid}_germline_CNV_called.seg"
-    - "{tumor}/canvas/{tumorid}_germline_CNV_observed.seg"
-    - "{tumor}/reports/{tumorid}_baf.igv"
+    # CNV_seg
     ## Ascat
-    - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     - "{tumor}/ascat/{tumorid}_ascat_CN_smooth_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_CN_call_IGV.seg"
     - "{tumor}/ascat/{tumorid}_ascat_BAF_IGV.seg"
-    ## Control-FREEC
-    - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.png"
-    - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.seg"
-    - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.png"
-    - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.seg"
+    ## Canvas
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_called.seg"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_observed.seg"
+    - "{tumor}/reports/{tumorid}_baf.igv"
+
+  CNV_vcf:
+    # CNV calling
+    ## Canvas
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly.vcf.gz.csi"
+    - "{tumor}/canvas/{tumorid}_canvas_tumoronly_filt.vcf.xlsx"
+
+  not_copied:
+    # Note: the following files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for these files is in copy_results() function in launch_snakemake.py
+    - "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
 
 
 normal-only:
   toplevel:
     # QC reports
     - "qc_report/{normalid}_qc_stats.xlsx"
+    # SNV/INDEL calling
+    ## DNAScope
+    - "{normal}/dnascope/{normalid}_DNAscope_germline.vcf.gz"
+    - "{normal}/dnascope/{normalid}_DNAscope_germline.vcf.gz.csi"
 
-  mapped_reads:
+  IGV_files:
     # Read mapping
     - "{normal}/realign/{normalid}_REALIGNED.bam"
     - "{normal}/realign/{normalid}_REALIGNED.bam.bai"
     - "{normal}/realign/{normalid}_REALIGNED.bam.tdf"
-    - "{normal}/realign/{normalid}_REALIGNED.cram"
-    - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
+    # CNV_seg
+    ## Canvas
+    - "{normal}/canvas/{normalid}_canvas_germline_called.seg"
+    - "{normal}/canvas/{normalid}_canvas_germline_observed.seg"
+    - "{normal}/reports/{normalid}_baf.igv"
 
-  SNV_INDEL:
-    # SNV/INDEL calling
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz"
-    - "{normal}/dnascope/{normalid}_germline.vcf.gz.csi"
-
-  CNV:
+  CNV_vcf:
     # CNV calling
     ## Canvas
-    - "{normal}/canvas/{normalid}_CNV_germline.vcf.gz"
-    - "{normal}/canvas/{normalid}_CNV_germline.vcf.gz.csi"
-    - "{normal}/canvas/{normalid}_germline_CNV_called.seg"
-    - "{normal}/canvas/{normalid}_germline_CNV_observed.seg"
-    - "{normal}/reports/{normalid}_baf.igv"
+    - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz"
+    - "{normal}/canvas/{normalid}_canvas_germline.vcf.gz.csi"
+
+  not_copied:
+    # Note: the following files are not copied to webstore but are added as a target to include them in the workdir
+    # The exception for these files is in copy_results() function in launch_snakemake.py
+    - "qc_report/{normalid}_qc_stats_wgsadmin.xlsx"

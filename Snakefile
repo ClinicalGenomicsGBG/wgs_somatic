@@ -107,7 +107,6 @@ include:    "workflows/rules/mapping/generate_tdf.smk"
 if tumorid:
     include:        "workflows/rules/variantcalling/tnscope.smk"
     include:        "workflows/rules/variantcalling/pindel.smk"
-    include:        "workflows/rules/variantcalling/control-freec.smk"
     include:        "workflows/rules/variantcalling/ascat.smk"
 include:        "workflows/rules/variantcalling/dnascope.smk"
 include:        "workflows/rules/variantcalling/canvas.smk"
@@ -125,14 +124,6 @@ include:        "workflows/rules/small_tools/bgzip.smk"
 # QC
 include:       "workflows/rules/qc/aggregate_qc.smk"
 include:       "workflows/rules/qc/coverage.smk"
-
-
-ruleorder: merge_snvs_cnvs > dnascope_vcffilter
-ruleorder: canvas_germline > bgzip_vcf
-
-if tumorid and normalid:
-    ruleorder: canvas_somatic > bgzip_vcf
-
 
 all_result_files = []
 for result in resultsconf.values():

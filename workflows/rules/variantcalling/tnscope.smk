@@ -99,9 +99,9 @@ if normalid:
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
-            somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
-            somatic = "{stype}/tnscope/{sname}_somatic.vcf",
-            tnscope_filterstats = "{stype}/tnscope/{sname}_tnscope_filterstats.txt",
+            somatic_n = temp("{stype}/tnscope/{sname}_TNscope_somatic_w_normal.vcf"),
+            somatic = "{stype}/tnscope/{sname}_TNscope_somatic.vcf",
+            tnscope_filterstats = "{stype}/tnscope/{sname}_TNscope_filterstats.txt",
         #shadow:
         #    pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
@@ -139,9 +139,9 @@ else:
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
         output:
-            somatic_n = temp("{stype}/tnscope/{sname}_somatic_w_normal.vcf"),
-            somatic = "{stype}/tnscope/{sname}_somatic.vcf",
-            tnscope_filterstats = "{stype}/tnscope/{sname}_tnscope_filterstats.txt",
+            somatic_n = temp("{stype}/tnscope/{sname}_TNscope_somatic_w_normal.vcf"),
+            somatic = "{stype}/tnscope/{sname}_TNscope_somatic.vcf",
+            tnscope_filterstats = "{stype}/tnscope/{sname}_TNscope_filterstats.txt",
         shadow:
             pipeconfig["rules"].get("tnscope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
