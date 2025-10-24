@@ -123,7 +123,7 @@ if normalid:
             | {params.bcftools} filter   -s strand_bias      -e 'SOR > 3'                                -m + -Ou \
             | {params.bcftools} view -Ov > {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf
             {params.bcftools} view -f PASS -Ov {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf > {output.somatic_n}
-            {params.bcftools} view -s {wildcards.sname} {output.somatic_n} -Ov > {output.somatic}
+            {params.bcftools} view -s {tumorname} {output.somatic_n} -Ov > {output.somatic}
 
             # Generate filter statistics
             awk -F'\t' '!/^#/ {{ split($7, filters, ";");
@@ -143,7 +143,6 @@ else:
             pon_table = pipeconfig["rules"]["tnscope_vcffilter"]["pon_table"],
             inpon_header = "##INFO=<ID=INPON,Number=0,Type=Flag,Description=\"Exact CHROM:POS:REF:ALT present in PoN\">"
         output:
-            somatic_n = temp("{stype}/tnscope/{sname}_TNscope_somatic_w_normal.vcf"),
             somatic = "{stype}/tnscope/{sname}_TNscope_somatic.vcf",
             tnscope_filterstats = "{stype}/tnscope/{sname}_TNscope_filterstats.txt",
         threads:
@@ -167,8 +166,7 @@ else:
                 -h <(printf '{params.inpon_header}')                                                          -Ou \
             | {params.bcftools} annotate -x FILTER/panel_of_normals -i 'INFO/INPON=0' -k                      -Ou \
             | {params.bcftools} view -Ov > {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf
-            {params.bcftools} view -f PASS -Ov {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf > {output.somatic_n}
-            {params.bcftools} view -s {wildcards.sname} {output.somatic_n} -Ov > {output.somatic}
+            {params.bcftools} view -f PASS -Ov {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf > {output.somatic}
 
             # Generate filter statistics
             awk -F'\t' '!/^#/ {{ split($7, filters, ";");
