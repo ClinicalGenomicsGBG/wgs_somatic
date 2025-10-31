@@ -32,7 +32,7 @@ tumor-normal:
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.gz.csi"
     - "{tumor}/manta/{tumorid}_somatic_mantaSV.vcf.xlsx"
-    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"  
+    - "{tumor}/manta/{tumorid}_somatic_mantaSV_Summary.xlsx"
     ## Pindel
     - "{tumor}/pindel/{tumorid}_pindel.xlsx"
 
@@ -60,7 +60,6 @@ tumor-normal:
     - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.png"
     - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.seg"
 
-
 tumor-only:
   toplevel:
     # QC reports
@@ -78,6 +77,8 @@ tumor-only:
     # SNV/INDEL calling
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz"
     - "{tumor}/tnscope/{tumorid}_somatic.vcf.gz.csi"
+    - "{tumor}/tnscope/{tumorid}_somatic_vep_gnomadfilt.vcf.gz"
+    - "{tumor}/tnscope/{tumorid}_somatic_vep_gnomadfilt.vcf.gz.csi"
 
   SV:
     # SV calling
@@ -109,7 +110,6 @@ tumor-only:
     - "{tumor}/control-freec_2/{tumorid}_controlfreec_ploidy2.seg"
     - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.png"
     - "{tumor}/control-freec_free/{tumorid}_controlfreec_ploidyfree.seg"
-
 
 normal-only:
   toplevel:
