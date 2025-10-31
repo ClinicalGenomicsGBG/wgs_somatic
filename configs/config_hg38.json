@@ -37,6 +37,10 @@
             "dbsnp": "/clinical/exec/wgs_somatic/dependencies/ncbi/hg38/GRCh38.dbSNP156_common.vcf.gz",
             "dnascope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model",
             "tnscope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonTNscopeModelWGS0.2.model"
+        },
+        "vep":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/ensembl-vep-115.2.1.sif"
         }
     },
     "shadow": "copy-minimal",
@@ -149,6 +153,10 @@
         {
             "msi_list": "/clinical/exec/wgs_somatic/dependencies/msi/GCA_000001405.15_GRCh38_no_alt_analysis_set.list",
             "msi_bed": "/clinical/exec/wgs_somatic/dependencies/msi/SelectedMSIloci2019Sorted_hg38lift.bed"
+        },
+        "vep_annotate":
+        {
+            "cache": "/clinical/exec/wgs_somatic/dependencies/vep/115"
         }
     }
 }
