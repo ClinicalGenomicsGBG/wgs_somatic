@@ -68,8 +68,8 @@ tumor-only:
     ## TNscope
     - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz"
     - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz.csi"
-    - "{tumor}/tnscope/{tumorid}_somatic_vep_gnomadfilt.vcf.gz"
-    - "{tumor}/tnscope/{tumorid}_somatic_vep_gnomadfilt.vcf.gz.csi"
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic_vep_gnomadfilt.vcf.gz"
+    - "{tumor}/tnscope/{tumorid}_TNscope_somatic_vep_gnomadfilt.vcf.gz.csi"
     ## Pindel
     - "{tumor}/pindel/{tumorid}_pindel.xlsx"
     # SV calling
