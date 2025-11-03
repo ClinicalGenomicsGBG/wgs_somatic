@@ -1,0 +1,11 @@
+name: ensembl-vep-115.2.1
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - ensembl-vep=115.2
+  - bcftools
+  - perl>=5.32
+  - perl-compress-raw-zlib>=2.201
+  - htslib
+  - samtools

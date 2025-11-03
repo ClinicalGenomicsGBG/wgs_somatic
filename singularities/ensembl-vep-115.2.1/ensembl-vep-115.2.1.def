@@ -1,0 +1,19 @@
+Bootstrap: docker
+From: mambaorg/micromamba
+
+%files
+    ensembl-vep-115.2.1.yaml  /ensembl-vep-115.2.1.yaml
+
+%post -c /bin/bash
+    micromamba install -n base --file /ensembl-vep-115.2.1.yaml && \
+    micromamba clean --all --yes
+
+%environment
+    export PATH="${MAMBA_ROOT_PREFIX}/bin:$PATH"
+    export BCFTOOLS_PLUGINS=/opt/conda/libexec/bcftools
+
+%runscript
+    #!/bin/bash
+
+    # Activate base environment
+    source /usr/local/bin/_activate_current_env.sh
