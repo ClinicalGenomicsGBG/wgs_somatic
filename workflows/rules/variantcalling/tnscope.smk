@@ -100,6 +100,7 @@ if normalid:
         output:
             somatic_n = temp("{stype}/tnscope/{sname}_TNscope_somatic_w_normal.vcf"),
             somatic = "{stype}/tnscope/{sname}_TNscope_somatic.vcf",
+            tnscope_filters = temp("{stype}/tnscope/{sname}_TNscope_filters.vcf"),
             tnscope_filterstats = "{stype}/tnscope/{sname}_TNscope_filterstats.txt",
         threads:
             clusterconf["tnscope_vcffilter"]["threads"]
@@ -121,15 +122,15 @@ if normalid:
             | {params.bcftools} filter   -s MLrejected       -e 'INFO/ML_PROB>0.6'                       -m + -Ou \
             | {params.bcftools} filter   -s orientation_bias -e 'FMT/FOXOG[0] == 1'                      -m + -Ou \
             | {params.bcftools} filter   -s strand_bias      -e 'SOR > 3'                                -m + -Ou \
-            | {params.bcftools} view -Ov > {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf
-            {params.bcftools} view -f PASS -Ov {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf > {output.somatic_n}
+            | {params.bcftools} view -Ov > {output.tnscope_filters}
+            {params.bcftools} view -f PASS -Ov {output.tnscope_filters} > {output.somatic_n}
             {params.bcftools} view -s {tumorname} {output.somatic_n} -Ov > {output.somatic}
 
             # Generate filter statistics
             awk -F'\t' '!/^#/ {{ split($7, filters, ";");
                 for (i in filters) count[filters[i]]++; total++; }}
                 END {{ for (f in count) {{ fraction = count[f] / total; printf "%s\\t%d\\t%.4f\\n", f, count[f], fraction; }}
-                }}' {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf \
+                }}' {output.tnscope_filters} \
             | sort > {output.tnscope_filterstats}
             """
 
@@ -144,6 +145,7 @@ else:
             inpon_header = "##INFO=<ID=INPON,Number=0,Type=Flag,Description=\"Exact CHROM:POS:REF:ALT present in PoN\">"
         output:
             somatic = "{stype}/tnscope/{sname}_TNscope_somatic.vcf",
+            tnscope_filters = temp("{stype}/tnscope/{sname}_TNscope_filters.vcf"),
             tnscope_filterstats = "{stype}/tnscope/{sname}_TNscope_filterstats.txt",
         threads:
             clusterconf["tnscope_vcffilter"]["threads"]
@@ -165,14 +167,14 @@ else:
             | {params.bcftools} annotate -a {params.pon_table} -c CHROM,POS,REF,ALT,INFO/INPON \
                 -h <(printf '{params.inpon_header}')                                                          -Ou \
             | {params.bcftools} annotate -x FILTER/panel_of_normals -i 'INFO/INPON=0' -k                      -Ou \
-            | {params.bcftools} view -Ov > {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf
-            {params.bcftools} view -f PASS -Ov {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf > {output.somatic}
+            | {params.bcftools} view -Ov > {output.tnscope_filters}
+            {params.bcftools} view -f PASS -Ov {output.tnscope_filters} > {output.somatic}
 
             # Generate filter statistics
             awk -F'\t' '!/^#/ {{ split($7, filters, ";");
                 for (i in filters) count[filters[i]]++; total++; }}
                 END {{ for (f in count) {{ fraction = count[f] / total; printf "%s\\t%d\\t%.4f\\n", f, count[f], fraction; }}
-                }}' {params.outputdir}/{wildcards.sname}_TNscope_filtered.vcf \
+                }}' {output.tnscope_filters} \
             | sort > {output.tnscope_filterstats}
             """
 
