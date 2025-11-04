@@ -17,6 +17,7 @@ rule somalier_extract:
       -d {params.outdir} \
       --sites {params.sites} \
       -f {params.reference} \
+      --sample-prefix={wildcards.stype}_ \
       {input}
     mv {params.outdir}/*.somalier {output}
     """
@@ -37,6 +38,7 @@ rule somalier_relate:
   shell:
     """
     somalier relate \
+      -i \
       -o {params.outpath} \
       {input.normal_somalier} {input.tumor_somalier}
     """
