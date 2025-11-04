@@ -1,0 +1,18 @@
+Bootstrap: docker
+From: mambaorg/micromamba
+
+%files
+        somalier-0.3.1.yaml /somalier-0.3.1.yaml
+
+%post -c /bin/bash
+    micromamba install -n base --file somalier-0.3.1.yaml && \
+    micromamba clean --all --yes
+
+%environment
+    export PATH="${MAMBA_ROOT_PREFIX}/bin:$PATH"
+
+%runscript
+    #!/bin/bash
+
+    # Activate base environment
+    source /usr/local/bin/_activate_current_env.sh
