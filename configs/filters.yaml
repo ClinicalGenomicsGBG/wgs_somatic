@@ -10,3 +10,6 @@ sv_filter:
   ## Need both paired and split reads in the tumor supporting the alternate allele
   ## Remove duplicate (reciprocal) SVs
   ## Filter to only keep "PASS"
+
+gnomad_filter:
+  max_allele_frequency: 0.01

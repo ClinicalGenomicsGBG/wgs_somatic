@@ -34,6 +34,8 @@ rule vep_annotate:
 rule vep_gnomad_filter:
   input:
     "{path}/{file}_vep.vcf"
+  params:
+    max_af = filterconfig["gnomad_filter"]["max_allele_frequency"]
   output:
     temp("{path}/{file}_vep_gnomadfilt.vcf")
   singularity:
@@ -46,7 +48,7 @@ rule vep_gnomad_filter:
     bcftools \
       +split-vep \
       -c gnomADe_AF:Float,gnomADg_AF:Float \
-      -e 'gnomADe_AF>0.01 || gnomADg_AF>0.01' \
+      -e 'gnomADe_AF>{params.max_af} || gnomADg_AF>{params.max_af}' \
       -o {output} {input}
     """
 
