@@ -8,8 +8,8 @@ rule vep_annotate:
     reference = pipeconfig["referencegenome"],
     cache = pipeconfig["rules"]["vep_annotate"]["cache"]
   output:
-    temp("{path}/{file}_vep.vcf"),
-    temp("{path}/{file}_vep.vcf_warnings.txt")
+    vcf = temp("{path}/{file}_vep.vcf"),
+    warnings = temp("{path}/{file}_vep.vcf_warnings.txt")
   singularity:
     pipeconfig["singularities"]["vep"]["sing"]
   threads:
@@ -18,7 +18,7 @@ rule vep_annotate:
     """
     vep \
       --input_file {input} \
-      --output_file {output} \
+      --output_file {output.vcf} \
       --vcf \
       --cache \
       --dir_cache {params.cache} \
