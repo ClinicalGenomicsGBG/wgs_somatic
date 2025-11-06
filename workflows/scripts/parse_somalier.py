@@ -16,12 +16,21 @@ class SomalierParser:
     """
 
     def __init__(
-        self, pairs_file, samples_file, tumorstring="tumor", normalstring="normal"
+        self,
+        pairs_file,
+        samples_file,
+        tumorstring="tumor",
+        normalstring="normal",
+        match_cutoff=0.95,
     ):
         self.relatedness = self.parse_somalier_pairs(pairs_file)
         self.sampleid, self.sex, self.y_depth_mean = self.parse_somalier_samples(
             samples_file, tumorstring, normalstring
         )
+        if self.relatedness is not None and self.relatedness >= match_cutoff:
+            self.match = True
+        else:
+            self.match = False
 
     def parse_somalier_pairs(self, pairs_file):
         """
