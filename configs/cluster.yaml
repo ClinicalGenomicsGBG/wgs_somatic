@@ -105,20 +105,5 @@ vep_gnomad_filter:
   output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
   error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
 
-control_freec_pileup:
-  threads: 64
-
-control_freec_run:
-  threads: 4
-  name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
-  output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
-  error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
-
-control_freec_plot:
-  threads: 4
-  name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
-  output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
-  error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
-
 ascat_run:
   threads: 16
