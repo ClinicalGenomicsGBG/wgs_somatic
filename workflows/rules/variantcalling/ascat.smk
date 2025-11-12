@@ -1,138 +1,82 @@
+# vim: syntax=python tabstop=4 expandtab
+# coding: utf-8
+
 import os
-from workflows.scripts.sex import calc_sex
+from workflows.scripts.parse_somalier import SomalierParser
 
-# Helper function to resolve file paths dynamically
-def get_cov_files(wildcards):
-    if normalid:
-        # If normal is included in the run, the Ycov and WGScov files are taken from the normal sample
-        return {
-            "wgscov": "{stype}/reports/{sname}_WGScov.tsv".format(
-                stype=sampleconfig[normalname]["stype"], sname=normalid),
-            "ycov": "{stype}/reports/{sname}_Ycov.tsv".format(
-                stype=sampleconfig[normalname]["stype"], sname=normalid)
-        }
-    else:
-        # If no normal is included, the Ycov and WGScov files are taken from the tumor sample
-        return {
-            "wgscov": "{stype}/reports/{sname}_WGScov.tsv".format(
-                stype=sampleconfig[tumorname]["stype"], sname=tumorid),
-            "ycov": "{stype}/reports/{sname}_Ycov.tsv".format(
-                stype=sampleconfig[tumorname]["stype"], sname=tumorid)
-        }
-
-if normalid:
-    rule ascat_run:
-        input:
-            tumor_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            normal_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            wgscov = lambda wildcards: get_cov_files(wildcards)["wgscov"],
-            ycov = lambda wildcards: get_cov_files(wildcards)["ycov"]
-        params:
-            # alleleCounter executable is in conda bin directory in the ascat container
-            allelecounter_exe = pipeconfig["rules"]["ascat_run"]["allelecounter_exe"],
-            alleles_prefix = pipeconfig["rules"]["ascat_run"]["alleles_prefix"],
-            loci_prefix = pipeconfig["rules"]["ascat_run"]["loci_prefix"],
-            # calc_sex outputs male / female, ascat Rscript accepts male/XY or female/XX
-            # ascat will currently not calculate on chrY but will add it to the plot depending on sex
-            # see also: https://github.com/VanLoo-lab/ascat/issues/125
-            gender = lambda wildcards: calc_sex(
-                get_cov_files(wildcards)["wgscov"],
-                get_cov_files(wildcards)["ycov"]
-            ),            
-            genome_version = pipeconfig["rules"]["ascat_run"]["genome_version"],
-            gc_content_file = pipeconfig["rules"]["ascat_run"]["gc_content_file"],
-            replic_timing_file = pipeconfig["rules"]["ascat_run"]["replic_timing_file"],
-            ascat_run_script = f"{ROOT_DIR}/workflows/scripts/ascat_run.R",
-        output:
-            # All output will be stored in the temporary output_directory. 
-            # The Rdata and segments files are moved to the below output locations for further processing.
-            output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
-            rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
-            stats = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
-        singularity:
-            pipeconfig["singularities"]["ascat"]["sing"]
-        threads:
-            clusterconf["ascat_run"]["threads"]
-        shell:
-            """
-            Rscript {params.ascat_run_script} \
-                --tumor-bam {input.tumor_bam} \
-                --tumor-name {wildcards.sname} \
-                --normal-bam {input.normal_bam} \
-                --normal-name {wildcards.sname}_normal \
-                --allelecounter-exe {params.allelecounter_exe} \
-                --alleles-prefix {params.alleles_prefix} \
-                --loci-prefix {params.loci_prefix} \
-                --gender {params.gender} \
-                --genome-version {params.genome_version} \
-                --nthreads {threads} \
-                --gc-content-file {params.gc_content_file} \
-                --replic-timing-file {params.replic_timing_file} \
-                --output-dir {output.output_dir} \
-                --tumoronly FALSE
-            mv {output.output_dir}/{wildcards.sname}_ascat_bc.Rdata {output.rdata_file}
-            mv {output.output_dir}/{wildcards.sname}_ascat_stats.tsv {output.stats}
-            """
-
-else:
-    rule ascat_run:
-        input:
-            tumor_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-            wgscov = lambda wildcards: get_cov_files(wildcards)["wgscov"],
-            ycov = lambda wildcards: get_cov_files(wildcards)["ycov"]
-        params:
-            allelecounter_exe = pipeconfig["rules"]["ascat_run"]["allelecounter_exe"],
-            alleles_prefix = pipeconfig["rules"]["ascat_run"]["alleles_prefix"],
-            loci_prefix = pipeconfig["rules"]["ascat_run"]["loci_prefix"],
-            gender = lambda wildcards: calc_sex(
-                get_cov_files(wildcards)["wgscov"],
-                get_cov_files(wildcards)["ycov"]
-            ),            
-            genome_version = pipeconfig["rules"]["ascat_run"]["genome_version"],
-            gc_content_file = pipeconfig["rules"]["ascat_run"]["gc_content_file"],
-            replic_timing_file = pipeconfig["rules"]["ascat_run"]["replic_timing_file"],
-            ascat_run_script = f"{ROOT_DIR}/workflows/scripts/ascat_run.R",
-        output:
-            output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
-            rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
-            stats = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
-        singularity:
-            pipeconfig["singularities"]["ascat"]["sing"]
-        threads:
-            clusterconf["ascat_run"]["threads"]
-        shell:
-            """
-            Rscript {params.ascat_run_script} \
-                --tumor-bam {input.tumor_bam} \
-                --tumor-name {wildcards.sname} \
-                --allelecounter-exe {params.allelecounter_exe} \
-                --alleles-prefix {params.alleles_prefix} \
-                --loci-prefix {params.loci_prefix} \
-                --gender {params.gender} \
-                --genome-version {params.genome_version} \
-                --nthreads {threads} \
-                --gc-content-file {params.gc_content_file} \
-                --replic-timing-file {params.replic_timing_file} \
-                --output-dir {output.output_dir} \
-                --tumoronly TRUE
-            mv {output.output_dir}/{wildcards.sname}_ascat_bc.Rdata {output.rdata_file}
-            mv {output.output_dir}/{wildcards.sname}_ascat_stats.tsv {output.stats}
-            """
+rule ascat_run:
+    input:
+        tumor_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=tumortype),
+        normal_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=normaltype) if normalid else [],
+        somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=normaltype if normalid else tumortype),
+        somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=normaltype if normalid else tumortype),
+    params:
+       # alleleCounter executable is in conda bin directory in the ascat container
+        allelecounter_exe = pipeconfig["rules"]["ascat_run"]["allelecounter_exe"],
+        alleles_prefix = pipeconfig["rules"]["ascat_run"]["alleles_prefix"],
+        loci_prefix = pipeconfig["rules"]["ascat_run"]["loci_prefix"],
+        # SomalierParser outputs male / female, ascat Rscript accepts male/XY or female/XX
+        # ascat will currently not calculate on chrY but will add it to the plot depending on sex
+        # see also: https://github.com/VanLoo-lab/ascat/issues/125
+        sex = lambda wildcards, input: SomalierParser(
+            pairs_file=f"{input.somalier_pairs}",
+            samples_file=f"{input.somalier_samples}",
+            tumorstring=tumortype,
+            normalstring=normaltype).sex,
+        genome_version = pipeconfig["rules"]["ascat_run"]["genome_version"],
+        gc_content_file = pipeconfig["rules"]["ascat_run"]["gc_content_file"],
+        replic_timing_file = pipeconfig["rules"]["ascat_run"]["replic_timing_file"],
+        ascat_run_script = f"{ROOT_DIR}/workflows/scripts/ascat_run.R",
+        tumoronly = "TRUE" if not normalid else "FALSE",
+        normal_bam_arg = lambda wildcards, input: f"--normal-bam {input.normal_bam}" if input.normal_bam else "",
+        normal_name_arg = lambda wildcards, input: f"--normal-name {normalid}" if normalid else "",
+    output:
+        # All output will be stored in the temporary output_directory. 
+        # The Rdata and segments files are moved to the below output locations for further processing.
+        output_dir = temp(directory("{stype}/ascat/{sname}_run_output")),
+        rdata_file = temp("{stype}/ascat/{sname}_ascat_bc.Rdata"),
+        stats = temp("{stype}/ascat/{sname}_ascat_stats.tsv"),
+    singularity:
+        pipeconfig["singularities"]["ascat"]["sing"]
+    threads:
+        clusterconf["ascat_run"]["threads"]
+    shell:
+        """
+        export XDG_CACHE_HOME="${{TMPDIR:-/tmp}}";
+        Rscript {params.ascat_run_script} \
+            --tumor-bam {input.tumor_bam} \
+            --tumor-name {wildcards.sname} \
+            {params.normal_bam_arg} \
+            {params.normal_name_arg} \
+            --allelecounter-exe {params.allelecounter_exe} \
+            --alleles-prefix {params.alleles_prefix} \
+            --loci-prefix {params.loci_prefix} \
+            --gender {params.sex} \
+            --genome-version {params.genome_version} \
+            --nthreads {threads} \
+            --gc-content-file {params.gc_content_file} \
+            --replic-timing-file {params.replic_timing_file} \
+            --output-dir {output.output_dir} \
+            --tumoronly {params.tumoronly}
+        mv {output.output_dir}/{wildcards.sname}_ascat_bc.Rdata {output.rdata_file}
+        mv {output.output_dir}/{wildcards.sname}_ascat_stats.tsv {output.stats}
+        """
 
 rule ascat_plot:
     input:
         rdata_file = "{stype}/ascat/{sname}_ascat_bc.Rdata",
-        wgscov = lambda wildcards: get_cov_files(wildcards)["wgscov"],
-        ycov = lambda wildcards: get_cov_files(wildcards)["ycov"]
+        somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=normaltype if normalid else tumortype),
+        somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=normaltype if normalid else tumortype),
     params:
         tumorname = tumorname,
-        gender = lambda wildcards: calc_sex(
-                get_cov_files(wildcards)["wgscov"],
-                get_cov_files(wildcards)["ycov"]
-        ),        
         genome_fai = pipeconfig["referencefai"],
         ascat_plot_script = f"{ROOT_DIR}/workflows/scripts/ascat_custom_plot.R",
         cytoBandIdeo = pipeconfig["rules"]["ascat_run"]["cytoBandIdeo"],
+        sex = lambda wildcards, input: SomalierParser(
+            pairs_file=f"{input.somalier_pairs}",
+            samples_file=f"{input.somalier_samples}",
+            tumorstring=tumortype,
+            normalstring=normaltype).sex,
     output:
         plot = "{stype}/ascat/{sname}_ascat_plot.pdf",
         seg_smooth = "{stype}/ascat/{sname}_ascat_CN_smooth_IGV.seg",
@@ -142,9 +86,10 @@ rule ascat_plot:
         pipeconfig["singularities"]["ascat"]["sing"]
     shell:
         """
+        export XDG_CACHE_HOME="${{TMPDIR:-/tmp}}";
         Rscript {params.ascat_plot_script} \
             --tumorname {params.tumorname} \
-            --gender {params.gender} \
+            --gender {params.sex} \
             --genome-fai {params.genome_fai} \
             --Rdata-file {input.rdata_file} \
             --cytoband {params.cytoBandIdeo} \
