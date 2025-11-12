@@ -67,8 +67,6 @@ tumor-only:
     - "{tumor}/ascat/{tumorid}_ascat_plot.pdf"
     # SNV/INDEL calling
     ## TNscope
-    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz"
-    - "{tumor}/tnscope/{tumorid}_TNscope_somatic.vcf.gz.csi"
     - "{tumor}/tnscope/{tumorid}_TNscope_somatic_vep_gnomadfilt.vcf.gz"
     - "{tumor}/tnscope/{tumorid}_TNscope_somatic_vep_gnomadfilt.vcf.gz.csi"
     ## Pindel
