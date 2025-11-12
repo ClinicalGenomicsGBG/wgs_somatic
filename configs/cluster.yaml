@@ -1,112 +1,124 @@
 __default__:
-    queue: routine.q
-    threads: 20
-    excl: excl=1
-    name: "WGSsomatic_{rule}_{wildcards.sname}"
-    output: "WGSsomatic_{rule}_{wildcards.sname}.stdout"
-    error: "WGSsomatic_{rule}_{wildcards.sname}.stderr"
+  queue: routine.q
+  threads: 20
+  excl: excl=1
+  name: "WGSsomatic_{rule}_{wildcards.sname}"
+  output: "WGSsomatic_{rule}_{wildcards.sname}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.sname}.stderr"
 
 mapping:
-    name: "WGSsomatic_{rule}_{wildcards.fastqpattern}"
-    output: "WGSsomatic_{rule}_{wildcards.fastqpattern}.stdout"
-    error: "WGSsomatic_{rule}_{wildcards.fastqpattern}.stderr"
-    threads: 40
+  name: "WGSsomatic_{rule}_{wildcards.fastqpattern}"
+  output: "WGSsomatic_{rule}_{wildcards.fastqpattern}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.fastqpattern}.stderr"
+  threads: 40
 
 cram:
-    threads: 40
+  threads: 40
 
 rtgtools_eval:
-    threads: 10
+  threads: 10
 
 dedup:
-    threads: 20
+  threads: 20
 
 realign_mapping:
-    threads: 20
+  threads: 20
 
 baserecal:
-    threads: 20
+  threads: 20
 
 tnscope:
-    threads: 40
+  threads: 40
 
 tnscope_modelfilter:
-    threads: 20
+  threads: 20
 
 tnscope_vcffilter:
-    threads: 2
+  threads: 2
 
 dnascope:
-    threads: 40
+  threads: 40
 
 generate_tdf:
-    threads: 4
+  threads: 4
 
 dnascope_modelfilter:
-    threads: 20
+  threads: 20
 
 dnascope_vcffilter:
-    threads: 2
+  threads: 2
 
 ballele_plot:
-    threads: 2
+  threads: 2
 
 wgs_coverage:
-    threads: 4
+  threads: 4
 
 y_coverage:
-    threads: 4
+  threads: 4
 
 manta_somatic:
-    threads: 20
+  threads: 20
 
 manta_germline:
-    threads: 20
+  threads: 20
 
 manta_summary:
-    threads: 4
+  threads: 4
 
 pindel:
-    threads: 4
+  threads: 4
 
 msi:
-    threads: 64
+  threads: 64
 
 msi_filtered:
-    threads: 64
+  threads: 64
 
 cutadapt:
-    threads:  1
-    excl: excl=1
+  threads: 1
+  excl: excl=1
 
 bgzip_vcf:
-    threads: 1
-    excl: excl=1
-    name: "WGSsomatic_{rule}_{wildcards.file}"
-    output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
-    error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
+  threads: 1
+  excl: excl=1
+  name: "WGSsomatic_{rule}_{wildcards.file}"
+  output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
 
 index_vcf:
-    threads: 1
-    excl: excl=1
-    name: "WGSsomatic_{rule}_{wildcards.file}"
-    output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
-    error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
+  threads: 1
+  excl: excl=1
+  name: "WGSsomatic_{rule}_{wildcards.file}"
+  output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
+
+vep_annotate:
+  threads: 4
+  name: "WGSsomatic_{rule}_{wildcards.file}"
+  output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
+
+vep_gnomad_filter:
+  threads: 1
+  name: "WGSsomatic_{rule}_{wildcards.file}"
+  output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
 
 control_freec_pileup:
-    threads: 64
+  threads: 64
 
 control_freec_run:
-    threads: 4
-    name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
-    output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
-    error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
+  threads: 4
+  name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
+  output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
+  error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
 
 control_freec_plot:
-    threads: 4
-    name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
-    output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
-    error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
+  threads: 4
+  name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
+  output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
+  error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
 
 ascat_run:
-    threads: 16
+  threads: 16
