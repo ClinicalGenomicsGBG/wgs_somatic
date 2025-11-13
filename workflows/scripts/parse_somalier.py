@@ -13,6 +13,7 @@ class SomalierParser:
         relatedness (float): The (first) relatedness value from the pairs file.
         sex (male/female/unknown): The parsed sex prediction from the normal (if available) or otherwise tumor sample.
         y_depth_mean (float): The Y_depth_mean from the normal (if available) or otherwise tumor sample.
+        match (bool): Whether the relatedness meets the match cutoff.
     """
 
     def __init__(
