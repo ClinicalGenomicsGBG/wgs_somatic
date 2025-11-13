@@ -11,6 +11,7 @@ class SomalierParser:
 
     Attributes:
         relatedness (float): The (first) relatedness value from the pairs file.
+        sampleid (str): The sample ID from the normal (if available) or otherwise tumor sample.
         sex (male/female/unknown): The parsed sex prediction from the normal (if available) or otherwise tumor sample.
         y_depth_mean (float): The Y_depth_mean from the normal (if available) or otherwise tumor sample.
         match (bool): Whether the relatedness meets the match cutoff.
@@ -51,13 +52,14 @@ class SomalierParser:
     ):
         """
         Parses a somalier samples.tsv file using csv.
-        Returns the sex and Y_depth_mean for the normal if available or otherwise the tumor.
+        Returns the sampleid, sex and Y_depth_mean for the normal if available or otherwise the tumor.
         """
         sex_map = {"1": "male", "2": "female"}
         normal = tumor = None
         with open(samples_file, newline="") as f:
             reader = csv.DictReader(f, delimiter="\t")
             for row in reader:
+                # In the somalier_extract rule, the normal and tumor string are prepended
                 if row["sample_id"].startswith(normalstring):
                     normal = (
                         row["sample_id"],
