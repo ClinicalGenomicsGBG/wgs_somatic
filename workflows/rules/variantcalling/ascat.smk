@@ -8,7 +8,7 @@ rule ascat_run:
         somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=normaltype if normalid else tumortype),
         somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=normaltype if normalid else tumortype),
     params:
-       # alleleCounter executable is in conda bin directory in the ascat container
+        # alleleCounter executable is in conda bin directory in the ascat container
         allelecounter_exe = pipeconfig["rules"]["ascat_run"]["allelecounter_exe"],
         alleles_prefix = pipeconfig["rules"]["ascat_run"]["alleles_prefix"],
         loci_prefix = pipeconfig["rules"]["ascat_run"]["loci_prefix"],
