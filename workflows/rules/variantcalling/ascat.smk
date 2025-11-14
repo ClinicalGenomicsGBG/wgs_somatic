@@ -28,6 +28,7 @@ rule ascat_run:
         tumoronly = "TRUE" if not normalid else "FALSE",
         normal_bam_arg = lambda wildcards, input: f"--normal-bam {input.normal_bam}" if input.normal_bam else "",
         normal_name_arg = lambda wildcards, input: f"--normal-name {normalid}" if normalid else "",
+        vstamp = f"{VDIR}/ascat_run.txt"
     output:
         # All output will be stored in the temporary output_directory. 
         # The Rdata and segments files are moved to the below output locations for further processing.
@@ -40,7 +41,14 @@ rule ascat_run:
         clusterconf["ascat_run"]["threads"]
     shell:
         """
+        # Set cache to avoid protected files
         export XDG_CACHE_HOME="${{TMPDIR:-/tmp}}";
+
+        # Version info
+        Rscript --version 2>&1 | head -n 1 > {params.vstamp}
+        Rscript -e "library(ASCAT); cat(paste('ASCAT version:', packageVersion('ASCAT')),'\n')" >> {params.vstamp}
+
+        # Run ascat
         Rscript {params.ascat_run_script} \
             --tumor-bam {input.tumor_bam} \
             --tumor-name {wildcards.sname} \
@@ -75,6 +83,7 @@ rule ascat_plot:
             samples_file=f"{input.somalier_samples}",
             tumorstring=stype_tumor,
             normalstring=stype_normal).sex,
+        vstamp = f"{VDIR}/ascat_plot.txt"
     output:
         plot = "{stype}/ascat/{sname}_ascat_plot.pdf",
         seg_smooth = "{stype}/ascat/{sname}_ascat_CN_smooth_IGV.seg",
@@ -84,7 +93,14 @@ rule ascat_plot:
         pipeconfig["singularities"]["ascat"]["sing"]
     shell:
         """
+        # Set cache to avoid protected files
         export XDG_CACHE_HOME="${{TMPDIR:-/tmp}}";
+
+        # Version info
+        Rscript --version 2>&1 | head -n 1 > {params.vstamp}
+        Rscript -e "library(ggplot2); cat(paste('ggplot2 version:', packageVersion('ggplot2')),'\n')" >> {params.vstamp}
+            
+        # Plot ascat
         Rscript {params.ascat_plot_script} \
             --tumorname {params.tumorname} \
             --gender {params.sex} \
