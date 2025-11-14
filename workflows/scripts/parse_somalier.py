@@ -39,13 +39,24 @@ class SomalierParser:
         Parses a somalier pairs.tsv file using csv and returns the relatedness value.
         Assumes data in first row after the header.
         """
-        with open(pairs_file, newline="") as f:
-            reader = csv.DictReader(f, delimiter="\t")
-            row = next(reader, None)
-            if row is None:
-                logger.info("No relatedness data found in pairs file.")
-                return None
-            return float(row["relatedness"])
+        try:
+            with open(pairs_file, newline="") as f:
+                reader = csv.DictReader(f, delimiter="\t")
+                row = next(reader, None)
+                if row is None:
+                    logger.info("No relatedness data found in pairs file.")
+                    return None
+                try:
+                    return float(row["relatedness"])
+                except KeyError:
+                    logger.error('The "relatedness" column is missing from the pairs file.')
+                    return None
+                except ValueError:
+                    logger.error('The value in the "relatedness" column is not a valid float.')
+                    return None
+        except Exception as e:
+            logger.error(f"Error reading pairs file '{pairs_file}': {e}")
+            return None
 
     def parse_somalier_samples(
         self, samples_file, tumorstring="tumor", normalstring="normal"
