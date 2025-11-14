@@ -8,6 +8,7 @@ from tools.git_versions import get_git_commit, get_git_tag, get_git_reponame
 import time
 import pandas as pd
 import gzip
+from tools.somalier_parser import SomalierParser
 
 
 def extract_stats(statsfile, statstype, sampletype, statsdict):
@@ -632,10 +633,17 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "-so",
-        "--somalierobj",
+        "-sp",
+        "--somalierpairs",
         nargs="?",
-        help="Somalier object parsed with SomalierParser",
+        help="Somalier pairs.tsv file",
+        required=False,
+    )
+    parser.add_argument(
+        "-ss",
+        "--somaliersamples",
+        nargs="?",
+        help="Somalier samples.tsv file",
         required=False,
     )
     parser.add_argument(
@@ -666,12 +674,17 @@ if __name__ == "__main__":
         required=True,
     )
     args = parser.parse_args()
+    somalier_obj = (
+        SomalierParser(args.somalierpairs, args.somaliersamples, match_cutoff=0.95)
+        if args.somalierpairs and args.somaliersamples
+        else None
+    )
     create_excel_main(
         args.tumorcov,
         args.normalcov,
         args.tumordedup,
         args.normaldedup,
-        args.somalierobj,
+        somalier_obj,
         args.canvasvcf,
         args.tmb,
         args.msi,
