@@ -433,12 +433,12 @@ def create_excel_main(
 
 
 def create_qc_toaggregate(
-    somalier_obj,
+    output,
+    somalier_obj=None,
     tumorcov="",
     normalcov="",
     tumordedup="",
     normaldedup="",
-    output="",
     tmb="",
     tumorid="",
     normalid="",

@@ -82,13 +82,13 @@ rule qcstats_wgs_admin:
             normalstring=f"{params.normalstring}"
         )
         create_qc_toaggregate(
-        somalier_obj=somalier,
-        tumorcov=f"{input.tumorcov}",
-        normalcov=f"{input.normalcov}" ,
-        tumordedup=f"{input.tumordedup}" ,
-        normaldedup=f"{input.normaldedup}" ,
-        tmb=f"{input.tmb}" ,
-        output=f"{output}",
-        tumorid = f"{params.tumorid}",
-        normalid = f"{params.normalid}"
+            output=f"{output}",
+            somalier_obj=somalier,
+            tumorcov=f"{input.tumorcov}",
+            normalcov=f"{input.normalcov}" ,
+            tumordedup=f"{input.tumordedup}" ,
+            normaldedup=f"{input.normaldedup}" ,
+            tmb=f"{input.tmb}" ,
+            tumorid = f"{params.tumorid}",
+            normalid = f"{params.normalid}"
         )
