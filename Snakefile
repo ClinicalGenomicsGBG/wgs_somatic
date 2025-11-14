@@ -91,6 +91,12 @@ if tumorfastqdirs:
 #wildcard_constraints:
 #    sname="[^_]*_[^_]*_[^_]*"
 
+#########################################
+# Setup versions folder
+
+VDIR = "logs/versions"
+os.makedirs(VDIR, exist_ok=True)
+
 ###########################################################
 # Defining Non Cluster Rules
 if tumorid:
