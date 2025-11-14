@@ -71,18 +71,27 @@ class SomalierParser:
             reader = csv.DictReader(f, delimiter="\t")
             for row in reader:
                 # In the somalier_extract rule, the normal and tumor string are prepended
-                if row["sample_id"].startswith(normalstring):
-                    normal = (
-                        row["sample_id"],
-                        sex_map.get(row["sex"], "unknown"),
-                        float(row["Y_depth_mean"]),
-                    )
-                if row["sample_id"].startswith(tumorstring):
-                    tumor = (
-                        row["sample_id"],
-                        sex_map.get(row["sex"], "unknown"),
-                        float(row["Y_depth_mean"]),
-                    )
+                try:
+                    sample_id = row["sample_id"]
+                    sex = row.get("sex", None)
+                   y_depth_mean_str = row.get("Y_depth_mean", None)
+                    y_depth_mean = float(y_depth_mean_str) if y_depth_mean_str is not None else None
+                except (KeyError, ValueError, TypeError):
+                    continue  # skip rows with missing or invalid data
+
+               if sample_id.startswith(normalstring):
+                   normal = (
+                       sample_id,
+                       sex_map.get(sex, "unknown"),
+                       y_depth_mean,
+                   )
+               elif sample_id.startswith(tumorstring):
+                   tumor = (
+                      sample_id,
+                      sex_map.get(sex, "unknown"),
+                      y_depth_mean,
+                  )
+
         if normal:
             return normal
         elif tumor:
