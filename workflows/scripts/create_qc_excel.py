@@ -459,7 +459,7 @@ def create_qc_toaggregate(
         tumor_row = {
             "Type": "Tumor",
             "SampleID": tumorid,
-            "Sex": somalier_obj.sex,
+            "Sex": getattr(somalier_obj, "sex", "N/A"),
             "Coverage 10x": next(
                 (
                     item["colvalue"]
@@ -508,10 +508,9 @@ def create_qc_toaggregate(
                 ),
                 "N/A",
             ),
-            "Relatedness": somalier_obj.relatedness
-            if somalier_obj.relatedness is not None
-            else "N/A",
-            "Match": somalier_obj.match if normalcov else "N/A",
+            "Relatedness": getattr(somalier_obj, "relatedness", None)
+            or "N/A",  # if none or empty default to N/A
+            "Match": getattr(somalier_obj, "match", "N/A") if normalcov else "N/A",
             "TMB": tmb_dict.get("TMB", "N/A"),
         }
         rows.append(tumor_row)
@@ -520,7 +519,7 @@ def create_qc_toaggregate(
         normal_row = {
             "Type": "Normal",
             "SampleID": normalid,
-            "Sex": somalier_obj.sex,
+            "Sex": getattr(somalier_obj, "sex", "N/A"),
             "Coverage 10x": next(
                 (
                     item["colvalue"]
@@ -569,10 +568,9 @@ def create_qc_toaggregate(
                 ),
                 "N/A",
             ),
-            "Relatedness": somalier_obj.relatedness
-            if somalier_obj.relatedness is not None
-            else "N/A",
-            "Match": somalier_obj.match if tumorcov else "N/A",
+            "Relatedness": getattr(somalier_obj, "relatedness", None)
+            or "N/A",  # if none or empty default to N/A
+            "Match": getattr(somalier_obj, "match", "N/A") if normalcov else "N/A",
             "TMB": "N/A",
         }
         rows.append(normal_row)
