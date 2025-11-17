@@ -4,20 +4,22 @@ import os
 from workflows.scripts.parse_somalier import SomalierParser
 from workflows.scripts.create_segfile import create_seg
 from workflows.scripts.fix_sexploidyfile import mod_sex_vcf
-
+from tools.git_versions import submodule_info
 
 rule filter_canvas:
     input:
         vcf = "{stype}/canvas/{sname}_canvas_{mode}.vcf.gz"
     params:
         annotate = pipeconfig["rules"]["canvas"].get("annotate", f"{ROOT_DIR}/workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py"),
-        annotate_ref = pipeconfig["rules"]["canvas"]["annotate_ref"]
+        annotate_ref = pipeconfig["rules"]["canvas"]["annotate_ref"],
+        vstamp = f"{VDIR}/filter_canvas.txt"
     output:
         xlsx = "{stype}/canvas/{sname}_canvas_{mode}_filt.vcf.xlsx",
         vcf_out = "{stype}/canvas/{sname}_canvas_{mode}_filt.vcf"
     shadow:
         pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
+        submodule_info(os.path.dirname(params.annotate), params.vstamp)
         vcf_unzipped = input.vcf[:-3]
         shell("gunzip {input.vcf}")
         shell("grep -v 'Canvas:REF' {vcf_unzipped} > {output.vcf_out}")
@@ -51,7 +53,8 @@ if tumorid:
                     match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]).sex,
                 intermediate_vcf = "{stype}/canvas/{sname}_somatic_CNV.vcf.gz",
                 intermediate_observed = "{stype}/canvas/{sname}_somatic_CNV_observed.seg",
-                intermediate_called = "{stype}/canvas/{sname}_somatic_CNV_called.seg"
+                intermediate_called = "{stype}/canvas/{sname}_somatic_CNV_called.seg",
+                vstamp = f"{VDIR}/canvas_somatic.txt"
             singularity:
                 pipeconfig["singularities"]["canvas"]["sing"]
             output:
@@ -62,6 +65,7 @@ if tumorid:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             shell:
                 """
+                dotnet {params.dll} --version > {params.vstamp}
                 echo $HOSTNAME;
                 {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t TN --samplename {wildcards.sname} --somatic_vcf {input.somatic_vcf} --sex {params.sex} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
                 mv {params.intermediate_vcf} {output.out_vcf}
@@ -95,7 +99,8 @@ if tumorid:
                     match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]).sex,
                 intermediate_vcf = "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
                 intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
-                intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg"
+                intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg",
+                vstamp = f"{VDIR}/canvas_tumoronly.txt"
             singularity:
                 pipeconfig["singularities"]["canvas"]["sing"]
             output:
@@ -106,6 +111,7 @@ if tumorid:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             shell:
                 """
+                dotnet {params.dll} --version > {params.vstamp}
                 echo $HOSTNAME;
                 {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --sex {params.sex} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
                 mv {params.intermediate_vcf} {output.out_vcf}
@@ -138,7 +144,8 @@ if normalid:
                 normalstring=stype_normal).sex,
             intermediate_vcf = "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
             intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
-            intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg"
+            intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg",
+            vstamp = f"{VDIR}/canvas_germline.txt"
         singularity:
             pipeconfig["singularities"]["canvas"]["sing"]
         output:
@@ -149,6 +156,7 @@ if normalid:
             pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
+            dotnet {params.dll} --version > {params.vstamp}
             echo $HOSTNAME;
             {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --sex {params.sex} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
             mv {params.intermediate_vcf} {output.out_vcf}
