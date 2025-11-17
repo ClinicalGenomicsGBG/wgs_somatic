@@ -5,7 +5,7 @@ import glob
 import time
 from pathlib import Path
 import yaml
-from tools.helpers import read_config
+from tools.helpers import read_config, collect_versions
 import os
 from definitions import ROOT_DIR
 
@@ -96,6 +96,7 @@ if tumorfastqdirs:
 
 VDIR = "logs/versions"
 os.makedirs(VDIR, exist_ok=True)
+VDIR = os.path.abspath(VDIR)
 
 ###########################################################
 # Defining Non Cluster Rules
@@ -145,8 +146,9 @@ rule workflow_finished:
         all_result_files
     output:
         "workflow_finished.txt"
-    shell:
-        "echo 'Workflow finished successfully.' > {output}"
+    run:
+        collect_versions(VDIR, "tool_versions.yaml")
+        shell("echo 'Workflow finished successfully.' > {output}")
 
 rule all:
     input:
