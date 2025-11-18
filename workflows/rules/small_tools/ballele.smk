@@ -6,6 +6,7 @@ rule ballele_plot:
     input:
         "{stype}/dnascope/{sname}_DNAscope_germline.vcf"
     params:
+        # NOTE: these are just boolean flags, plot_freq does not use the paths
         dbsnp = pipeconfig["rules"]["ballele_plot"]["dbsnp"],
         hg38ref = pipeconfig["rules"]["ballele_plot"]["hg38ref"]
     shadow:

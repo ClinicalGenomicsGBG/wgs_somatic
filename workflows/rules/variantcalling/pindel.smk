@@ -13,7 +13,8 @@ if normalid:
             reference = pipeconfig["referencegenome"],
             threads = clusterconf["pindel"]["threads"],
             x = 2,
-            B = 60
+            B = 60,
+            vstamp = f"{VDIR}/pindel.txt"
         singularity:
             pipeconfig["singularities"]["pindel"]["sing"]
         output:
@@ -30,9 +31,12 @@ if normalid:
         shadow:
             pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
-            "echo $HOSTNAME; "
-            "echo '{input.tumorbam}\t300\t{tumorname}\n{input.normalbam}\t300\t{normalname}'>{output.pindelConfig}; "
-            "(pindel -f {params.reference} -i {output.pindelConfig} -T {params.threads} -x {params.x} -B {params.B} -j {params.bed} -o {wildcards.stype}/pindel/{wildcards.sname} ) "
+            """
+            pindel | sed -n 2p > {params.vstamp}
+            echo $HOSTNAME
+            echo '{input.tumorbam}\t300\t{tumorname}\n{input.normalbam}\t300\t{normalname}'>{output.pindelConfig}
+            (pindel -f {params.reference} -i {output.pindelConfig} -T {params.threads} -x {params.x} -B {params.B} -j {params.bed} -o {wildcards.stype}/pindel/{wildcards.sname} )
+            """
 
 else:
     rule pindel:
@@ -44,7 +48,8 @@ else:
             reference = pipeconfig["referencegenome"],
             threads = clusterconf["pindel"]["threads"],
             x = 2,
-            B = 60
+            B = 60,
+            vstamp = f"{VDIR}/pindel.txt"
         singularity:
             pipeconfig["singularities"]["pindel"]["sing"]
         output:
@@ -61,9 +66,12 @@ else:
         shadow:
             pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
-            "echo $HOSTNAME; "
-            "echo '{input.tumorbam}\t300\t{tumorname}'>{output.pindelConfig}; "
-            "(pindel -f {params.reference} -i {output.pindelConfig} -T {params.threads} -x {params.x} -B {params.B} -j {params.bed} -o {wildcards.stype}/pindel/{wildcards.sname} ) "
+            """
+            pindel | sed -n 2p > {params.vstamp}
+            echo $HOSTNAME
+            echo '{input.tumorbam}\t300\t{tumorname}'>{output.pindelConfig}
+            (pindel -f {params.reference} -i {output.pindelConfig} -T {params.threads} -x {params.x} -B {params.B} -j {params.bed} -o {wildcards.stype}/pindel/{wildcards.sname} )
+            """
 
 rule pindel2vcf:
     input:
@@ -83,7 +91,8 @@ rule pindel2vcf:
         refdate = 000000,
         e = 1, #3, #e = 10,
         mc = 10,
-        minsize = 5
+        minsize = 5,
+        vstamp = f"{VDIR}/pindel2vcf.txt"
     singularity:
         pipeconfig["singularities"]["pindel"]["sing"]
     output:
@@ -91,8 +100,11 @@ rule pindel2vcf:
     shadow:
         pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
-        "echo $HOSTNAME;"
-        " (pindel2vcf -P {wildcards.stype}/pindel/{wildcards.sname} -r {params.reference} -R {params.refname} -d {params.refdate} -v {output} -e {params.e} -mc {params.mc} -G -is {params.minsize}) "
+        """
+        echo pindel2vcf $(pindel2vcf --help | grep Version) > {params.vstamp}
+        echo $HOSTNAME
+        (pindel2vcf -P {wildcards.stype}/pindel/{wildcards.sname} -r {params.reference} -R {params.refname} -d {params.refdate} -v {output} -e {params.e} -mc {params.mc} -G -is {params.minsize})
+        """
 
 rule fixContigPindel:
     input:
@@ -100,9 +112,13 @@ rule fixContigPindel:
     output:
         temp("{stype}/pindel/{sname}_pindel_noDP.vcf")
     params: 
-        referencefai = pipeconfig["referencefai"]
+        referencefai = pipeconfig["referencefai"],
+        vstamp = f"{VDIR}/fixContigPindel.txt"
     shell:
-        """/apps/bio/software/anaconda2/envs/wgs_somatic/bin/bcftools reheader --fai {params.referencefai} {input} > {output}"""
+        """
+        bcftools -v | head -n 2 > {params.vstamp}
+        bcftools reheader --fai {params.referencefai} {input} > {output}
+        """
 
 rule fixPindelDPoAF:
     input:
