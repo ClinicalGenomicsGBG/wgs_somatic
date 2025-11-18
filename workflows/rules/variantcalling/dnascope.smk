@@ -11,7 +11,8 @@ rule dnascope:
         reference = pipeconfig["singularities"]["sentieon"]["reference"],
         dbsnp = pipeconfig["singularities"]["sentieon"]["dbsnp"],
         model = pipeconfig["singularities"]["sentieon"]["dnascope_m"],
-        callsettings = pipeconfig["rules"]["dnascope"]["settings"]
+        callsettings = pipeconfig["rules"]["dnascope"]["settings"],
+        vstamp = f"{VDIR}/dnascope.txt"
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
@@ -20,10 +21,15 @@ rule dnascope:
     shadow:
         pipeconfig["rules"].get("dnascope", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
-        "echo $HOSTNAME;"
-        "{params.sentieon} driver -t {params.threads} -r {params.reference} "
-            "-i {input.bam} --algo DNAscope -d {params.dbsnp} "
-            "--var_type snp,indel --model {params.model} {params.callsettings} {output.vcf}"
+        """
+        {params.sentieon} driver --version > {params.vstamp}
+        basename {params.dbsnp} >> {params.vstamp}
+        basename {params.model} >> {params.vstamp}
+        echo $HOSTNAME;
+        {params.sentieon} driver -t {params.threads} -r {params.reference} \
+            -i {input.bam} --algo DNAscope -d {params.dbsnp} \
+            --var_type snp,indel --model {params.model} {params.callsettings} {output.vcf}
+        """
         
 rule dnascope_modelfilter:
     input:
@@ -34,6 +40,7 @@ rule dnascope_modelfilter:
         sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
         reference = pipeconfig["singularities"]["sentieon"]["reference"],
         model = pipeconfig["singularities"]["sentieon"]["dnascope_m"],
+        vstamp = f"{VDIR}/dnascope_modelfilter.txt"
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
@@ -42,8 +49,13 @@ rule dnascope_modelfilter:
     shadow:
         pipeconfig["rules"].get("dnascope_modelfilter", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
-        "echo $HOSTNAME;"
-        "{params.sentieon} driver -t {params.threads} -r {params.reference} --algo DNAModelApply --model {params.model} -v {input.vcf} {output.vcf}"
+        """
+        {params.sentieon} driver --version > {params.vstamp}
+        basename {params.model} >> {params.vstamp}
+        echo $HOSTNAME
+        {params.sentieon} driver -t {params.threads} -r {params.reference} \
+            --algo DNAModelApply --model {params.model} -v {input.vcf} {output.vcf}
+        """
 
 rule dnascope_vcffilter:
     input:
@@ -53,13 +65,16 @@ rule dnascope_vcffilter:
         threads = clusterconf["dnascope_vcffilter"]["threads"],
         bcftools = pipeconfig["rules"]["dnascope_vcffilter"]["bcftools"],
         vcftools = pipeconfig["rules"]["dnascope_vcffilter"]["vcftools"],
+        vstamp = f"{VDIR}/dnascope_vcffilter.txt"
     output:
         germline_vcf = "{stype}/dnascope/{sname}_DNAscope_germline.vcf", 
         germline_snv_vcf = temp("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf"),
-    #shadow:
-        #pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
+    shadow:
+        pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
         """
+        {params.bcftools} --version > {params.vstamp}
+        {params.vcftools} --version >> {params.vstamp}
         {params.bcftools} filter -s 'ML_FAIL' -e 'INFO/ML_PROB > 0.5' -m + {input.vcf} > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered1.vcf
         {params.bcftools} filter -s 'low_depth' -e 'FORMAT/DP < 10' -m + {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered1.vcf> {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered2.vcf
         {params.bcftools} filter -s 'low_genotype_quality' -e 'FORMAT/GQ < 20' -m + {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered2.vcf > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered3.vcf
