@@ -3,10 +3,10 @@ from workflows.scripts.parse_somalier import SomalierParser
 
 rule ascat_run:
     input:
-        tumor_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=tumortype),
-        normal_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=normaltype) if normalid else [],
-        somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=normaltype if normalid else tumortype),
-        somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=normaltype if normalid else tumortype),
+        tumor_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=stype_tumor),
+        normal_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=stype_normal) if normalid else [],
+        somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_normal if normalid else stype_tumor),
+        somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal if normalid else stype_tumor),
     params:
         # alleleCounter executable is in conda bin directory in the ascat container
         allelecounter_exe = pipeconfig["rules"]["ascat_run"]["allelecounter_exe"],
@@ -18,8 +18,8 @@ rule ascat_run:
         sex = lambda wildcards, input: SomalierParser(
             pairs_file=f"{input.somalier_pairs}",
             samples_file=f"{input.somalier_samples}",
-            tumorstring=tumortype,
-            normalstring=normaltype).sex,
+            tumorstring=stype_tumor,
+            normalstring=stype_normal).sex,
         genome_version = pipeconfig["rules"]["ascat_run"]["genome_version"],
         gc_content_file = pipeconfig["rules"]["ascat_run"]["gc_content_file"],
         replic_timing_file = pipeconfig["rules"]["ascat_run"]["replic_timing_file"],
@@ -62,8 +62,8 @@ rule ascat_run:
 rule ascat_plot:
     input:
         rdata_file = "{stype}/ascat/{sname}_ascat_bc.Rdata",
-        somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=normaltype if normalid else tumortype),
-        somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=normaltype if normalid else tumortype),
+        somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_normal if normalid else stype_tumor),
+        somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal if normalid else stype_tumor),
     params:
         tumorname = tumorname,
         genome_fai = pipeconfig["referencefai"],
@@ -72,8 +72,8 @@ rule ascat_plot:
         sex = lambda wildcards, input: SomalierParser(
             pairs_file=f"{input.somalier_pairs}",
             samples_file=f"{input.somalier_samples}",
-            tumorstring=tumortype,
-            normalstring=normaltype).sex,
+            tumorstring=stype_tumor,
+            normalstring=stype_normal).sex,
     output:
         plot = "{stype}/ascat/{sname}_ascat_plot.pdf",
         seg_smooth = "{stype}/ascat/{sname}_ascat_CN_smooth_IGV.seg",

@@ -37,8 +37,8 @@ sampleconfig["tumor"] = tumorid
 sampleconfig["normalname"] = normalname
 sampleconfig["tumorname"] = tumorname
 
-tumortype = sampleconfig[tumorname]["stype"]
-normaltype = sampleconfig[normalname]["stype"]
+stype_tumor = sampleconfig[tumorname]["stype"]
+stype_normal = sampleconfig[normalname]["stype"]
 
 ####################################################
 # Prepare Fastq Variables 
