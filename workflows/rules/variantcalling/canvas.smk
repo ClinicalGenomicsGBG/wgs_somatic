@@ -47,7 +47,8 @@ if tumorid:
                     pairs_file=f"{input.somalier_pairs}",
                     samples_file=f"{input.somalier_samples}",
                     tumorstring=stype_tumor,
-                    normalstring=stype_normal).sex,
+                    normalstring=stype_normal,
+                    match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]).sex,
                 intermediate_vcf = "{stype}/canvas/{sname}_somatic_CNV.vcf.gz",
                 intermediate_observed = "{stype}/canvas/{sname}_somatic_CNV_observed.seg",
                 intermediate_called = "{stype}/canvas/{sname}_somatic_CNV_called.seg"
@@ -90,7 +91,8 @@ if tumorid:
                     pairs_file=f"{input.somalier_pairs}",
                     samples_file=f"{input.somalier_samples}",
                     tumorstring=stype_tumor,
-                    normalstring=stype_normal).sex,
+                    normalstring=stype_normal,
+                    match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]).sex,
                 intermediate_vcf = "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
                 intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
                 intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg"

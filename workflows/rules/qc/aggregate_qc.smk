@@ -35,7 +35,8 @@ rule excel_qc:
             pairs_file=f"{input.somalier_pairs}",
             samples_file=f"{input.somalier_samples}",
             tumorstring=stype_tumor,
-            normalstring=stype_normal
+            normalstring=stype_normal,
+            match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]
         )
         # Call create_excel_main with all inputs
         create_excel_main(
@@ -74,7 +75,8 @@ rule qcstats_wgs_admin:
             pairs_file=f"{input.somalier_pairs}",
             samples_file=f"{input.somalier_samples}",
             tumorstring=stype_tumor,
-            normalstring=stype_normal
+            normalstring=stype_normal,
+            match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]
         )
         create_qc_toaggregate(
             output=f"{output}",
