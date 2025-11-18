@@ -8,7 +8,7 @@ from tools.git_versions import get_git_commit, get_git_tag, get_git_reponame
 import time
 import pandas as pd
 import gzip
-from tools.somalier_parser import SomalierParser
+from workflows.scripts.parse_somalier import SomalierParser
 
 
 def extract_stats(statsfile, statstype, sampletype, statsdict):
