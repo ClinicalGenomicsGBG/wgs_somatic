@@ -49,10 +49,14 @@ class SomalierParser:
                 try:
                     return float(row["relatedness"])
                 except KeyError:
-                    logger.error('The "relatedness" column is missing from the pairs file.')
+                    logger.error(
+                        'The "relatedness" column is missing from the pairs file.'
+                    )
                     return None
                 except ValueError:
-                    logger.error('The value in the "relatedness" column is not a valid float.')
+                    logger.error(
+                        'The value in the "relatedness" column is not a valid float.'
+                    )
                     return None
         except Exception as e:
             logger.error(f"Error reading pairs file '{pairs_file}': {e}")
@@ -74,23 +78,27 @@ class SomalierParser:
                 try:
                     sample_id = row["sample_id"]
                     sex = row.get("sex", None)
-                   y_depth_mean_str = row.get("Y_depth_mean", None)
-                    y_depth_mean = float(y_depth_mean_str) if y_depth_mean_str is not None else None
+                    y_depth_mean_str = row.get("Y_depth_mean", None)
+                    y_depth_mean = (
+                        float(y_depth_mean_str)
+                        if y_depth_mean_str is not None
+                        else None
+                    )
                 except (KeyError, ValueError, TypeError):
                     continue  # skip rows with missing or invalid data
 
-               if sample_id.startswith(normalstring):
-                   normal = (
-                       sample_id,
-                       sex_map.get(sex, "unknown"),
-                       y_depth_mean,
-                   )
-               elif sample_id.startswith(tumorstring):
-                   tumor = (
-                      sample_id,
-                      sex_map.get(sex, "unknown"),
-                      y_depth_mean,
-                  )
+                if sample_id.startswith(normalstring):
+                    normal = (
+                        sample_id,
+                        sex_map.get(sex or "", "unknown"),
+                        y_depth_mean,
+                    )
+                elif sample_id.startswith(tumorstring):
+                    tumor = (
+                        sample_id,
+                        sex_map.get(sex or "", "unknown"),
+                        y_depth_mean,
+                    )
 
         if normal:
             return normal
