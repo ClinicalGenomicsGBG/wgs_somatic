@@ -27,8 +27,8 @@ if tumorid:
     if normalid:
         rule canvas_somatic:
             input:
-                germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                somatic_vcf = expand("{stype}/tnscope/{sname}_TNscope_somatic.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=normalid, stype=normaltype),
+                somatic_vcf = expand("{stype}/tnscope/{sname}_TNscope_somatic.vcf", sname=tumorid, stype=tumortype),
                 bam = "{stype}/realign/{sname}_REALIGNED.bam",
                 bai = "{stype}/realign/{sname}_REALIGNED.bam.bai",
                 somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=normaltype),
@@ -71,7 +71,7 @@ if tumorid:
         rule canvas_tumoronly:
             # Note: for tumor-only we use "-t germline" to call variants in the tumor
             input:
-                germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=tumorid, stype=tumortype),
                 bam = "{stype}/realign/{sname}_REALIGNED.bam",
                 bai = "{stype}/realign/{sname}_REALIGNED.bam.bai",
                 somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=tumortype),
@@ -114,7 +114,7 @@ if tumorid:
 if normalid:
     rule canvas_germline:
         input:
-            germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=normalid, stype=normaltype),
             bam = "{stype}/realign/{sname}_REALIGNED.bam",
             bai = "{stype}/realign/{sname}_REALIGNED.bam.bai",
             somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=normaltype),

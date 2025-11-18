@@ -24,8 +24,8 @@ rule somalier_extract:
 
 rule somalier_relate:
   input:
-    normal_somalier = expand("{stype}/somalier/{sname}.somalier", sname=normalid, stype=sampleconfig[normalname]["stype"]) if normalid else [],
-    tumor_somalier = expand("{stype}/somalier/{sname}.somalier", sname=tumorid, stype=sampleconfig[tumorname]["stype"]) if tumorid else [],
+    normal_somalier = expand("{stype}/somalier/{sname}.somalier", sname=normalid, stype=normaltype) if normalid else [],
+    tumor_somalier = expand("{stype}/somalier/{sname}.somalier", sname=tumorid, stype=tumortype) if tumorid else [],
   params:
     outpath = lambda wildcards: f"{wildcards.stype}/somalier/somalier"
   singularity:
