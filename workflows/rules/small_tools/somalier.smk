@@ -50,7 +50,7 @@ rule somalier_parse_sex:
     pairs = "{stype}/somalier/somalier.pairs.tsv",
     samples = "{stype}/somalier/somalier.samples.tsv"
   output:
-    sex = "{stype}/somalier/calculated_sex.txt"
+    sex = temp("{stype}/somalier/calculated_sex.txt")
   run:
     parser = SomalierParser(
       pairs_file=f"{input.pairs}",
