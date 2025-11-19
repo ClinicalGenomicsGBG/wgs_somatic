@@ -1,3 +1,5 @@
+from workflows.scripts.parse_somalier import SomalierParser
+
 rule somalier_extract:
   input:
     "{stype}/realign/{sname}_REALIGNED.bam"
@@ -43,3 +45,20 @@ rule somalier_relate:
       {input.normal_somalier} {input.tumor_somalier}
     """
 
+rule somalier_parse_sex:
+  input:
+    pairs = "{stype}/somalier/somalier.pairs.tsv",
+    samples = "{stype}/somalier/somalier.samples.tsv"
+  output:
+    sex = "{stype}/somalier/calculated_sex.txt"
+  run:
+    parser = SomalierParser(
+      pairs_file=f"{input.pairs}",
+      samples_file=f{"input.samples"},
+      tumorstring=stype_tumor,
+      normalstring=stype_normal,
+      match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]
+    )
+    
+    with open(output.sex, "w") as f:
+      f.write(parser.sex + "\n")
