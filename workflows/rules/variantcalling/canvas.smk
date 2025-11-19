@@ -1,10 +1,9 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 import os
-from workflows.scripts.sex import calc_sex
+from workflows.scripts.parse_somalier import SomalierParser
 from workflows.scripts.create_segfile import create_seg
 from workflows.scripts.fix_sexploidyfile import mod_sex_vcf
-
 
 
 rule filter_canvas:
@@ -28,12 +27,12 @@ if tumorid:
     if normalid:
         rule canvas_somatic:
             input:
-                germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                somatic_vcf = expand("{stype}/tnscope/{sname}_TNscope_somatic.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=normalid, stype=stype_normal),
+                somatic_vcf = expand("{stype}/tnscope/{sname}_TNscope_somatic.vcf", sname=tumorid, stype=stype_tumor),
                 bam = "{stype}/realign/{sname}_REALIGNED.bam",
                 bai = "{stype}/realign/{sname}_REALIGNED.bam.bai",
-                normal_wgscov = expand("{stype}/reports/{sname}_WGScov.tsv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-                normal_ycov = expand("{stype}/reports/{sname}_Ycov.tsv", sname=normalid, stype=sampleconfig[normalname]["stype"])
+                somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_normal),
+                somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal),
             params:
                 genomeversion = config["reference"],
                 dll = pipeconfig["singularities"]["canvas"]["dll"],
@@ -44,6 +43,12 @@ if tumorid:
                 run_py = pipeconfig["singularities"]["canvas"]["tool_path"],
                 filter13 = pipeconfig["singularities"]["canvas"]["filter13"],
                 samplename = sampleconfig["tumorname"],
+                sex = lambda wildcards, input: SomalierParser(
+                    pairs_file=f"{input.somalier_pairs}",
+                    samples_file=f"{input.somalier_samples}",
+                    tumorstring=stype_tumor,
+                    normalstring=stype_normal,
+                    match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]).sex,
                 intermediate_vcf = "{stype}/canvas/{sname}_somatic_CNV.vcf.gz",
                 intermediate_observed = "{stype}/canvas/{sname}_somatic_CNV_observed.seg",
                 intermediate_called = "{stype}/canvas/{sname}_somatic_CNV_called.seg"
@@ -58,7 +63,7 @@ if tumorid:
             shell:
                 """
                 echo $HOSTNAME;
-                {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t TN --samplename {wildcards.sname} --wgscovfile {input.normal_wgscov} --ycovfile {input.normal_ycov} --somatic_vcf {input.somatic_vcf} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
+                {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t TN --samplename {wildcards.sname} --somatic_vcf {input.somatic_vcf} --sex {params.sex} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
                 mv {params.intermediate_vcf} {output.out_vcf}
                 mv {params.intermediate_observed} {output.out_observed}
                 mv {params.intermediate_called} {output.out_called}
@@ -67,11 +72,11 @@ if tumorid:
         rule canvas_tumoronly:
             # Note: for tumor-only we use "-t germline" to call variants in the tumor
             input:
-                germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
+                germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=tumorid, stype=stype_tumor),
                 bam = "{stype}/realign/{sname}_REALIGNED.bam",
                 bai = "{stype}/realign/{sname}_REALIGNED.bam.bai",
-                tumor_wgscov = expand("{stype}/reports/{sname}_WGScov.tsv", sname=tumorid, stype=sampleconfig[tumorname]["stype"]),
-                tumor_ycov = expand("{stype}/reports/{sname}_Ycov.tsv", sname=tumorid, stype=sampleconfig[tumorname]["stype"])
+                somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_tumor),
+                somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_tumor),
             params:
                 genomeversion = config["reference"],
                 dll = pipeconfig["singularities"]["canvas"]["dll"],
@@ -82,6 +87,12 @@ if tumorid:
                 run_py = pipeconfig["singularities"]["canvas"]["tool_path"],
                 filter13 = pipeconfig["singularities"]["canvas"]["filter13"],
                 samplename = sampleconfig["tumorname"],
+                sex = lambda wildcards, input: SomalierParser(
+                    pairs_file=f"{input.somalier_pairs}",
+                    samples_file=f"{input.somalier_samples}",
+                    tumorstring=stype_tumor,
+                    normalstring=stype_normal,
+                    match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]).sex,
                 intermediate_vcf = "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
                 intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
                 intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg"
@@ -96,7 +107,7 @@ if tumorid:
             shell:
                 """
                 echo $HOSTNAME;
-                {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --wgscovfile {input.tumor_wgscov} --ycovfile {input.tumor_ycov} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
+                {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --sex {params.sex} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
                 mv {params.intermediate_vcf} {output.out_vcf}
                 mv {params.intermediate_observed} {output.out_observed}
                 mv {params.intermediate_called} {output.out_called}
@@ -105,11 +116,11 @@ if tumorid:
 if normalid:
     rule canvas_germline:
         input:
-            germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=normalid, stype=sampleconfig[normalname]["stype"]),
+            germline_snv_vcf = expand("{stype}/dnascope/{sname}_DNAscope_germline_SNVsOnly.recode.vcf", sname=normalid, stype=stype_normal),
             bam = "{stype}/realign/{sname}_REALIGNED.bam",
             bai = "{stype}/realign/{sname}_REALIGNED.bam.bai",
-            normal_wgscov = expand("{stype}/reports/{sname}_WGScov.tsv", sname=normalid, stype=sampleconfig[normalname]["stype"]),
-            normal_ycov = expand("{stype}/reports/{sname}_Ycov.tsv", sname=normalid, stype=sampleconfig[normalname]["stype"])
+            somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_normal),
+            somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal),
         params:
             genomeversion = config["reference"],
             dll = pipeconfig["singularities"]["canvas"]["dll"],
@@ -120,6 +131,11 @@ if normalid:
             run_py = pipeconfig["singularities"]["canvas"]["tool_path"],
             filter13 = pipeconfig["singularities"]["canvas"]["filter13"],
             samplename = sampleconfig["normalname"],
+            sex = lambda wildcards, input: SomalierParser(
+                pairs_file=f"{input.somalier_pairs}",
+                samples_file=f"{input.somalier_samples}",
+                tumorstring=stype_tumor,
+                normalstring=stype_normal).sex,
             intermediate_vcf = "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
             intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
             intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg"
@@ -134,7 +150,7 @@ if normalid:
         shell:
             """
             echo $HOSTNAME;
-            {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --wgscovfile {input.normal_wgscov} --ycovfile {input.normal_ycov} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
+            {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --sex {params.sex} --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
             mv {params.intermediate_vcf} {output.out_vcf}
             mv {params.intermediate_observed} {output.out_observed}
             mv {params.intermediate_called} {output.out_called}

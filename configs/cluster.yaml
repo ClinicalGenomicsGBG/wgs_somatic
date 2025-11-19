@@ -75,6 +75,9 @@ msi:
 msi_filtered:
   threads: 64
 
+somalier_extract:
+  threads: 4
+
 cutadapt:
   threads: 1
   excl: excl=1

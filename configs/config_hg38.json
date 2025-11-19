@@ -38,6 +38,10 @@
             "dnascope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonIlluminaWGS2.2.dnascope.model",
             "tnscope_m": "/clinical/exec/wgs_somatic/dependencies/sentieon/SentieonTNscopeModelWGS0.2.model"
         },
+        "somalier":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/somalier-0.3.1.sif"
+        },
         "vep":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/ensembl-vep-115.2.1.sif"
@@ -138,6 +142,10 @@
         {
             "bed": "/clinical/exec/wgs_somatic/dependencies/in_house/new_twist_shortlist_pindel_hg38_padded50.bed",
             "python": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/python"
+        },
+        "somalier":
+        {
+            "sites": "/clinical/exec/wgs_somatic/dependencies/somalier/sites.hg38.vcf.gz"
         },
         "bgzip":
         {
