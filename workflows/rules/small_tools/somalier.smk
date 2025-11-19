@@ -54,7 +54,7 @@ rule somalier_parse_sex:
   run:
     parser = SomalierParser(
       pairs_file=f"{input.pairs}",
-      samples_file=f{"input.samples"},
+      samples_file=f"{input.samples}",
       tumorstring=stype_tumor,
       normalstring=stype_normal,
       match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]
