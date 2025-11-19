@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 import yaml
 from tools.helpers import read_config, collect_versions
+from tools.git_versions import main_info
 import os
 from definitions import ROOT_DIR
 
@@ -96,6 +97,7 @@ if tumorfastqdirs:
 
 VDIR = "logs/versions"
 os.makedirs(VDIR, exist_ok=True)
+# VDIR as absolute path for shadowrules
 VDIR = os.path.abspath(VDIR)
 
 ###########################################################
@@ -144,9 +146,12 @@ for result in resultsconf.values():
 rule workflow_finished:
     input:
         all_result_files
+    params:
+        vstamp = f"{VDIR}/main.txt"
     output:
         "workflow_finished.txt"
     run:
+        main_info(f"{params.vstamp}", reference=reference)
         collect_versions(VDIR, "tool_versions.yaml")
         shell("echo 'Workflow finished successfully.' > {output}")
 
