@@ -13,3 +13,6 @@ sv_filter:
 
 somalier_filter:
   min_relatedness: 0.95
+
+gnomad_filter:
+  max_allele_frequency: 0.01

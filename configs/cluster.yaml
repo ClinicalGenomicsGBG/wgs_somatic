@@ -96,21 +96,17 @@ index_vcf:
   output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
   error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
 
-control_freec_pileup:
-  threads: 64
-
-control_freec_run:
+vep_annotate:
   threads: 4
-  name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
-  output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
-  error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
+  name: "WGSsomatic_{rule}_{wildcards.file}"
+  output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
 
-control_freec_plot:
-  threads: 4
-  name: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}"
-  output: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stdout"
-  error: "WGSsomatic_{rule}_ploidy{wildcards.ploidy}_{wildcards.sname}.stderr"
+vep_gnomad_filter:
+  threads: 1
+  name: "WGSsomatic_{rule}_{wildcards.file}"
+  output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
 
 ascat_run:
   threads: 16
-

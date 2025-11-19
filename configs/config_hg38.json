@@ -41,6 +41,10 @@
         "somalier":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/somalier-0.3.1.sif"
+        },
+        "vep":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/ensembl-vep-115.2.1.sif"
         }
     },
     "shadow": "copy-minimal",
@@ -83,7 +87,8 @@
         "tnscope_vcffilter":
         {
             "bcftools": "/clinical/exec/wgs_somatic/env/wgs_somatic_env/bin/bcftools",
-            "outputdir": "tumor/tnscope"
+            "outputdir": "tumor/tnscope",
+            "pon_table": "/clinical/exec/wgs_somatic/dependencies/pon/hg38/wgs-somatic-panel_of_normal_split_nosingle.tsv.gz"
         },
         "dnascope":
         {
@@ -156,6 +161,10 @@
         {
             "msi_list": "/clinical/exec/wgs_somatic/dependencies/msi/GCA_000001405.15_GRCh38_no_alt_analysis_set.list",
             "msi_bed": "/clinical/exec/wgs_somatic/dependencies/msi/SelectedMSIloci2019Sorted_hg38lift.bed"
+        },
+        "vep_annotate":
+        {
+            "cache": "/clinical/exec/wgs_somatic/dependencies/vep/115"
         }
     }
 }

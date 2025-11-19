@@ -123,6 +123,7 @@ if tumorid:
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/small_tools/bgzip.smk"
 include:        "workflows/rules/small_tools/somalier.smk"
+include:        "workflows/rules/small_tools/vep.smk"
 
 #########################################
 # QC
