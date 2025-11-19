@@ -8,7 +8,8 @@ rule wgs_coverage:
     params:
         threads = clusterconf["wgs_coverage"]["threads"],
         sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
-        reference = pipeconfig["singularities"]["sentieon"]["reference"]
+        reference = pipeconfig["singularities"]["sentieon"]["reference"],
+        vstamp = f"{VDIR}/wgs_coverage.txt"
     singularity:
         pipeconfig["singularities"]["sentieon"]["sing"]
     output:
@@ -16,6 +17,17 @@ rule wgs_coverage:
     shadow:
         pipeconfig["rules"].get("wgs_coverage", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
-        "{params.sentieon} driver -t {params.threads} -i {input.bam} -r {params.reference} "
-            "--interval chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM --algo WgsMetricsAlgo {output}"
+        """
+        # Version info
+        {params.sentieon} driver --version > {params.vstamp}
+
+        # Calculate WGS coverage metrics
+        {params.sentieon} driver \
+            -t {params.threads} \
+            -i {input.bam} \
+            -r {params.reference} \
+            --interval chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22,chrX,chrY,chrM \
+            --algo WgsMetricsAlgo \
+            {output}
+        """
 
