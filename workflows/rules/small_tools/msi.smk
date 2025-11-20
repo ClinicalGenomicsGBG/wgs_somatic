@@ -21,7 +21,10 @@ rule msi:
         msi_out_unstable = temp("{stype}/msi/{sname}_msi.txt_unstable"),
     shell:
         """
-        msi-sensor-pro --version > {params.vstamp}
+        # Version info
+        echo msisensor-pro: $(msisensor-pro --version 2>&1 | grep -o 'v[0-9.]\+') > {params.vstamp}
+        
+        # Run msisensor-pro
         msisensor-pro msi \
             -d {params.reference_list} \
             -n {input.normal_bam} \
@@ -70,7 +73,10 @@ rule msi_filtered:
         msi_out_unstable = temp("{stype}/msi/{sname}_msi_filtered.txt_unstable"),
     shell:
         """
-        msi-sensor-pro --version > {params.vstamp}
+        # Version info
+        echo msisensor-pro: $(msisensor-pro --version 2>&1 | grep -o 'v[0-9.]\+') > {params.vstamp}
+        
+        # Run msisensor-pro
         msisensor-pro msi \
             -d {params.reference_list} \
             -n {input.normal_bam} \
