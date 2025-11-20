@@ -56,7 +56,10 @@ if tumorid:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             shell:
                 """
-                dotnet {params.dll} --version > {params.vstamp}
+                # Version info
+                echo canvas: $(dotnet {params.dll} --version) > {params.vstamp}
+
+                # Run canvas
                 echo $HOSTNAME;
                 SEX=$(cat {input.somalier_sex})
                 {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t TN --samplename {wildcards.sname} --somatic_vcf {input.somatic_vcf} --sex "$SEX" --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
@@ -96,7 +99,10 @@ if tumorid:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             shell:
                 """
-                dotnet {params.dll} --version > {params.vstamp}
+                # Version info
+                echo canvas: $(dotnet {params.dll} --version) > {params.vstamp}
+
+                # Run canvas
                 echo $HOSTNAME;
                 SEX=$(cat {input.somalier_sex})
                 {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --sex "$SEX" --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
@@ -136,7 +142,10 @@ if normalid:
             pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
-            dotnet {params.dll} --version > {params.vstamp}
+            # Version info
+            echo canvas: $(dotnet {params.dll} --version) > {params.vstamp}
+
+            # Run canvas
             echo $HOSTNAME;
             SEX=$(cat {input.somalier_sex})
             {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --sex "$SEX" --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}

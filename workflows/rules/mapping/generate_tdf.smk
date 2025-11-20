@@ -13,6 +13,8 @@ rule generate_tdf:
         pipeconfig["rules"].get("generate_tdf", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
         "{stype}/realign/{sname}_REALIGNED.bam.tdf"
-    run:
-        shell("java -jar {params.igvtools_jar_path} version > {params.vstamp}")
-        shell("nohup java -Xmx{params.igvtools_memory_limit} -jar {params.igvtools_jar_path} count {input.bam} {output} hg38")
+    shell:
+        """
+        echo igvtools: $(java -jar {params.igvtools_jar_path} version | head -n 1) > {params.vstamp}
+        nohup java -Xmx{params.igvtools_memory_limit} -jar {params.igvtools_jar_path} count {input.bam} {output} hg38
+        """

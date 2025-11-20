@@ -22,9 +22,12 @@ rule dnascope:
         pipeconfig["rules"].get("dnascope", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
         """
+        # Version info
         {params.sentieon} driver --version > {params.vstamp}
         basename {params.dbsnp} >> {params.vstamp}
         basename {params.model} >> {params.vstamp}
+
+        # Run dnascope
         echo $HOSTNAME;
         {params.sentieon} driver -t {params.threads} -r {params.reference} \
             -i {input.bam} --algo DNAscope -d {params.dbsnp} \
@@ -50,8 +53,11 @@ rule dnascope_modelfilter:
         pipeconfig["rules"].get("dnascope_modelfilter", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
         """
+        # Version info
         {params.sentieon} driver --version > {params.vstamp}
         basename {params.model} >> {params.vstamp}
+
+        # Run model-based filtering
         echo $HOSTNAME
         {params.sentieon} driver -t {params.threads} -r {params.reference} \
             --algo DNAModelApply --model {params.model} -v {input.vcf} {output.vcf}
@@ -73,8 +79,11 @@ rule dnascope_vcffilter:
         pipeconfig["rules"].get("dnascope_vcffilter", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
         """
-        {params.bcftools} --version > {params.vstamp}
+        # Version info
+        {params.bcftools} -v | head -n 2 > {params.vstamp}
         {params.vcftools} --version >> {params.vstamp}
+
+        # Run vcf filtering
         {params.bcftools} filter -s 'ML_FAIL' -e 'INFO/ML_PROB > 0.5' -m + {input.vcf} > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered1.vcf
         {params.bcftools} filter -s 'low_depth' -e 'FORMAT/DP < 10' -m + {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered1.vcf> {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered2.vcf
         {params.bcftools} filter -s 'low_genotype_quality' -e 'FORMAT/GQ < 20' -m + {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered2.vcf > {wildcards.stype}/dnascope/{wildcards.sname}_DNAscope_filtered3.vcf

@@ -151,7 +151,7 @@ rule workflow_finished:
     output:
         "workflow_finished.txt"
     run:
-        main_info(f"{params.vstamp}", reference=reference)
+        main_info(f"{params.vstamp}", reference=pipeconfig["referencegenome"])
         collect_versions(VDIR, "tool_versions.yaml")
         shell("echo 'Workflow finished successfully.' > {output}")
 

@@ -123,8 +123,6 @@ else:
             pipeconfig["rules"].get("manta_summary", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
             # Version info
-            module_path = os.path.dirname(inspect.getfile(manta_summary))
-            submodule_info(module_path, params.vstamp)
             shell("echo genelist: $(basename {params.genelist}) >> {params.vstamp}")
 
             # Compile summary
