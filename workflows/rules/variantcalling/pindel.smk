@@ -32,7 +32,10 @@ if normalid:
             pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
-            pindel | sed -n 2p > {params.vstamp}
+            # Version info
+            (pindel | sed -n 2p > {params.vstamp}) || true
+
+            # Configure and run pindel
             echo $HOSTNAME
             echo '{input.tumorbam}\t300\t{tumorname}\n{input.normalbam}\t300\t{normalname}'>{output.pindelConfig}
             (pindel -f {params.reference} -i {output.pindelConfig} -T {params.threads} -x {params.x} -B {params.B} -j {params.bed} -o {wildcards.stype}/pindel/{wildcards.sname} )
@@ -67,7 +70,10 @@ else:
             pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
-            pindel | sed -n 2p > {params.vstamp}
+            # Version info
+            (pindel | sed -n 2p > {params.vstamp}) || true
+
+            # Configure and run pindel
             echo $HOSTNAME
             echo '{input.tumorbam}\t300\t{tumorname}'>{output.pindelConfig}
             (pindel -f {params.reference} -i {output.pindelConfig} -T {params.threads} -x {params.x} -B {params.B} -j {params.bed} -o {wildcards.stype}/pindel/{wildcards.sname} )
@@ -113,11 +119,12 @@ rule fixContigPindel:
         temp("{stype}/pindel/{sname}_pindel_noDP.vcf")
     params: 
         referencefai = pipeconfig["referencefai"],
-        vstamp = f"{VDIR}/fixContigPindel.txt"
+        vstamp = f"{VDIR}/fixContigPindel.txt",
+        bcftools = pipeconfig["rules"]["fixContigPindel"]["bcftools"]
     shell:
         """
-        bcftools -v | head -n 2 > {params.vstamp}
-        bcftools reheader --fai {params.referencefai} {input} > {output}
+        {params.bcftools} -v | head -n 2 > {params.vstamp}
+        {params.bcftools} reheader --fai {params.referencefai} {input} > {output}
         """
 
 rule fixPindelDPoAF:
