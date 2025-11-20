@@ -141,6 +141,10 @@ include:       "workflows/rules/qc/coverage.smk"
 
 all_result_files = []
 for result in resultsconf.values():
+    if "tool_versions.yaml" in result:
+        # we cannot have tool_versions.yaml as input and output
+        # it is included in resultsconf to include in the copy to webstore 
+        result = [f for f in result if f != "tool_versions.yaml"]
     all_result_files.extend(result)
 
 rule workflow_finished:
@@ -149,12 +153,14 @@ rule workflow_finished:
     params:
         vstamp = f"{VDIR}/main.txt"
     output:
-        "workflow_finished.txt"
+        tool_versions = "tool_versions.yaml",
+        finished = "workflow_finished.txt"
     run:
         main_info(f"{params.vstamp}", reference=pipeconfig["referencegenome"])
-        collect_versions(VDIR, "tool_versions.yaml")
-        shell("echo 'Workflow finished successfully.' > {output}")
+        collect_versions(VDIR, f"{output.tool_versions}")
+        shell("echo 'Workflow finished successfully.' > {output.finished}")
 
 rule all:
     input:
+        # The wrapper checks this to determine if the workflow ran successfully
         "workflow_finished.txt"
