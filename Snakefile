@@ -94,9 +94,9 @@ if tumorfastqdirs:
 ###########################################################
 # Defining Non Cluster Rules
 if tumorid:
-  localrules: all, excel_qc, tmb_calculation, qcstats_wgs_admin, somalier_relate, workflow_finished
+  localrules: all, excel_qc, tmb_calculation, qcstats_wgs_admin, somalier_relate, somalier_parse_sex, workflow_finished
 else:
-  localrules: all, excel_qc, qcstats_wgs_admin, somalier_relate, workflow_finished
+  localrules: all, excel_qc, qcstats_wgs_admin, somalier_relate, somalier_parse_sex, workflow_finished
 ###########################################################
 
 #########################################
