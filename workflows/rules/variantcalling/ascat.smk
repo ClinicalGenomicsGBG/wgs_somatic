@@ -1,26 +1,16 @@
-import os
-from workflows.scripts.parse_somalier import SomalierParser
-
 rule ascat_run:
     input:
         tumor_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=tumorid, stype=stype_tumor),
         normal_bam = expand("{stype}/realign/{sname}_REALIGNED.bam", sname=normalid, stype=stype_normal) if normalid else [],
-        somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_normal if normalid else stype_tumor),
-        somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal if normalid else stype_tumor),
+        somalier_sex = "{stype}/somalier/calculated_sex.txt",
+        # SomalierParser outputs male / female, ascat Rscript accepts male/XY or female/XX
+        # ascat will currently not calculate on chrY but will add it to the plot depending on sex
+        # see also: https://github.com/VanLoo-lab/ascat/issues/125
     params:
         # alleleCounter executable is in conda bin directory in the ascat container
         allelecounter_exe = pipeconfig["rules"]["ascat_run"]["allelecounter_exe"],
         alleles_prefix = pipeconfig["rules"]["ascat_run"]["alleles_prefix"],
         loci_prefix = pipeconfig["rules"]["ascat_run"]["loci_prefix"],
-        # SomalierParser outputs male / female, ascat Rscript accepts male/XY or female/XX
-        # ascat will currently not calculate on chrY but will add it to the plot depending on sex
-        # see also: https://github.com/VanLoo-lab/ascat/issues/125
-        sex = lambda wildcards, input: SomalierParser(
-            pairs_file=f"{input.somalier_pairs}",
-            samples_file=f"{input.somalier_samples}",
-            tumorstring=stype_tumor,
-            normalstring=stype_normal,
-            match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]).sex,
         genome_version = pipeconfig["rules"]["ascat_run"]["genome_version"],
         gc_content_file = pipeconfig["rules"]["ascat_run"]["gc_content_file"],
         replic_timing_file = pipeconfig["rules"]["ascat_run"]["replic_timing_file"],
@@ -41,6 +31,7 @@ rule ascat_run:
     shell:
         """
         export XDG_CACHE_HOME="${{TMPDIR:-/tmp}}";
+        SEX=$(cat {input.somalier_sex})
         Rscript {params.ascat_run_script} \
             --tumor-bam {input.tumor_bam} \
             --tumor-name {wildcards.sname} \
@@ -49,7 +40,7 @@ rule ascat_run:
             --allelecounter-exe {params.allelecounter_exe} \
             --alleles-prefix {params.alleles_prefix} \
             --loci-prefix {params.loci_prefix} \
-            --gender {params.sex} \
+            --gender "$SEX" \
             --genome-version {params.genome_version} \
             --nthreads {threads} \
             --gc-content-file {params.gc_content_file} \
@@ -63,18 +54,12 @@ rule ascat_run:
 rule ascat_plot:
     input:
         rdata_file = "{stype}/ascat/{sname}_ascat_bc.Rdata",
-        somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_normal if normalid else stype_tumor),
-        somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal if normalid else stype_tumor),
+        somalier_sex = "{stype}/somalier/calculated_sex.txt"
     params:
         tumorname = tumorname,
         genome_fai = pipeconfig["referencefai"],
         ascat_plot_script = f"{ROOT_DIR}/workflows/scripts/ascat_custom_plot.R",
         cytoBandIdeo = pipeconfig["rules"]["ascat_run"]["cytoBandIdeo"],
-        sex = lambda wildcards, input: SomalierParser(
-            pairs_file=f"{input.somalier_pairs}",
-            samples_file=f"{input.somalier_samples}",
-            tumorstring=stype_tumor,
-            normalstring=stype_normal).sex,
     output:
         plot = "{stype}/ascat/{sname}_ascat_plot.pdf",
         seg_smooth = "{stype}/ascat/{sname}_ascat_CN_smooth_IGV.seg",
@@ -85,9 +70,10 @@ rule ascat_plot:
     shell:
         """
         export XDG_CACHE_HOME="${{TMPDIR:-/tmp}}";
+        SEX=$(cat {input.somalier_sex})
         Rscript {params.ascat_plot_script} \
             --tumorname {params.tumorname} \
-            --gender {params.sex} \
+            --gender "$SEX" \
             --genome-fai {params.genome_fai} \
             --Rdata-file {input.rdata_file} \
             --cytoband {params.cytoBandIdeo} \
