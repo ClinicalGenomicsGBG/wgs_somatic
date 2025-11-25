@@ -16,10 +16,15 @@ def get_git_commit():
     return git_commit
 
 
-def get_git_tag(path="./"):
+def get_git_tag(path=None):
     """Get the current git tag for the repository."""
+    if path is None:
+        cmd = ["git", "describe", "--tags", "--always"]
+    else:
+        cmd = ["git", "-C", os.path.abspath(path), "describe", "--tags", "--always"]
+
     completed_process = subprocess.run(
-        ["git", "-C", os.path.abspath(path), "describe", "--tags", "--always"],
+        cmd,
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
@@ -44,19 +49,40 @@ def is_branch_clean():
     return "dirty" not in git_tag_or_hash
 
 
-def get_git_reponame(path="./"):
-    """Get the repository name from the remote origin URL."""
+def get_git_reponame(path=None):
+    """
+    Get the repository name from the remote origin URL.
+
+    If path is None, use the repo containing this file.
+    If path is given, treat it as the repo root.
+    """
+    if path is None:
+        cmd = ["git", "config", "--get", "remote.origin.url"]
+    else:
+        cmd = [
+            "git",
+            "-C",
+            os.path.abspath(path),
+            "config",
+            "--get",
+            "remote.origin.url",
+        ]
+
     completed_process = subprocess.run(
-        ["git", "-C", os.path.abspath(path), "config", "--get", "remote.origin.url"],
+        cmd,
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
     )
+
     if completed_process.returncode != 0:
-        raise Exception(f"Error: {completed_process.stderr}")
-    repo_name = completed_process.stdout.strip()
-    # Remove trailing and leading information
-    repo_name = os.path.splitext(os.path.basename(repo_name))[0]
+        raise Exception(
+            f"Error running git in get_git_reponame "
+            f"(path={path!r}): {completed_process.stderr}"
+        )
+
+    repo_url = completed_process.stdout.strip()
+    repo_name = os.path.splitext(os.path.basename(repo_url))[0]
     return repo_name
 
 
