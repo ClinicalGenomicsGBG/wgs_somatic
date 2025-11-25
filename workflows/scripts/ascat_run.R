@@ -17,7 +17,8 @@ option_list <- list(
   make_option("--replic-timing-file", type = "character", help = "Path to replication timing file", metavar = "character"),
   make_option("--output-dir", type = "character", help = "Directory for output images and files", metavar = "character"),
   make_option("--tumoronly", type = "logical", default = TRUE, help = "Set to TRUE for tumor-only analysis, FALSE for tumor-and-normal analysis", metavar = "logical"),
-  make_option("--penalty", type = "integer", default = 25, help = "Penalty parameter for ascat.aspcf", metavar = "integer")
+  make_option("--penalty", type = "integer", default = 25, help = "Penalty parameter for ascat.aspcf", metavar = "integer"),
+  make_option("--fallback-penalty", type = "integer", default = 70, help = "Fallback penalty parameter for ascat.aspcf if initial run fails", metavar = "integer")
 )
 
 # Parse command-line arguments
@@ -120,6 +121,22 @@ if (opt$tumoronly) {
 setwd(original_wd)
 
 ascat.output <- ascat.runAscat(ascat.bc, gamma = 1, write_segments = TRUE, img.dir = opt$`output-dir`)
+
+if (length(ascat.output$failedarrays) > 0 && opt$penalty < opt$`fallback-penalty`) {
+  # Ascat failed, try with a higher penalty
+  warning(paste0("ASCAT failed, retrying with a higher penalty of "), opt$`fallback-penalty`)
+  if (opt$tumoronly) {
+    ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg, penalty = opt$`fallback-penalty`)
+  } else {
+    ascat.bc <- ascat.aspcf(ascat.bc, penalty = opt$`fallback-penalty`)
+  }
+  
+  ascat.output <- ascat.runAscat(ascat.bc, gamma = 1, write_segments = TRUE, img.dir = opt$`output-dir`)
+}
+
+if (length(ascat.output$failedarrays) > 0) {
+  warning("ASCAT failed to process the sample")
+}
 
 stats <- ascat.metrics(ascat.bc, ascat.output)
 stats_output_file <- file.path(opt$`output-dir`, paste0(opt$`tumor-name`, "_ascat_stats.tsv"))

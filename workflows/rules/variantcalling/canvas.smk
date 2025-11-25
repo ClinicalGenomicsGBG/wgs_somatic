@@ -53,12 +53,46 @@ if tumorid:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             shell:
                 """
-                echo $HOSTNAME;
+                echo $HOSTNAME
                 SEX=$(cat {input.somalier_sex})
-                {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t TN --samplename {wildcards.sname} --somatic_vcf {input.somatic_vcf} --sex "$SEX" --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
-                mv {params.intermediate_vcf} {output.out_vcf}
-                mv {params.intermediate_observed} {output.out_observed}
-                mv {params.intermediate_called} {output.out_called}
+                
+                # Disable 'set -e' just for the Canvas call and capture its exit code
+                set +e
+                /canvas/run_canvas.py \
+                    --genomeversion {params.genomeversion} \
+                    --bam {input.bam} \
+                    --normal_vcf {input.germline_snv_vcf} \
+                    --o {wildcards.stype}/canvas/ \
+                    -t TN \
+                    --samplename {wildcards.sname} \
+                    --somatic_vcf {input.somatic_vcf} \
+                    --sex "$SEX" \
+                    --referencedir {params.genomedir} \
+                    --kmerfile {params.kmerfile} \
+                    --canvasdll {params.dll} \
+                    --filterfile {params.filter13}
+                canvas_exit=$?
+                set -e
+
+                if [ "$canvas_exit" -eq 0 ]; then
+                    # Canvas succeeded: move the real outputs into place
+                    mv {params.intermediate_vcf} {output.out_vcf}
+                    mv {params.intermediate_observed} {output.out_observed}
+                    mv {params.intermediate_called} {output.out_called}
+                else
+                    echo "WARNING: Canvas Somatic-WGS failed for sample {wildcards.sname} (exit $canvas_exit). Creating empty outputs." >&2
+
+                    # Create a minimal valid VCF (header only), then bgzip it
+                    VCF_TMP="{wildcards.stype}/canvas/{wildcards.sname}_canvas_somatic.stub.vcf"
+                    printf "##fileformat=VCFv4.2\n" > "$VCF_TMP"
+                    printf "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n" >> "$VCF_TMP"
+                    bgzip -c "$VCF_TMP" > {output.out_vcf}
+                    rm -f "$VCF_TMP"
+
+                    # Create empty SEG files (no CNVs)
+                    : > {output.out_observed}
+                    : > {output.out_called}
+                fi
                 """
     else:
         rule canvas_tumoronly:

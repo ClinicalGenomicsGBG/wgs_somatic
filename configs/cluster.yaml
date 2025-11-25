@@ -1,5 +1,5 @@
 __default__:
-  queue: routine.q
+  queue: development.q
   threads: 20
   excl: excl=1
   name: "WGSsomatic_{rule}_{wildcards.sname}"
