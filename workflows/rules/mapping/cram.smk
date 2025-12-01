@@ -9,12 +9,16 @@ rule cram:
         pipeconfig["singularities"]["samtools"]["sing"]
     params:
         threads = clusterconf["cram"]["threads"],
-        referencegenome = pipeconfig["referencegenome"]
+        referencegenome = pipeconfig["referencegenome"],
+        vstamp = f"{VDIR}/cram.txt"
     shadow:
         pipeconfig["rules"].get("cram", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
         cram = "{stype}/realign/{sname}_REALIGNED.cram",
         crai = "{stype}/realign/{sname}_REALIGNED.cram.crai",
     shell:
-        "samtools view -C --threads {params.threads} -T {params.referencegenome} -o {output.cram} {input.bam} ; "
-        "samtools index {output.cram}"
+        """
+        samtools --version | head -n 2 > {params.vstamp}
+        samtools view -C --threads {params.threads} -T {params.referencegenome} -o {output.cram} {input.bam}
+        samtools index {output.cram}
+        """

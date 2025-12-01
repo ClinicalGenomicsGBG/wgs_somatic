@@ -5,7 +5,8 @@ import glob
 import time
 from pathlib import Path
 import yaml
-from tools.helpers import read_config
+from tools.helpers import read_config, collect_versions
+from tools.git_versions import main_info
 import os
 from definitions import ROOT_DIR
 
@@ -91,6 +92,14 @@ if tumorfastqdirs:
 #wildcard_constraints:
 #    sname="[^_]*_[^_]*_[^_]*"
 
+#########################################
+# Setup versions folder
+
+VDIR = "logs/versions"
+os.makedirs(VDIR, exist_ok=True)
+# VDIR as absolute path for shadowrules
+VDIR = os.path.abspath(VDIR)
+
 ###########################################################
 # Defining Non Cluster Rules
 if tumorid:
@@ -132,16 +141,26 @@ include:       "workflows/rules/qc/coverage.smk"
 
 all_result_files = []
 for result in resultsconf.values():
+    if "tool_versions.yaml" in result:
+        # we cannot have tool_versions.yaml as input and output
+        # it is included in resultsconf to include in the copy to webstore 
+        result = [f for f in result if f != "tool_versions.yaml"]
     all_result_files.extend(result)
 
 rule workflow_finished:
     input:
         all_result_files
+    params:
+        vstamp = f"{VDIR}/main.txt"
     output:
-        "workflow_finished.txt"
-    shell:
-        "echo 'Workflow finished successfully.' > {output}"
+        tool_versions = "tool_versions.yaml",
+        finished = "workflow_finished.txt"
+    run:
+        main_info(f"{params.vstamp}", reference=pipeconfig["referencegenome"])
+        collect_versions(VDIR, f"{output.tool_versions}")
+        shell("echo 'Workflow finished successfully.' > {output.finished}")
 
 rule all:
     input:
+        # The wrapper checks this to determine if the workflow ran successfully
         "workflow_finished.txt"

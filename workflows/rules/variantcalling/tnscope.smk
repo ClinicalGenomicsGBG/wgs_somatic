@@ -17,6 +17,7 @@ if normalid:
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
             modelpath = pipeconfig["singularities"]["sentieon"]["tnscope_m"],
+            vstamp = f"{VDIR}/tnscope.txt"
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
@@ -27,6 +28,11 @@ if normalid:
         shell:
             # We run TNscope without dbSNP since it flags true positives as germline variants
             """
+            # Version info
+            {params.sentieon} driver --version > {params.vstamp}
+            basename {params.modelpath} >> {params.vstamp}
+
+            # Run tnscope
             {params.sentieon} driver -r {params.reference} -t {params.threads} \
                 -i {input.tumorbam} -q {input.tumortable} \
                 -i {input.normalbam} -q {input.normaltable} \
@@ -47,6 +53,7 @@ else:
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
             pon = pipeconfig["rules"]["tnscope"]["pon"],
+            vstamp = f"{VDIR}/tnscope.txt"
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
@@ -57,6 +64,11 @@ else:
         shell:
             # We run TNscope without dbSNP since it flags true positives as germline variants
             """
+            # Version info
+            {params.sentieon} driver --version > {params.vstamp}
+            basename {params.pon} >> {params.vstamp}
+
+            # Run tnscope
             {params.sentieon} driver -r {params.reference} -t {params.threads} \
                 -i {input.tumorbam} -q {input.tumortable} \
                 --algo TNscope --tumor_sample {params.tumorname} --pon {params.pon} \
@@ -75,6 +87,7 @@ if normalid:
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
             modelpath = pipeconfig["singularities"]["sentieon"]["tnscope_m"],
+            vstamp = f"{VDIR}/tnscope_modelfilter.txt"
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:
@@ -84,6 +97,11 @@ if normalid:
             pipeconfig["rules"].get("tnscope_modelfilter", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
+            # Version info
+            {params.sentieon} driver --version > {params.vstamp}
+            basename {params.modelpath} >> {params.vstamp}
+
+            # Run tnscope
             {params.sentieon} driver -r {params.reference} -t {params.threads} --algo TNModelApply \
                 --model {params.modelpath} -v {input.tnscopevcf} {output.vcf} || \
                 {{ echo 'TNModelApply failed'; exit 1; }}
@@ -96,7 +114,8 @@ if normalid:
             tnscopevcf_ml = "{stype}/tnscope/{sname}_TNscope_tn_ML.vcf"
         params:
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
-            bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"]
+            bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"],
+            vstamp = f"{VDIR}/tnscope_vcffilter.txt"
         output:
             somatic_n = temp("{stype}/tnscope/{sname}_TNscope_somatic_w_normal.vcf"),
             somatic = "{stype}/tnscope/{sname}_TNscope_somatic.vcf",
@@ -109,6 +128,9 @@ if normalid:
         shell:
             """
             set -euo pipefail
+            
+            # Version info
+            {params.bcftools} --version | head -n 2 > {params.vstamp}
 
             # Stream all steps as uncompressed BCF (Ou)
             {params.bcftools} view -Ou {input.tnscopevcf_ml} \
@@ -142,7 +164,8 @@ else:
             outputdir = pipeconfig["rules"]["tnscope_vcffilter"]["outputdir"],
             bcftools = pipeconfig["rules"]["tnscope_vcffilter"]["bcftools"],
             pon_table = pipeconfig["rules"]["tnscope_vcffilter"]["pon_table"],
-            inpon_header = "##INFO=<ID=INPON,Number=0,Type=Flag,Description=\"Exact CHROM:POS:REF:ALT present in PoN\">"
+            inpon_header = "##INFO=<ID=INPON,Number=0,Type=Flag,Description=\"Exact CHROM:POS:REF:ALT present in PoN\">",
+            vstamp = f"{VDIR}/tnscope_vcffilter.txt"
         output:
             somatic = "{stype}/tnscope/{sname}_TNscope_somatic.vcf",
             tnscope_filters = temp("{stype}/tnscope/{sname}_TNscope_filters.vcf"),
@@ -154,6 +177,10 @@ else:
         shell:
             """
             set -euo pipefail
+
+            # Version info
+            {params.bcftools} --version | head -n 2 > {params.vstamp}
+            basename {params.pon_table} >> {params.vstamp}
 
             # Stream all steps as uncompressed BCF (Ou)
             {params.bcftools} view -Ou {input.tnscopevcf_ml} \

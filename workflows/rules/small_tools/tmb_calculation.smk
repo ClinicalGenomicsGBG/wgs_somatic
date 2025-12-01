@@ -10,10 +10,12 @@ rule tmb_calculation:
         min_mutant_allele_reads = filterconfig["tmb_filter"]["min_mutant_allele_reads"],
         min_coverage = filterconfig["tmb_filter"]["min_coverage"],
         include_normal = ("True" if normalid else "False"),
+        vstamp = f"{VDIR}/tmb_calculation.txt"
     output:
         tmb = temp("{stype}/reports/{sname}_tmb.txt"),
     shell:
         """
+        bcftools --version | head -n 2 > {params.vstamp}
         bash {params.calculate_tmb} \
         {params.bcftools} \
         {input.somatic_vcf} \

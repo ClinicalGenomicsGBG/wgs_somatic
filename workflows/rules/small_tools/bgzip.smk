@@ -6,6 +6,7 @@ rule bgzip_vcf:
         "{path}/{file}.vcf"
     params:
         bgzip = pipeconfig["rules"]["bgzip"]["bgzip"],
+        vstamp = f"{VDIR}/bgzip_vcf.txt"
     output:
         "{path}/{file}.vcf.gz",
     wildcard_constraints:
@@ -13,13 +14,17 @@ rule bgzip_vcf:
     shadow:
         pipeconfig["rules"].get("bgzip_vcf", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
-        "{params.bgzip} -c {input} > {output}"
+        """
+        {params.bgzip} --version | head -n 1 > {params.vstamp}
+        {params.bgzip} -c {input} > {output}
+        """
 
 rule index_vcf:
     input:
         "{path}/{file}.vcf.gz"
     params:
         bcftools = pipeconfig["rules"]["bgzip"]["bcftools"],
+        vstamp = f"{VDIR}/index_vcf.txt"
     output:
         "{path}/{file}.vcf.gz.csi",
     wildcard_constraints:
@@ -27,4 +32,7 @@ rule index_vcf:
     shadow:
         pipeconfig["rules"].get("bgzip", {}).get("shadow", pipeconfig.get("shadow", False))
     shell:
-        "{params.bcftools} index {input}"
+        """
+        {params.bcftools} --version | head -n 2 > {params.vstamp}
+        {params.bcftools} index {input}
+        """
