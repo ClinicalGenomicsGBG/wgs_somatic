@@ -210,6 +210,22 @@ if (opt$gender == "XY") {
   fai <- fai[1:23,]
   }
 
+# failedarrays is empty (length 0) if ascat.run worked fine
+if (length(ascat.output$failedarrays) > 0) {
+  message("ASCAT failed for this sample. Producing empty outputs.")
+
+  pdf(opt$`output-plot`, width = 18, height = 9)
+  plot.new()
+  title("ASCAT failed for this sample.")
+  dev.off()
+
+  file.create(opt$`output-seg-smooth`)
+  file.create(opt$`output-seg-call`)
+  file.create(opt$`output-baf`)
+
+  quit(status = 0, save = "no")
+}
+
 ## Major Minor allele Segments
 # Read the segments table
 seg_df <- ascat.output$segments
