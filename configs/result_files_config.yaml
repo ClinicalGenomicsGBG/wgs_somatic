@@ -56,6 +56,7 @@ tumor-normal:
   pipeline_info:
     - "tool_versions.yaml"
     - "logs/{tumorid}.log"
+    - "logs/report.html"
     - "configs/filters.yaml"
 
   not_copied:

@@ -440,7 +440,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "snakemake",
             "--configfile", snakemake_config,
             "--directory", outputdir,
-            "--report", f"{samplelogs}/report_{current_date}.html"
+            "--report", f"{samplelogs}/report.html"
         ]
 
         subprocess.run(snakemake_args_report, env=my_env, check=True)

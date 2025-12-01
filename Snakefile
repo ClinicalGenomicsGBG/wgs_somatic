@@ -139,12 +139,12 @@ include:        "workflows/rules/small_tools/vep.smk"
 include:       "workflows/rules/qc/aggregate_qc.smk"
 include:       "workflows/rules/qc/coverage.smk"
 
+ignore = {"tool_versions.yaml", "logs/report.html"}
+
 all_result_files = []
 for result in resultsconf.values():
-    if "tool_versions.yaml" in result:
-        # we cannot have tool_versions.yaml as input and output
-        # it is included in resultsconf to include in the copy to webstore 
-        result = [f for f in result if f != "tool_versions.yaml"]
+    # remove files to ignore from workflow, but which should be copied
+    result = [f for f in result if f not in ignore]
     all_result_files.extend(result)
 
 rule workflow_finished:
