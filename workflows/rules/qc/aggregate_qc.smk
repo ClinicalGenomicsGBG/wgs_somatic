@@ -65,7 +65,7 @@ rule qcstats_wgs_admin:
         somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal if normalid else stype_tumor),
         tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=stype_tumor, sname=tumorid) if tumorid else [],
     output: 
-        qcstats_wgs_admin_output
+        report(qcstats_wgs_admin_output)
     params:
         tumorid = tumorid if tumorid else '',
         normalid = normalid if normalid else '',

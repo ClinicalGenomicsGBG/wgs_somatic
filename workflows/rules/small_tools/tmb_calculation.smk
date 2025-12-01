@@ -12,7 +12,7 @@ rule tmb_calculation:
         include_normal = ("True" if normalid else "False"),
         vstamp = f"{VDIR}/tmb_calculation.txt"
     output:
-        tmb = temp("{stype}/reports/{sname}_tmb.txt"),
+        tmb = report("{stype}/reports/{sname}_tmb.txt"),
     shell:
         """
         bcftools --version | head -n 2 > {params.vstamp}
