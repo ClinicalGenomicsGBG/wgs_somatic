@@ -41,8 +41,11 @@ def logger(message, logfile=False):
     print(message)
 
 
-def get_normalid_tumorid(normalfastqs=None, normalname=None, tumorfastqs=None, tumorname=None):
-    '''Get tumorid and normalid based on normalfastq+normalname and tumorfastq+tumorname'''
+def get_normalid_tumorid(
+    normalfastqs=None, normalname=None, tumorfastqs=None, tumorname=None
+):
+    """Get tumorid and normalid based on normalfastq+normalname and tumorfastq+tumorname"""
+
     def get_id_from_fastq(fastq_dir, name):
         for filename in os.listdir(fastq_dir):
             if filename.startswith(name):
@@ -51,10 +54,13 @@ def get_normalid_tumorid(normalfastqs=None, normalname=None, tumorfastqs=None, t
                     return "_".join(parts[:3])  # Returns an id based on the first hit
                 else:
                     # Add filler if the filename cannot be split into at least 4 parts
-                    logger(f"Filename {filename} could not be split into at least 4 parts")
+                    logger(
+                        f"Filename {filename} could not be split into at least 4 parts"
+                    )
                     logger(f"Returning filler id for {name}")
                     return "_".join(parts + ["filler"] * (3 - len(parts)))
         raise ValueError(f"No fastq found for {name} in {fastq_dir}")
+
     # End of get_id_from_fastq
 
     normalid = None
@@ -70,7 +76,7 @@ def get_normalid_tumorid(normalfastqs=None, normalname=None, tumorfastqs=None, t
 
 
 def yearly_stats(tumorname, normalname):
-    '''Update yearly stats file with sample that has finished running in pipeline correctly'''
+    """Update yearly stats file with sample that has finished running in pipeline correctly"""
     yearly_stats = "yearly_stats.txt"
     try:
         if not os.path.exists(yearly_stats):
@@ -82,21 +88,23 @@ def yearly_stats(tumorname, normalname):
 
     with open(yearly_stats, "a") as yearly_stats_file:
         date_time = time.strftime("%Y-%m-%d-%H-%M-%S")
-        yearly_stats_file.write(f"Tumor ID: {tumorname} Normal ID: {normalname} Date and Time: {date_time}\n")
+        yearly_stats_file.write(
+            f"Tumor ID: {tumorname} Normal ID: {normalname} Date and Time: {date_time}\n"
+        )
 
 
 def copy_results(outputdir, tumorname=None, normalname=None):
-    '''Rsync result files from outputdir to resultdir'''
+    """Rsync result files from outputdir to resultdir"""
     try:
         # Automatic detection of runconfig
-        config_dir = os.path.join(outputdir, 'configs')
+        config_dir = os.path.join(outputdir, "configs")
         if tumorname:
-            config_pattern = re.compile(rf'^{tumorname}.*_config\.json$')
+            config_pattern = re.compile(rf"^{tumorname}.*_config\.json$")
         elif normalname:
-            config_pattern = re.compile(rf'^{normalname}.*_config\.json$')
+            config_pattern = re.compile(rf"^{normalname}.*_config\.json$")
         else:
             # Fallback to a generic pattern if no specific names are provided
-            config_pattern = re.compile(r'^DNA[\dA-Za-z]+_.+_.+_config\.json$')
+            config_pattern = re.compile(r"^DNA[\dA-Za-z]+_.+_.+_config\.json$")
 
         if os.path.isdir(config_dir):
             for f in os.listdir(config_dir):
@@ -105,25 +113,33 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                     logger(f"Found runconfig: {runconfig}")
                     break
             else:
-                logger(f"Automatic detection of config file failed. No matching configuration file found in {config_dir}")
-                logger(f"Pattern used to match the config file: {config_pattern.pattern}")
-                raise ValueError("Automatic detection of config file failed. No matching configuration file found.")
+                logger(
+                    f"Automatic detection of config file failed. No matching configuration file found in {config_dir}"
+                )
+                logger(
+                    f"Pattern used to match the config file: {config_pattern.pattern}"
+                )
+                raise ValueError(
+                    "Automatic detection of config file failed. No matching configuration file found."
+                )
 
         try:
             # Read the runconfig file to get resultdir and resultsconf
-            with open(runconfig, 'r') as cf:
+            with open(runconfig, "r") as cf:
                 config_data = json.load(cf)
                 try:
-                    resultdir = config_data.get('resultdir')
+                    resultdir = config_data.get("resultdir")
                     logger(f"Resultdir found in config file: {resultdir}")
                 except KeyError:
                     logger(f"Key 'resultdir' not found in config file {runconfig}")
                     raise KeyError("Key 'resultdir' not found in config file")
                 try:
-                    resultsconf = config_data.get('resultfilesconf')
+                    resultsconf = config_data.get("resultfilesconf")
                     logger(f"Results configuration file found: {resultsconf}")
                 except KeyError:
-                    logger(f"Key 'resultfilesconf' not found in config file {runconfig}")
+                    logger(
+                        f"Key 'resultfilesconf' not found in config file {runconfig}"
+                    )
                     raise KeyError("Key 'resultfilesconf' not found in config file")
         except Exception as e:
             logger(f"Error reading config file {runconfig}: {e}")
@@ -140,7 +156,11 @@ def copy_results(outputdir, tumorname=None, normalname=None):
             if category == "not_copied":
                 logger("Skipping 'not_copied' category as per configuration.")
                 continue
-            dest_dir = resultdir if category == "toplevel" else os.path.join(resultdir, category)
+            dest_dir = (
+                resultdir
+                if category == "toplevel"
+                else os.path.join(resultdir, category)
+            )
 
             try:
                 os.makedirs(dest_dir, exist_ok=True)
@@ -156,10 +176,13 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                     try:
                         copyfile(src_path, dest_path)
                         logger(f"Copied {src_path} to {dest_path}")
+
                     except Exception as e:
                         logger(f"Error copying {src_path} to {dest_path}: {e}")
                 else:
-                    logger(f"Warning: Source file {src_path} does not exist, skipping copy.")
+                    logger(
+                        f"Warning: Source file {src_path} does not exist, skipping copy."
+                    )
 
         try:
             # webstore API call to make path searchable
@@ -170,7 +193,9 @@ def copy_results(outputdir, tumorname=None, normalname=None):
             if response.status_code == 200:
                 logger(f"Successfully notified webstore about new files in {resultdir}")
             else:
-                logger(f"Failed to notify webstore about new files in {resultdir}. Status code: {response.status_code}, Response: {response.text}")
+                logger(
+                    f"Failed to notify webstore about new files in {resultdir}. Status code: {response.status_code}, Response: {response.text}"
+                )
         except Exception as e:
             logger(f"Error occurred while notifying webstore: {e}")
 
@@ -394,16 +419,6 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "-l", "{cluster.excl}"
         ]
 
-        # Create DAG of pipeline
-        snakemake_args_DAG = [
-            "snakemake", "-s", "Snakefile",
-            "--configfile", snakemake_config,
-            "--directory", outputdir,
-            "--dag", "|", "dot", "-Tsvg", ">", f"{samplelogs}/dag_{current_date}.svg"
-        ]
-        snakemake_args_DAG_str = " ".join(snakemake_args_DAG)
-        subprocess.run(snakemake_args_DAG_str, shell=True, env=my_env)
-
         snakemake_args = [
             "snakemake", "-s", "Snakefile",
             "--configfile", snakemake_config,
@@ -414,13 +429,21 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "--latency-wait", "60",
             "--directory", outputdir,
             "--shadow-prefix", shadow_dir,
-            "--rerun-incomplete",
-            "--stats", f"{samplelogs}/stats_{current_date}.json"
+            "--rerun-incomplete"
         ] + notemp_arg
 
         # Execute Snakemake command with outputdir redirection
         with open(samplelog, "a") as log_file:
             subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
+
+        snakemake_args_report = [
+            "snakemake",
+            "--configfile", snakemake_config,
+            "--directory", outputdir,
+            "--report", f"{samplelogs}/report_{current_date}.html"
+        ]
+
+        subprocess.run(snakemake_args_report, env=my_env, check=True)
 
     except subprocess.CalledProcessError as e:
         tb = traceback.format_exc()
