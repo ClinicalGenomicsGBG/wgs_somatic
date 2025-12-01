@@ -89,12 +89,12 @@ def get_git_reponame(path=None):
 def submodule_info(path, outfile=None):
     """
     Get the submodule name and tag at the given path.
-    Optionaly write to a file.
+    Optionally write to a file.
     """
     name = get_git_reponame(path)
     tag = get_git_tag(path)
     if outfile:
-        with open(outfile, "w") as out:
+        with open(outfile, "a") as out:
             out.write(f"{name}-{tag}\n")
     return f"{name}-{tag}"
 
@@ -102,11 +102,11 @@ def submodule_info(path, outfile=None):
 def main_info(outfile, **kwargs):
     """
     Writes the main git information to a file.
-    Optinally takes paths to main dependencies and writes their basename
+    Optionally takes paths to main dependencies and writes their basename
     """
     name = get_git_reponame()
     tag = get_git_tag()
-    with open(outfile, "w") as out:
+    with open(outfile, "a") as out:
         out.write(f"{name}-{tag}\n")
         for title, path in kwargs.items():
             out.write(f"{title}: {os.path.basename(path)}\n")

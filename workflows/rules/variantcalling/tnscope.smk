@@ -87,7 +87,7 @@ if normalid:
             sentieon = pipeconfig["singularities"]["sentieon"]["tool_path"],
             reference = pipeconfig["singularities"]["sentieon"]["reference"],
             modelpath = pipeconfig["singularities"]["sentieon"]["tnscope_m"],
-            vstamp = f"{VDIR}/tnscope_modelfilter"
+            vstamp = f"{VDIR}/tnscope_modelfilter.txt"
         singularity:
             pipeconfig["singularities"]["sentieon"]["sing"]
         output:

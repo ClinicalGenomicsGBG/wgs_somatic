@@ -1,5 +1,6 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
+import os
 from workflows.scripts.create_segfile import create_seg
 from workflows.scripts.fix_sexploidyfile import mod_sex_vcf
 from tools.git_versions import submodule_info

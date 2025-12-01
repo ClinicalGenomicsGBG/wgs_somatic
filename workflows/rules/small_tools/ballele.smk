@@ -3,6 +3,7 @@
 import os
 import inspect
 from workflows.scripts.b_allele_igv_plot.plot_b_allele_freq import plot_freq
+from tools.git_versions import submodule_info
 
 rule ballele_plot:
     input:
