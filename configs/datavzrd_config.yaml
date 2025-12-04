@@ -1,0 +1,36 @@
+__use_yte__: true
+
+datasets:
+  admin_qc:
+    path: ?input.admin_qc
+    separator: "\t"
+
+  ascatstats:
+    path: ?input.ascatstats
+    separator: "\t"
+
+  tmb_table:
+    path: ?input.tmb
+    separator: "\t"
+
+  msi_table:
+    path: ?input.msi
+    separator: "\t"
+
+
+views:
+  admin_qc:
+    dataset: admin_qc
+    render-table: {}
+
+  ascat_stats:
+    dataset: ascatstats
+    render-table: {}
+
+  tmb_table:
+    dataset: tmb_table
+    render-table: {}
+
+  msi_table:
+    dataset: msi_table
+    render-table: {}
