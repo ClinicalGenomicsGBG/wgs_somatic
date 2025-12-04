@@ -15,6 +15,7 @@ import yaml
 import requests
 import random
 import string
+import zipfile
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
 
 
@@ -177,6 +178,15 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                         copyfile(src_path, dest_path)
                         logger(f"Copied {src_path} to {dest_path}")
 
+                        # Unzip zipped results on destination
+                        if src_path.endswith(".zip"):
+                            try:
+                                logger(f"Unzipping {dest_path} to {dest_dir}/{os.path.basename(relpath)[:-4]}")
+                                zip_ref = zipfile.ZipFile(dest_path, "r")
+                                zip_ref.extractall(f"{dest_dir}/{os.path.basename(relpath)[:-4]}")
+                            except Exception as e:
+                                logger(f"Error unzipping {dest_path}: {e}")
+
                         # Remove .bam and .bai files from outputdir once copied
                         if src_path.endswith(".bam") or src_path.endswith(".bai"):
                             try:
@@ -303,8 +313,10 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         # copying configfiles to analysisdir
         clusterconf = config["clusterconf"]
         filterconf = config["filterconf"]
+        datavzrdconf = config["datavzrdconf"]
         copyfile(os.path.join(configdir, clusterconf), os.path.join(runconfigs, clusterconf))
         copyfile(os.path.join(configdir, filterconf), os.path.join(runconfigs, filterconf))
+        copyfile(os.path.join(configdir, datavzrdconf), os.path.join(runconfigs, datavzrdconf))
         copyfile(os.path.join(configdir, mainconf_name), os.path.join(runconfigs, mainconf_name))
 
         # Use wildcards to fill in the resultfiles templates
@@ -447,7 +459,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "snakemake",
             "--configfile", snakemake_config,
             "--directory", outputdir,
-            "--report", f"{samplelogs}/report.html"
+            "--report", f"{samplelogs}/report.zip"
         ]
 
         subprocess.run(snakemake_args_report, env=my_env, check=True)

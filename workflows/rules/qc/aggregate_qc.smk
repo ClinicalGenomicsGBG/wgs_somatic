@@ -9,9 +9,11 @@ import os
 if tumorid:
     excel_qc_output = "qc_report/{tumorid}_qc_stats.xlsx"
     qcstats_wgs_admin_output = "qc_report/{tumorid}_qc_stats_wgsadmin.xlsx"
+    qcstats_wgs_admin_output_tsv = "qc_report/{tumorid}_qc_stats_wgsadmin.tsv"
 else:
     excel_qc_output = "qc_report/{normalid}_qc_stats.xlsx"
     qcstats_wgs_admin_output = "qc_report/{normalid}_qc_stats_wgsadmin.xlsx"
+    qcstats_wgs_admin_output_tsv = "qc_report/{normalid}_qc_stats_wgsadmin.tsv"
 
 
 rule excel_qc:
@@ -23,9 +25,9 @@ rule excel_qc:
         somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_normal if normalid else stype_tumor),
         somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal if normalid else stype_tumor),
         canvasvcf = expand("{stype}/canvas/{sname}_canvas_somatic.vcf.gz", stype=stype_tumor, sname=tumorid) if tumorid and normalid else [],
-        tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=stype_tumor, sname=tumorid) if tumorid else [],
-        msi_filtered = expand("{stype}/msi/{sname}_msi_filtered.txt", sname=tumorid, stype=stype_tumor) if tumorid and normalid else [],
-        msi = expand("{stype}/msi/{sname}_msi.txt", sname=tumorid, stype=stype_tumor) if tumorid and normalid else [],
+        tmb = expand("{stype}/reports/{sname}_tmb.tsv", stype=stype_tumor, sname=tumorid) if tumorid else [],
+        msi_filtered = expand("{stype}/msi/{sname}_msi_filtered.tsv", sname=tumorid, stype=stype_tumor) if tumorid and normalid else [],
+        msi = expand("{stype}/msi/{sname}_msi.tsv", sname=tumorid, stype=stype_tumor) if tumorid and normalid else [],
         ascatstats = expand("{stype}/ascat/{sname}_ascat_stats.tsv", sname=tumorid, stype=stype_tumor) if tumorid else [],
     output:
         excel_qc_output
@@ -63,9 +65,10 @@ rule qcstats_wgs_admin:
         normaldedup = expand("{stype}/dedup/{sname}_DEDUP.txt", stype=stype_normal, sname=normalid) if normalid else [],
         somalier_pairs = expand("{stype}/somalier/somalier.pairs.tsv", stype=stype_normal if normalid else stype_tumor),
         somalier_samples = expand("{stype}/somalier/somalier.samples.tsv", stype=stype_normal if normalid else stype_tumor),
-        tmb = expand("{stype}/reports/{sname}_tmb.txt", stype=stype_tumor, sname=tumorid) if tumorid else [],
+        tmb = expand("{stype}/reports/{sname}_tmb.tsv", stype=stype_tumor, sname=tumorid) if tumorid else [],
     output: 
-        report(qcstats_wgs_admin_output)
+        xlsx=qcstats_wgs_admin_output,
+        tsv=qcstats_wgs_admin_output_tsv
     params:
         tumorid = tumorid if tumorid else '',
         normalid = normalid if normalid else '',
@@ -79,7 +82,7 @@ rule qcstats_wgs_admin:
             match_cutoff=filterconfig["somalier_filter"]["min_relatedness"]
         )
         create_qc_toaggregate(
-            output=f"{output}",
+            output=f"{output.xlsx}",
             somalier_obj=somalier,
             tumorcov=f"{input.tumorcov}",
             normalcov=f"{input.normalcov}" ,

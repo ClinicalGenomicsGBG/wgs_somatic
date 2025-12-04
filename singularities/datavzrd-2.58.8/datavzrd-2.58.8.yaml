@@ -1,0 +1,11 @@
+iname: datavzrd-2.58.8
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - datavzrd=2.58.8
+  - yte=1.9.4
+  - numpy
+  - pandas
+  - polars
