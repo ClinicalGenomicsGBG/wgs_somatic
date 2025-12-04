@@ -11,6 +11,6 @@ rule datavzrd_report:
             htmlindex="index.html",
         ),
     singularity:
-        "/clinical/dev/cgg-cancer/wgs_somatic/wgs_somatic_report/singularities/datavzrd-2.58.8/datavzrd-2.58.8.sif"
+        pipeconfig["singularities"]["datavzrd"]["sing"]
     wrapper:
         "v8.0.3/utils/datavzrd"
