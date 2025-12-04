@@ -102,10 +102,8 @@ VDIR = os.path.abspath(VDIR)
 
 ###########################################################
 # Defining Non Cluster Rules
-if tumorid:
-  localrules: all, excel_qc, tmb_calculation, qcstats_wgs_admin, somalier_relate, somalier_parse_sex, workflow_finished
-else:
-  localrules: all, excel_qc, qcstats_wgs_admin, somalier_relate, somalier_parse_sex, workflow_finished
+localrules: all, excel_qc, tmb_calculation, qcstats_wgs_admin, somalier_relate, somalier_parse_sex, workflow_finished, datavzrd_report
+
 ###########################################################
 
 #########################################
@@ -133,13 +131,14 @@ include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/small_tools/bgzip.smk"
 include:        "workflows/rules/small_tools/somalier.smk"
 include:        "workflows/rules/small_tools/vep.smk"
+include:        "workflows/rules/small_tools/datavzrd.smk"
 
 #########################################
 # QC
 include:       "workflows/rules/qc/aggregate_qc.smk"
 include:       "workflows/rules/qc/coverage.smk"
 
-ignore = {"tool_versions.yaml", "logs/report.html"}
+ignore = {"tool_versions.yaml", "logs/report.zip"}
 
 all_result_files = []
 for result in resultsconf.values():

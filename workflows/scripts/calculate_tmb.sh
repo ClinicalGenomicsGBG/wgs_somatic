@@ -17,10 +17,13 @@ else
     filt_norm=""  # Only use the tumor sample in coverage filter
 fi
 
+# Write headers to table
+echo -e "Metric\tValue" > $output_file
+
 # Filter, get total mutations, and calculate TMB
 $bcftools filter -i "FORMAT/AF[0]>$min_mutant_allele_fraction && FORMAT/AD[0:1]>$min_mutant_allele_reads && FORMAT/DP[0]>$min_coverage $filt_norm" $input_vcf | \
 $bcftools stats | grep 'number of records:' | awk '{print $NF}' | \
-awk -v gsize=$genome_size '{ printf "TMB\t%.2f\n", ($1 / gsize * 1e6) }' > $output_file
+awk -v gsize=$genome_size '{ printf "TMB\t%.2f\n", ($1 / gsize * 1e6) }' >> $output_file
 
 # Add parameters to the output file
 echo -e "min_mutant_allele_fraction\t$min_mutant_allele_fraction" >> $output_file
