@@ -110,11 +110,12 @@ ascat.bc <- ascat.correctLogR(
   GCcontentfile = opt$`gc-content-file`,
   replictimingfile = opt$`replic-timing-file`
 )
+seg_penalty <- opt$penalty
 if (opt$tumoronly) {
   gg <- ascat.predictGermlineGenotypes(ascat.bc, platform = "WGS_hg38_50X")
-  ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg, penalty = opt$penalty)
+  ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg, penalty = seg_penalty)
 } else {
-  ascat.bc <- ascat.aspcf(ascat.bc, penalty = opt$penalty)
+  ascat.bc <- ascat.aspcf(ascat.bc, penalty = seg_penalty)
 }
 
 # Restore the original working directory
@@ -126,9 +127,10 @@ if (length(ascat.output$failedarrays) > 0 && opt$penalty < opt$`fallback-penalty
   # Ascat failed, try with a higher penalty
   warning(paste0("ASCAT failed, retrying with a higher penalty of "), opt$`fallback-penalty`)
   if (opt$tumoronly) {
-    ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg, penalty = opt$`fallback-penalty`)
+    seg_penalty <- opt$`fallback-penalty`
+    ascat.bc <- ascat.aspcf(ascat.bc, ascat.gg = gg, penalty = seg_penalty)
   } else {
-    ascat.bc <- ascat.aspcf(ascat.bc, penalty = opt$`fallback-penalty`)
+    ascat.bc <- ascat.aspcf(ascat.bc, penalty = seg_penalty)
   }
   
   ascat.output <- ascat.runAscat(ascat.bc, gamma = 1, write_segments = TRUE, img.dir = opt$`output-dir`)
@@ -142,4 +144,4 @@ stats <- ascat.metrics(ascat.bc, ascat.output)
 stats_output_file <- file.path(opt$`output-dir`, paste0(opt$`tumor-name`, "_ascat_stats.tsv"))
 write.table(t(stats), stats_output_file, sep = "\t", quote = FALSE, row.names = TRUE, col.names = FALSE)
 
-save(ascat.bc, ascat.output, stats, file = file.path(opt$`output-dir`, paste0(opt$`tumor-name`, "_ascat_bc.Rdata")))
+save(ascat.bc, ascat.output, stats, seg_penalty, file = file.path(opt$`output-dir`, paste0(opt$`tumor-name`, "_ascat_bc.Rdata")))

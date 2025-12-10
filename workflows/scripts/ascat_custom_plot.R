@@ -159,8 +159,9 @@ option_list <- list(
   make_option("--whole-genome-points", type = "integer", default = 2E4, help = "Number of points to show in the whole genome BAF/LogR plots [default %default]", metavar = "integer"),
   make_option("--chromosome-points", type = "integer", default = 4E3, help = "Number of points to show in the chromosome-specific BAF/LogR plots [default %default]", metavar = "integer"),
   make_option("--smoothing-window", type = "integer", default = 51, help = "Window size for smoothing the LogR values [default %default]", metavar = "integer"),
-  make_option("--default-y-scale", type = "integer", default = 6, help = "Default maximum y-scale for the copy number plot [default %default]", metavar = "integer")
-  )
+  make_option("--default-y-scale", type = "integer", default = 6, help = "Default maximum y-scale for the copy number plot [default %default]", metavar = "integer"),
+  make_option("--default-seg-penalty", type = "integer", default = 25, help = "Penalty parameter for ascat.aspcf used in the ascat run [default %default]", metavar = "integer")
+)
 
 # Parse command-line arguments
 opt_parser <- OptionParser(option_list = option_list)
@@ -306,6 +307,18 @@ tumorBAF_df_adj <- tumorBAF_df %>%
 
 # Whole genome plot
 print(plot_panel_wgs(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, max_scale = opt$`default-y-scale`, tumorname = opt$tumorname, cytoband = cytoband))
+
+if (!is.null(seg_penalty) && (seg_penalty > opt$`default-seg-penalty`)){
+  # Add note to plot if higher penalty was used
+  text(x = par("usr")[2],
+       y = par("usr")[4],
+       labels = paste0("Note: Higher segmentation pentalty: ", seg_penalty),
+       pos = 2,
+       cex = 1.0,
+       col = "red"
+  )
+}
+
 if(
     any(seg_df$ascat_ploidy > opt$`default-y-scale`) |
     any(CNs_df$CN_call > opt$`default-y-scale`) |
