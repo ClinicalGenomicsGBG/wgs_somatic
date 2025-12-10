@@ -306,18 +306,26 @@ tumorBAF_df_adj <- tumorBAF_df %>%
   slice(which(row_number() %% ceiling(n() / opt$`whole-genome-points`) == 1))
 
 # Whole genome plot
-print(plot_panel_wgs(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, max_scale = opt$`default-y-scale`, tumorname = opt$tumorname, cytoband = cytoband))
+p <- plot_panel_wgs(
+  fai, seg_df, tumorBAF_df_adj, CNs_df_adj,
+  max_scale = opt$`default-y-scale`,
+  tumorname = opt$tumorname,
+  cytoband = cytoband
+)
 
-if (!is.null(seg_penalty) && (seg_penalty > opt$`default-seg-penalty`)){
-  # Add note to plot if higher penalty was used
-  text(x = par("usr")[2],
-       y = par("usr")[4],
-       labels = paste0("Note: Higher segmentation pentalty: ", seg_penalty),
-       pos = 2,
-       cex = 1.0,
-       col = "red"
+if (!is.null(seg_penalty) && seg_penalty > opt$`default-seg-penalty`) {
+  p <- p + ggplot2::annotate(
+    "text",
+    x = Inf, y = Inf,
+    label = paste0("Note: Higher segmentation penalty: ", seg_penalty),
+    hjust = 1.1, vjust = 1.5,   # nudges inward from top-right
+    colour = "red",
+    size = 3.5
   )
 }
+
+print(p)
+
 
 if(
     any(seg_df$ascat_ploidy > opt$`default-y-scale`) |
