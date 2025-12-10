@@ -124,9 +124,8 @@ include:        "workflows/rules/variantcalling/manta.smk"
 
 #########################################
 # Small Tools
-if tumorid:
-    include:        "workflows/rules/small_tools/tmb_calculation.smk"
-    include:        "workflows/rules/small_tools/msi.smk"
+include:        "workflows/rules/small_tools/tmb_calculation.smk"
+include:        "workflows/rules/small_tools/msi.smk"
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/small_tools/bgzip.smk"
 include:        "workflows/rules/small_tools/somalier.smk"

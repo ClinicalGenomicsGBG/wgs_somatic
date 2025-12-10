@@ -5,17 +5,20 @@ datasets:
     path: ?input.admin_qc
     separator: "\t"
 
-  ascatstats:
-    path: ?input.ascatstats
-    separator: "\t"
+  ?if input.ascatstats:
+    ascatstats:
+      path: ?input.ascatstats
+      separator: "\t"
 
-  tmb_table:
-    path: ?input.tmb
-    separator: "\t"
+  ?if input.tmb:
+    tmb_table:
+      path: ?input.tmb
+      separator: "\t"
 
-  msi_table:
-    path: ?input.msi
-    separator: "\t"
+  ?if input.msi:
+    msi_table:
+      path: ?input.msi
+      separator: "\t"
 
 
 views:
@@ -23,14 +26,17 @@ views:
     dataset: admin_qc
     render-table: {}
 
-  ascat_stats:
-    dataset: ascatstats
-    render-table: {}
+  ?if input.ascatstats:
+    ascat_stats:
+      dataset: ascatstats
+      render-table: {}
 
-  tmb_table:
-    dataset: tmb_table
-    render-table: {}
+  ?if input.tmb:
+    tmb_table:
+      dataset: tmb_table
+      render-table: {}
 
-  msi_table:
-    dataset: msi_table
-    render-table: {}
+  ?if input.msi:
+    msi_table:
+      dataset: msi_table
+      render-table: {}
