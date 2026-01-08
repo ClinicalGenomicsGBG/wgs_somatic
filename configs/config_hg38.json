@@ -136,7 +136,7 @@
         "manta_summary":
         {
             "genelist": "/clinical/exec/wgs_somatic/dependencies/in_house/genelist_v1.1.txt",
-            "genelist_tumoronly": "/clinical/exec/wgs_somatic/dependencies/in_house/Genelist_GMS-AL_tumor-only_v1.2.txt"
+            "genelist_tumoronly": "/clinical/exec/wgs_somatic/dependencies/in_house/Genelist_GMS-AL_tumor-only_MANTA_v4_251209.txt"
         },
         "pindel":
         {
