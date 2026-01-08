@@ -9,6 +9,7 @@ rule msi:
         normal_bai = expand("{stype}/realign/{sname}_REALIGNED.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
     params:
         reference_list = pipeconfig["rules"]["msi"]["msi_list"],
+        vstamp = f"{VDIR}/msi.txt"
     threads:
         clusterconf["msi"]["threads"]
     singularity:
@@ -20,6 +21,10 @@ rule msi:
         msi_out_unstable = temp("{stype}/msi/{sname}_msi.txt_unstable"),
     shell:
         """
+        # Version info
+        echo msisensor-pro: $(msisensor-pro --version 2>&1 | grep -o 'v[0-9.]\+') > {params.vstamp}
+        
+        # Run msisensor-pro
         msisensor-pro msi \
             -d {params.reference_list} \
             -n {input.normal_bam} \
@@ -34,6 +39,7 @@ rule msi_filter_bam:
         bam = "{stype}/realign/{sname}_REALIGNED.bam",
     params:
         bed = pipeconfig["rules"]["msi"]["msi_bed"],
+        vstamp = f"{VDIR}/msi_filter_bam.txt"
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
@@ -41,6 +47,8 @@ rule msi_filter_bam:
         filtered_bam_bai = temp("{stype}/msi/{sname}_filtered.bam.bai"),
     shell:
         """
+        bedtools --version > {params.vstamp}
+        samtools --version | head -n 1 >> {params.vstamp}
         bedtools intersect -wa -abam {input.bam} -b {params.bed} > {output.filtered_bam}
         samtools index {output.filtered_bam}
         """
@@ -53,6 +61,7 @@ rule msi_filtered:
         normal_bai = expand("{stype}/msi/{sname}_filtered.bam.bai", sname=normalid, stype=sampleconfig[normalname]["stype"]),
     params:
         reference_list = pipeconfig["rules"]["msi"]["msi_list"],
+        vstamp = f"{VDIR}/msi_filtered.txt"
     threads:
         clusterconf["msi"]["threads"]
     singularity:
@@ -64,6 +73,10 @@ rule msi_filtered:
         msi_out_unstable = temp("{stype}/msi/{sname}_msi_filtered.txt_unstable"),
     shell:
         """
+        # Version info
+        echo msisensor-pro: $(msisensor-pro --version 2>&1 | grep -o 'v[0-9.]\+') > {params.vstamp}
+        
+        # Run msisensor-pro
         msisensor-pro msi \
             -d {params.reference_list} \
             -n {input.normal_bam} \

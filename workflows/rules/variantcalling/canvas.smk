@@ -1,21 +1,24 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
+import os
 from workflows.scripts.create_segfile import create_seg
 from workflows.scripts.fix_sexploidyfile import mod_sex_vcf
-
+from tools.git_versions import submodule_info
 
 rule filter_canvas:
     input:
         vcf = "{stype}/canvas/{sname}_canvas_{mode}.vcf.gz"
     params:
         annotate = pipeconfig["rules"]["canvas"].get("annotate", f"{ROOT_DIR}/workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py"),
-        annotate_ref = pipeconfig["rules"]["canvas"]["annotate_ref"]
+        annotate_ref = pipeconfig["rules"]["canvas"]["annotate_ref"],
+        vstamp = f"{VDIR}/filter_canvas.txt"
     output:
         xlsx = "{stype}/canvas/{sname}_canvas_{mode}_filt.vcf.xlsx",
         vcf_out = "{stype}/canvas/{sname}_canvas_{mode}_filt.vcf"
     shadow:
         pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
+        submodule_info(os.path.dirname(params.annotate), params.vstamp)
         vcf_unzipped = input.vcf[:-3]
         shell("gunzip {input.vcf}")
         shell("grep -v 'Canvas:REF' {vcf_unzipped} > {output.vcf_out}")
@@ -44,6 +47,7 @@ if tumorid:
                 intermediate_observed = "{stype}/canvas/{sname}_somatic_CNV_observed.seg",
                 intermediate_called = "{stype}/canvas/{sname}_somatic_CNV_called.seg",
                 bgzip = pipeconfig["rules"]["bgzip"]["bgzip"],
+                vstamp = f"{VDIR}/canvas_somatic.txt",
             singularity:
                 pipeconfig["singularities"]["canvas"]["sing"]
             output:
@@ -54,7 +58,11 @@ if tumorid:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             shell:
                 """
-                echo $HOSTNAME
+                # Version info
+                echo canvas: $(dotnet {params.dll} --version) > {params.vstamp}
+
+                # Run canvas
+                echo $HOSTNAME;
                 SEX=$(cat {input.somalier_sex})
                 # set +e to capture canvas exit code
                 set +e
@@ -113,6 +121,7 @@ if tumorid:
                 intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
                 intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg",
                 bgzip = pipeconfig["rules"]["bgzip"]["bgzip"],
+                vstamp = f"{VDIR}/canvas_tumoronly.txt",
             singularity:
                 pipeconfig["singularities"]["canvas"]["sing"]
             output:
@@ -123,6 +132,10 @@ if tumorid:
                 pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
             shell:
                 """
+                # Version info
+                echo canvas: $(dotnet {params.dll} --version) > {params.vstamp}
+
+                # Run canvas
                 echo $HOSTNAME;
                 SEX=$(cat {input.somalier_sex})
                 set +e
@@ -180,6 +193,7 @@ if normalid:
             intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
             intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg",
             bgzip = pipeconfig["rules"]["bgzip"]["bgzip"],
+            vstamp = f"{VDIR}/canvas_germline.txt",
         singularity:
             pipeconfig["singularities"]["canvas"]["sing"]
         output:
@@ -190,6 +204,10 @@ if normalid:
             pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
         shell:
             """
+            # Version info
+            echo canvas: $(dotnet {params.dll} --version) > {params.vstamp}
+
+            # Run canvas
             echo $HOSTNAME;
             SEX=$(cat {input.somalier_sex})
             set +e
