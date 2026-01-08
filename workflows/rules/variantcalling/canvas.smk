@@ -46,7 +46,8 @@ if tumorid:
                 intermediate_vcf = "{stype}/canvas/{sname}_somatic_CNV.vcf.gz",
                 intermediate_observed = "{stype}/canvas/{sname}_somatic_CNV_observed.seg",
                 intermediate_called = "{stype}/canvas/{sname}_somatic_CNV_called.seg",
-                vstamp = f"{VDIR}/canvas_somatic.txt"
+                bgzip = pipeconfig["rules"]["bgzip"]["bgzip"],
+                vstamp = f"{VDIR}/canvas_somatic.txt",
             singularity:
                 pipeconfig["singularities"]["canvas"]["sing"]
             output:
@@ -63,10 +64,40 @@ if tumorid:
                 # Run canvas
                 echo $HOSTNAME;
                 SEX=$(cat {input.somalier_sex})
-                {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t TN --samplename {wildcards.sname} --somatic_vcf {input.somatic_vcf} --sex "$SEX" --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
-                mv {params.intermediate_vcf} {output.out_vcf}
-                mv {params.intermediate_observed} {output.out_observed}
-                mv {params.intermediate_called} {output.out_called}
+                # set +e to capture canvas exit code
+                set +e
+                {params.run_py} \
+                    --genomeversion {params.genomeversion} \
+                    --bam {input.bam} \
+                    --normal_vcf {input.germline_snv_vcf} \
+                    --o {wildcards.stype}/canvas/ \
+                    -t TN \
+                    --samplename {wildcards.sname} \
+                    --somatic_vcf {input.somatic_vcf} \
+                    --sex "$SEX" \
+                    --referencedir {params.genomedir} \
+                    --kmerfile {params.kmerfile} \
+                    --canvasdll {params.dll} \
+                    --filterfile {params.filter13}
+                canvas_exit=$?
+                set -e
+                if [ "$canvas_exit" -eq 0 ]; then
+                    # Canvas succeeded: move the real outputs into place
+                    mv {params.intermediate_vcf} {output.out_vcf}
+                    mv {params.intermediate_observed} {output.out_observed}
+                    mv {params.intermediate_called} {output.out_called}
+                else
+                    # Empty VCF
+                    VCF_TMP="{wildcards.stype}/canvas/{wildcards.sname}.stub.vcf"
+                    printf "##fileformat=VCFv4.2\n" > "$VCF_TMP"
+                    printf "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n" >> "$VCF_TMP"
+                    {params.bgzip} -c "$VCF_TMP" > {output.out_vcf}
+                    rm -f "$VCF_TMP"
+
+                    # Empty SEG files
+                    : > {output.out_observed}
+                    : > {output.out_called}                
+                fi
                 """
     else:
         rule canvas_tumoronly:
@@ -89,7 +120,8 @@ if tumorid:
                 intermediate_vcf = "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
                 intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
                 intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg",
-                vstamp = f"{VDIR}/canvas_tumoronly.txt"
+                bgzip = pipeconfig["rules"]["bgzip"]["bgzip"],
+                vstamp = f"{VDIR}/canvas_tumoronly.txt",
             singularity:
                 pipeconfig["singularities"]["canvas"]["sing"]
             output:
@@ -106,10 +138,38 @@ if tumorid:
                 # Run canvas
                 echo $HOSTNAME;
                 SEX=$(cat {input.somalier_sex})
-                {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --sex "$SEX" --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
-                mv {params.intermediate_vcf} {output.out_vcf}
-                mv {params.intermediate_observed} {output.out_observed}
-                mv {params.intermediate_called} {output.out_called}
+                set +e
+                {params.run_py} \
+                    --genomeversion {params.genomeversion} \
+                    --bam {input.bam} \
+                    --normal_vcf {input.germline_snv_vcf} \
+                    --o {wildcards.stype}/canvas/ \
+                    -t germline \
+                    --samplename {wildcards.sname} \
+                    --sex "$SEX" \
+                    --referencedir {params.genomedir} \
+                    --kmerfile {params.kmerfile} \
+                    --canvasdll {params.dll} \
+                    --filterfile {params.filter13}
+                canvas_exit=$?
+                set -e
+                if [ "$canvas_exit" -eq 0 ]; then
+                    # Canvas succeeded: move the real outputs into place
+                    mv {params.intermediate_vcf} {output.out_vcf}
+                    mv {params.intermediate_observed} {output.out_observed}
+                    mv {params.intermediate_called} {output.out_called}
+                else
+                    # Empty VCF
+                    VCF_TMP="{wildcards.stype}/canvas/{wildcards.sname}.stub.vcf"
+                    printf "##fileformat=VCFv4.2\n" > "$VCF_TMP"
+                    printf "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n" >> "$VCF_TMP"
+                    {params.bgzip} -c "$VCF_TMP" > {output.out_vcf}
+                    rm -f "$VCF_TMP"
+
+                    # Empty SEG files
+                    : > {output.out_observed}
+                    : > {output.out_called}                
+                fi
                 """
 
 if normalid:
@@ -132,7 +192,8 @@ if normalid:
             intermediate_vcf = "{stype}/canvas/{sname}_germline_CNV.vcf.gz",
             intermediate_observed = "{stype}/canvas/{sname}_germline_CNV_observed.seg",
             intermediate_called = "{stype}/canvas/{sname}_germline_CNV_called.seg",
-            vstamp = f"{VDIR}/canvas_germline.txt"
+            bgzip = pipeconfig["rules"]["bgzip"]["bgzip"],
+            vstamp = f"{VDIR}/canvas_germline.txt",
         singularity:
             pipeconfig["singularities"]["canvas"]["sing"]
         output:
@@ -149,8 +210,36 @@ if normalid:
             # Run canvas
             echo $HOSTNAME;
             SEX=$(cat {input.somalier_sex})
-            {params.run_py} --genomeversion {params.genomeversion} --bam {input.bam} --normal_vcf {input.germline_snv_vcf} --o {wildcards.stype}/canvas/ -t germline --samplename {wildcards.sname} --sex "$SEX" --referencedir {params.genomedir} --kmerfile {params.kmerfile} --canvasdll {params.dll} --filterfile {params.filter13}
-            mv {params.intermediate_vcf} {output.out_vcf}
-            mv {params.intermediate_observed} {output.out_observed}
-            mv {params.intermediate_called} {output.out_called}
+            set +e
+            {params.run_py} \
+              --genomeversion {params.genomeversion} \
+              --bam {input.bam} \
+              --normal_vcf {input.germline_snv_vcf} \
+              --o {wildcards.stype}/canvas/ \
+              -t germline \
+              --samplename {wildcards.sname} \
+              --sex "$SEX" \
+              --referencedir {params.genomedir} \
+              --kmerfile {params.kmerfile} \
+              --canvasdll {params.dll} \
+              --filterfile {params.filter13}
+            canvas_exit=$?
+            set -e
+            if [ "$canvas_exit" -eq 0 ]; then
+                # Canvas succeeded: move the real outputs into place
+                mv {params.intermediate_vcf} {output.out_vcf}
+                mv {params.intermediate_observed} {output.out_observed}
+                mv {params.intermediate_called} {output.out_called}
+            else
+                # Empty VCF
+                VCF_TMP="{wildcards.stype}/canvas/{wildcards.sname}.stub.vcf"
+                printf "##fileformat=VCFv4.2\n" > "$VCF_TMP"
+                printf "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n" >> "$VCF_TMP"
+                {params.bgzip} -c "$VCF_TMP" > {output.out_vcf}
+                rm -f "$VCF_TMP"
+
+                # Empty SEG files
+                : > {output.out_observed}
+                : > {output.out_called}                
+            fi
             """

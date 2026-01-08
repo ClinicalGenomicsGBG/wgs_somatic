@@ -159,8 +159,9 @@ option_list <- list(
   make_option("--whole-genome-points", type = "integer", default = 2E4, help = "Number of points to show in the whole genome BAF/LogR plots [default %default]", metavar = "integer"),
   make_option("--chromosome-points", type = "integer", default = 4E3, help = "Number of points to show in the chromosome-specific BAF/LogR plots [default %default]", metavar = "integer"),
   make_option("--smoothing-window", type = "integer", default = 51, help = "Window size for smoothing the LogR values [default %default]", metavar = "integer"),
-  make_option("--default-y-scale", type = "integer", default = 6, help = "Default maximum y-scale for the copy number plot [default %default]", metavar = "integer")
-  )
+  make_option("--default-y-scale", type = "integer", default = 6, help = "Default maximum y-scale for the copy number plot [default %default]", metavar = "integer"),
+  make_option("--default-seg-penalty", type = "integer", default = 25, help = "Penalty parameter for ascat.aspcf used in the ascat run [default %default]", metavar = "integer")
+)
 
 # Parse command-line arguments
 opt_parser <- OptionParser(option_list = option_list)
@@ -209,6 +210,22 @@ if (opt$gender == "XY") {
 } else {
   fai <- fai[1:23,]
   }
+
+# failedarrays is empty (length 0) if ascat.run worked fine
+if (length(ascat.output$failedarrays) > 0) {
+  message("ASCAT failed for this sample. Producing empty outputs.")
+
+  pdf(opt$`output-plot`, width = 18, height = 9)
+  plot.new()
+  title("ASCAT failed for this sample.")
+  dev.off()
+
+  file.create(opt$`output-seg-smooth`)
+  file.create(opt$`output-seg-call`)
+  file.create(opt$`output-baf`)
+
+  quit(status = 0, save = "no")
+}
 
 ## Major Minor allele Segments
 # Read the segments table
@@ -289,7 +306,27 @@ tumorBAF_df_adj <- tumorBAF_df %>%
   slice(which(row_number() %% ceiling(n() / opt$`whole-genome-points`) == 1))
 
 # Whole genome plot
-print(plot_panel_wgs(fai, seg_df, tumorBAF_df_adj, CNs_df_adj, max_scale = opt$`default-y-scale`, tumorname = opt$tumorname, cytoband = cytoband))
+p <- plot_panel_wgs(
+  fai, seg_df, tumorBAF_df_adj, CNs_df_adj,
+  max_scale = opt$`default-y-scale`,
+  tumorname = opt$tumorname,
+  cytoband = cytoband
+)
+
+if (!is.null(seg_penalty) && seg_penalty > opt$`default-seg-penalty`) {
+  p <- p + ggplot2::annotate(
+    "text",
+    x = Inf, y = Inf,
+    label = paste0("Note: Higher segmentation penalty: ", seg_penalty),
+    hjust = 1.1, vjust = 1.5,   # nudges inward from top-right
+    colour = "red",
+    size = 3.5
+  )
+}
+
+print(p)
+
+
 if(
     any(seg_df$ascat_ploidy > opt$`default-y-scale`) |
     any(CNs_df$CN_call > opt$`default-y-scale`) |
