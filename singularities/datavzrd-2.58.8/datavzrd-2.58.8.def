@@ -1,0 +1,18 @@
+Bootstrap: docker
+From: mambaorg/micromamba
+
+%files
+    datavzrd-2.58.8.yaml /datavzrd-2.58.8.yaml
+
+%environment
+    export PATH="${MAMBA_ROOT_PREFIX}/bin:$PATH"
+
+%post -c /bin/bash
+    micromamba install -n base --file datavzrd-2.58.8.yaml && \
+    micromamba clean --all --yes
+
+%runscript
+    #!/bin/bash
+
+    # Activate base environment
+    source /usr/local/bin/_activate_current_env.sh

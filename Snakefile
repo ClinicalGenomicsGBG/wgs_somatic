@@ -102,10 +102,8 @@ VDIR = os.path.abspath(VDIR)
 
 ###########################################################
 # Defining Non Cluster Rules
-if tumorid:
-  localrules: all, excel_qc, tmb_calculation, qcstats_wgs_admin, somalier_relate, somalier_parse_sex, workflow_finished
-else:
-  localrules: all, excel_qc, qcstats_wgs_admin, somalier_relate, somalier_parse_sex, workflow_finished
+localrules: all, excel_qc, tmb_calculation, qcstats_wgs_admin, somalier_relate, somalier_parse_sex, workflow_finished, datavzrd_report
+
 ###########################################################
 
 #########################################
@@ -126,25 +124,25 @@ include:        "workflows/rules/variantcalling/manta.smk"
 
 #########################################
 # Small Tools
-if tumorid:
-    include:        "workflows/rules/small_tools/tmb_calculation.smk"
-    include:        "workflows/rules/small_tools/msi.smk"
+include:        "workflows/rules/small_tools/tmb_calculation.smk"
+include:        "workflows/rules/small_tools/msi.smk"
 include:        "workflows/rules/small_tools/ballele.smk"
 include:        "workflows/rules/small_tools/bgzip.smk"
 include:        "workflows/rules/small_tools/somalier.smk"
 include:        "workflows/rules/small_tools/vep.smk"
+include:        "workflows/rules/small_tools/datavzrd.smk"
 
 #########################################
 # QC
 include:       "workflows/rules/qc/aggregate_qc.smk"
 include:       "workflows/rules/qc/coverage.smk"
 
+ignore = {"tool_versions.yaml", "logs/report.zip"}
+
 all_result_files = []
 for result in resultsconf.values():
-    if "tool_versions.yaml" in result:
-        # we cannot have tool_versions.yaml as input and output
-        # it is included in resultsconf to include in the copy to webstore 
-        result = [f for f in result if f != "tool_versions.yaml"]
+    # remove files to ignore from workflow, but which should be copied
+    result = [f for f in result if f not in ignore]
     all_result_files.extend(result)
 
 rule workflow_finished:

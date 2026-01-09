@@ -15,10 +15,10 @@ rule msi:
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
-        msi_out = temp("{stype}/msi/{sname}_msi.txt"),
-        msi_out_dis = temp("{stype}/msi/{sname}_msi.txt_dis"),
-        msi_out_all = temp("{stype}/msi/{sname}_msi.txt_all"),
-        msi_out_unstable = temp("{stype}/msi/{sname}_msi.txt_unstable"),
+        msi_out = temp("{stype}/msi/{sname}_msi.tsv"),
+        msi_out_dis = temp("{stype}/msi/{sname}_msi.tsv_dis"),
+        msi_out_all = temp("{stype}/msi/{sname}_msi.tsv_all"),
+        msi_out_unstable = temp("{stype}/msi/{sname}_msi.tsv_unstable"),
     shell:
         """
         # Version info
@@ -67,10 +67,10 @@ rule msi_filtered:
     singularity:
         pipeconfig["singularities"]["msi"]["sing"]
     output:
-        msi_out = temp("{stype}/msi/{sname}_msi_filtered.txt"),
-        msi_out_dis = temp("{stype}/msi/{sname}_msi_filtered.txt_dis"),
-        msi_out_all = temp("{stype}/msi/{sname}_msi_filtered.txt_all"),
-        msi_out_unstable = temp("{stype}/msi/{sname}_msi_filtered.txt_unstable"),
+        msi_out = temp("{stype}/msi/{sname}_msi_filtered.tsv"),
+        msi_out_dis = temp("{stype}/msi/{sname}_msi_filtered.tsv_dis"),
+        msi_out_all = temp("{stype}/msi/{sname}_msi_filtered.tsv_all"),
+        msi_out_unstable = temp("{stype}/msi/{sname}_msi_filtered.tsv_unstable"),
     shell:
         """
         # Version info
