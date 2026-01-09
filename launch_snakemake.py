@@ -156,14 +156,6 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                     try:
                         copyfile(src_path, dest_path)
                         logger(f"Copied {src_path} to {dest_path}")
-
-                        # Remove .bam and .bai files from outputdir once copied
-                        if src_path.endswith('.bam') or src_path.endswith('.bai'):
-                            try:
-                                logger(f"Removing {src_path} from outputdir.")
-                                os.remove(src_path)
-                            except Exception as e:
-                                logger(f"Error occurred while removing {src_path}: {e}")
                     except Exception as e:
                         logger(f"Error copying {src_path} to {dest_path}: {e}")
                 else:
