@@ -181,9 +181,9 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                         # Unzip zipped results on destination
                         if src_path.endswith(".zip"):
                             try:
-                                logger(f"Unzipping {dest_path} to {dest_dir}/{os.path.basename(relpath)[:-4]}")
+                                logger(f"Unzipping {dest_path} to {dest_dir}")
                                 zip_ref = zipfile.ZipFile(dest_path, "r")
-                                zip_ref.extractall(f"{dest_dir}/{os.path.basename(relpath)[:-4]}")
+                                zip_ref.extractall(dest_dir)
                             except Exception as e:
                                 logger(f"Error unzipping {dest_path}: {e}")
                     except Exception as e:
