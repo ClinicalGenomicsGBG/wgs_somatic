@@ -82,6 +82,21 @@ CGG Cancer
 
     send_email(subject, body)
 
+
+def error_setup_email(instrument):
+    """Send an email when the setup of wgs-somatic fails"""
+
+    subject = f'Crashed WGS somatic setup for {instrument}'
+
+    body = f"""The automatic setup of WGS somatic failed for instrument {instrument}.\n
+Errors will be investigated.\n
+Best regards,
+CGG Cancer
+    """
+    
+    send_email(subject, body)
+
+
 def error_admin_qc_email(run_name):
     """Send an email when the generating the qd admin summary report fails"""
 

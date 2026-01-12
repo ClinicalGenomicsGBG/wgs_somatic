@@ -15,7 +15,7 @@ from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, I
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
-from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email
+from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
@@ -218,14 +218,16 @@ def wrapper(instrument=None, outpath=None):
         with open(previous_runs_file_path, 'a') as prev:
             logger.info(f'Writing {Rctx.run_name} to previous runs list.')
             print(Rctx.run_name, file=prev)
-
+        
+        logger.info(f'Processing run: {Rctx.run_name}')
         # get Rctx and Sctx for current run
         Rctx_run = generate_context_objects(Rctx, logger)
-
+        logger.info(f'Found {len(Rctx_run.sample_contexts)} samples for wgs_somatic in run {Rctx.run_name}.')
         # Get T/N pair info in a dict for samples and link additional fastqs from other runs
         for sctx in Rctx_run.sample_contexts:
             pair_dict = get_pair_dict(sctx, Rctx, logger)
             pair_dict_all_pairs.update(pair_dict)
+            logger.info(f'Sample {sctx.sample_name} info: {pair_dict[sctx.sample_name]}')
 
 
         # Uses the dictionary of T/N samples to put the correct pairs together and finds the correct input arguments to the pipeline
@@ -377,7 +379,16 @@ def main():
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
-        wrapper(args.instrument, args.outpath)
+        try:
+            wrapper(args.instrument, args.outpath)
+        except Exception as e:
+            try:
+                print("Error during automatic wrapper execution:", e)
+                print("Sending error setup email.")
+                error_setup_email(args.instrument)
+            except Exception as email_error:
+                print("Failed to send error setup email:", email_error)
+            raise e
     elif args.tumorsample or args.normalsample:
         manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary)
     else:
@@ -389,7 +400,3 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         pass
-    #except Exception:
-        #format_exc = traceback.format_exc()
-        #logger.error(format_exc)
-        # TODO: add send email about error here
