@@ -9,6 +9,7 @@ rule datavzrd_report:
         report(
             directory("{stype}/reports/{sname}_datavzrd_report"),
             htmlindex="index.html",
+            labels={"result": "result tables"}
         ),
     singularity:
         pipeconfig["singularities"]["datavzrd"]["sing"]
