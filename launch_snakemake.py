@@ -213,7 +213,7 @@ def copy_results(outputdir, tumorname=None, normalname=None):
         raise
 
 
-def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, starttype=False, notemp=False):
+def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, starttype=False, notemp=False, dag=False):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -430,6 +430,16 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "-l", "{cluster.excl}"
         ]
 
+        if dag:
+            snakemake_args_dag = [
+                "snakemake", "-s", "Snakefile",
+                "--configfile", snakemake_config,
+                "--directory", outputdir,
+                "--dag", "|", "dot", "-Tsvg", ">", f"{samplelogs}/dag.svg"
+            ]
+            snakemake_args_dag_command = " ".join(snakemake_args_dag)
+            subprocess.run(snakemake_args_dag_command, env=my_env, shell=True)
+
         snakemake_args = [
             "snakemake", "-s", "Snakefile",
             "--configfile", snakemake_config,
@@ -478,6 +488,7 @@ if __name__ == '__main__':
     parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on webstore', required=False)
     parser.add_argument('--notemp', action="store_true", help='Run the pipeline in notemp mode (all intermediate files kept)', required=False)
     parser.add_argument('-onlycopy', '--onlycopyresults', action="store_true", help='Only run the copy_results function', required=False)
+    parser.add_argument('--dag', action="store_true", help="Also generate a separate DAG svg in logs", required=False)
     args = parser.parse_args()
 
     if not args.outputdir.startswith("/"):
@@ -494,7 +505,7 @@ if __name__ == '__main__':
             if not args.normalfastqs.startswith("/"):
                 args.normalfastqs = os.path.abspath(args.normalfastqs)
                 logger(f"Adjusted normalfastqs to {args.normalfastqs}")
-        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.starttype, args.notemp)
+        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.starttype, args.notemp, args.dag)
 
         if args.tumorsample:
             if args.normalsample:
