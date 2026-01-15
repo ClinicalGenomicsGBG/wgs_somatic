@@ -16,6 +16,10 @@
             "kmerfile": "/canvasfiles/canvasfiles/kmer.fa",
             "filter13": "/canvasfiles/canvasfiles/filter13.bed"
         },
+        "datavzrd":
+        {
+            "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/datavzrd-2.58.8.sif"
+        },
         "msi":
         {
             "sing": "/clinical/exec/wgs_somatic/dependencies/singularities/msisensor-pro-1.3.0.sif"

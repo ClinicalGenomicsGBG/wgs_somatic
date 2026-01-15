@@ -70,7 +70,7 @@ rule ascat_plot:
         cytoBandIdeo = pipeconfig["rules"]["ascat_run"]["cytoBandIdeo"],
         vstamp = f"{VDIR}/ascat_plot.txt"
     output:
-        plot = "{stype}/ascat/{sname}_ascat_plot.pdf",
+        plot = report("{stype}/ascat/{sname}_ascat_plot.pdf", labels={"result": "ascat plot"}),
         seg_smooth = "{stype}/ascat/{sname}_ascat_CN_smooth_IGV.seg",
         seg_call = "{stype}/ascat/{sname}_ascat_CN_call_IGV.seg",
         BAF = "{stype}/ascat/{sname}_ascat_BAF_IGV.seg",
