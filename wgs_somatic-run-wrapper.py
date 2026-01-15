@@ -20,65 +20,84 @@ from launch_snakemake import analysis_main, yearly_stats, copy_results, get_time
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
 
-
-# Store info about samples to use for sending report emails
-sample_status = {'missing_slims': [],
-                 'unset_WS': [],
-                 'approved': []}
-
-
 def look_for_runs(config, instrument):
-    '''Look for runs in demultiplexdir'''
-    instrument_root_path = config[instrument]['demultiplex_path']
-    found_paths = glob.glob(os.path.join(instrument_root_path, '*'))
-    regex = config[instrument]['seq_name_regex']
+    """Look for runs in demultiplexdir"""
+    instrument_root_path = config[instrument]["demultiplex_path"]
+    found_paths = glob.glob(os.path.join(instrument_root_path, "*"))
+    regex = config[instrument]["seq_name_regex"]
     return [path for path in found_paths if re.search(regex, os.path.basename(path))]
 
 
 def generate_context_objects(Rctx, logger):
-    '''Create Rctx and Sctx for a demultiplexed run'''
+    """Create Rctx and Sctx for a demultiplexed run"""
 
     # Read demultiplex stats file for sample names, fastq paths, and nr reads
-    with open(Rctx.demultiplex_summary_path, 'r') as inp:
+    with open(Rctx.demultiplex_summary_path, "r") as inp:
         demuxer_info = json.load(inp)
 
-    for sample_id, sample_info in demuxer_info['samples'].items():
-        logger.info(f'Setting up context for {sample_id}.')
+    for sample_id, sample_info in demuxer_info["samples"].items():
+        logger.info(f"Setting up context for {sample_id}.")
 
         # Setup Sample context class and add listed fastq paths
         Sctx = SampleContext(sample_id)
-        Sctx.add_fastq(sample_info['fastq_paths'])
+        Sctx.add_fastq(sample_info["fastq_paths"])
 
         # Query Slims for clinical information and add to sample context
-        logger.info('Fetching SLIMS info.')
-        Sctx.slims_info = get_sample_slims_info(Sctx, run_tag = Rctx.run_tag)
+        logger.info("Fetching SLIMS info.")
+        Sctx.slims_info = get_sample_slims_info(Sctx, run_tag=Rctx.run_tag)
 
         if not Sctx.slims_info:
-            logger.warning('No SLIMS info available!')
-            logger.warning('Sample will not be analysed.')
-            sample_status['missing_slims'].append(Sctx)
-            continue
+            # If no slims info is found/available we need to be notified
+            # The sample has been added to the runlist without running potential wgs-somatic samples
+            logger.error(f"No SLIMS info available for {sample_id}!")
+            raise ValueError(f"No SLIMS info available for {sample_id}!")
 
         # NOTE: 54 is Slims internal primary key for wgs_somatic
-        if 54 not in Sctx.slims_info['secondary_analysis']:
-            sample_status['unset_WS'].append(Sctx)
+        if 54 not in Sctx.slims_info["secondary_analysis"]:
+            logger.info("Sample not set for wgs_somatic.")
             continue
 
         # Add sample context to run context list
-        logger.info('Adding sample context to list of contexts.')
+        logger.info("Sample set for wgs_somatic, adding to RunContext.")
         Rctx.add_sample_context(Sctx)
 
-    if not Rctx.sample_contexts:
-        # If no samples set for wgs_somatic
-        # doesn't skip continuing with the rest of the code - need to fix this
-        logger.info('No samples set for wgs_somatic. Skipping run.')
-        # exit script if no samples set for wgs_somatic in run
-        sys.exit()
-
-    for Sctx in Rctx.sample_contexts:
-        sample_status['approved'].append(Sctx)
-
     return Rctx
+
+
+def return_first_new_run(config, instrument, logger):
+    """Return first new run for given instrument, which has files for wgs_somatic analysis."""
+    local_run_paths = look_for_runs(config, instrument)
+
+    previous_runs_file = config["previous_runs_file_path"]
+    previous_runs_file_path = os.path.join(ROOT_DIR, previous_runs_file)
+    if not os.path.exists(previous_runs_file_path):
+        raise FileNotFoundError(f"Runlist file not found: {previous_runs_file_path}")
+
+    with open(previous_runs_file_path, "r") as prev:
+        previous_runs = [line.rstrip() for line in prev]
+
+    for run_path in local_run_paths:
+        Rctx = RunContext(run_path)
+        # Check if demultiplexing is completed
+        if not Rctx.demultiplex_complete:
+            continue
+
+        # Check if run has been previously analysed
+        if Rctx.run_name in previous_runs:
+            continue
+
+        # Write run name to previously analysed list to ensure no double-running
+        with open(previous_runs_file_path, "a") as prev:
+            logger.info(f"Writing {Rctx.run_name} to previous runs list.")
+            print(Rctx.run_name, file=prev)
+
+        Rctx_run = generate_context_objects(Rctx, logger)
+
+        if not Rctx_run.sample_contexts:
+            logger.info(f"No samples for wgs_somatic found in run {Rctx.run_name}.")
+            continue
+
+        return Rctx_run
 
 
 def call_script(**kwargs):
@@ -163,72 +182,50 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
 
 def wrapper(instrument=None, outpath=None):
     '''Automatic wrapper function'''
+    
+    # === Setup run ===
+    try:
+        config = read_config(WRAPPER_CONFIG_PATH)
+        wrapper_log_path = config["wrapper_log_path"]
+        logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
 
-    config = read_config(WRAPPER_CONFIG_PATH)
-    wrapper_log_path = config["wrapper_log_path"]
-    logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
+        # Empty dict, will update later with T/N pair info
+        pair_dict_all_pairs = {}
 
-    # Empty dict, will update later with T/N pair info
-    pair_dict_all_pairs = {}
+        # prepare hcp download directory
+        hcptmp = config["hcp_download_dir"]
+        if not os.path.isdir(hcptmp):
+            try:
+                os.makedirs(hcptmp)
+            except Exception as e:
+                logger.error(f"outputdirectory: {hcptmp} does not exist and could not be created")
+                raise e
 
-    # prepare hcp download directory
-    hcptmp = config["hcp_download_dir"]
-    if not os.path.isdir(hcptmp):
-        try:
-            os.makedirs(hcptmp)
-        except Exception as e:
-            error_list.append(f"outputdirectory: {hcptmp} does not exist and could not be created")
+        # If outputpath is not specified, get from config
+        if not outpath:
+            try:
+                outpath = config['cron_outpath']
+            except KeyError:
+                logger.error('Output path for cron job not specified in the configuration.')
+                raise ValueError('Output path for cron job not specified in the configuration.')
 
-    # If outputpath is not specified, get from config
-    if not outpath:
-        try:
-            outpath = config['cron_outpath']
-        except KeyError:
-            logger.error('Output path for cron job not specified in the configuration.')
-            raise ValueError('Output path for cron job not specified in the configuration.')
+        # NOTE: we only process one run at a time. The next run will start upon the next cron execution
+        Rctx = return_first_new_run(config, instrument, logger)
 
-    # Grab all available local run paths
-    local_run_paths = look_for_runs(config, instrument)
-    # Read all previously analysed runs
-    previous_runs_file = config['previous_runs_file_path']
-    previous_runs_file_path = os.path.join(ROOT_DIR, previous_runs_file)
+        if Rctx is None:
+            sys.exit(0)
 
-    if not os.path.exists(previous_runs_file_path):
-        raise FileNotFoundError(f"Runlist file not found: {previous_runs_file_path}")
-
-    with open(previous_runs_file_path, 'r') as prev:
-        previous_runs = [line.rstrip() for line in prev]
-
-    # Loop through each run path and setup Run context class
-    for run_path in local_run_paths:
-        Rctx = RunContext(run_path)
-        # Check if demultiplexing is completed
-        if not Rctx.demultiplex_complete:
-            continue
-
-        # Check if run has been previously analysed
-        if Rctx.run_name in previous_runs:
-            continue
+        logger.info(f'Found {len(Rctx.sample_contexts)} samples for wgs_somatic in run {Rctx.run_name}.')
 
         # Register start time
         start_time = datetime.now()
         logger.info(f'Started {Rctx.run_name} at {start_time}')
 
-        # Write run name to previously analysed list to ensure no double-running
-        with open(previous_runs_file_path, 'a') as prev:
-            logger.info(f'Writing {Rctx.run_name} to previous runs list.')
-            print(Rctx.run_name, file=prev)
-        
-        logger.info(f'Processing run: {Rctx.run_name}')
-        # get Rctx and Sctx for current run
-        Rctx_run = generate_context_objects(Rctx, logger)
-        logger.info(f'Found {len(Rctx_run.sample_contexts)} samples for wgs_somatic in run {Rctx.run_name}.')
         # Get T/N pair info in a dict for samples and link additional fastqs from other runs
-        for sctx in Rctx_run.sample_contexts:
+        for sctx in Rctx.sample_contexts:
             pair_dict = get_pair_dict(sctx, Rctx, logger)
             pair_dict_all_pairs.update(pair_dict)
             logger.info(f'Sample {sctx.sample_name} info: {pair_dict[sctx.sample_name]}')
-
 
         # Uses the dictionary of T/N samples to put the correct pairs together and finds the correct input arguments to the pipeline
         threads = []
@@ -278,60 +275,60 @@ def wrapper(instrument=None, outpath=None):
         # If there are no samples to process, skip the rest of the code
         if not threads:
             logger.info("No samples to process for this run. Skipping emails and further processing.")
-            break
+            sys.exit(0)
+    except Exception as e:
+        print(f"Error during setup: {e}")
+        error_setup_email(instrument)
+        raise e
 
-        # Start several samples at the same time
-        for t in threads:
-            t.start()
-            logger.info(f'Thread {t} has started')
+    # === Start analysis ===
+    start_email(Rctx.run_name, final_pairs)
 
-        # Send start email
-        start_email(Rctx_run.run_name, final_pairs)
+    # Start several samples at the same time
+    for t in threads:
+        t.start()
+        logger.info(f'Thread {t} has started')
 
-        for u in threads:
-            u.join()
-            logger.info(f'Thread {u} is finished')
+    for u in threads:
+        u.join()
+        logger.info(f'Thread {u} is finished')
 
-        ok_samples = []
-        bad_samples = []
-        # Check if all samples in run have finished successfully. If not, exit script and send error email.
-        for outputdir, sample_info in zip(outputdirs, final_pairs):
-            if check_ok(outputdir):
-                ok_samples.append(sample_info)
-                logger.info(f'Finished correctly: {sample_info}')
-            else:
-                logger.info(f'Not finished correctly: {sample_info}')
-                bad_samples.append(sample_info)
-
-        if bad_samples:
-            # send emails about which samples ok and which not ok
-            error_email(Rctx_run.run_name, ok_samples, bad_samples)
+    ok_samples = []
+    bad_samples = []
+    # Check if all samples in run have finished successfully. If not, exit script and send error email.
+    for outputdir, sample_info in zip(outputdirs, final_pairs):
+        if check_ok(outputdir):
+            ok_samples.append(sample_info)
+            logger.info(f'Finished correctly: {sample_info}')
         else:
-            logger.info('All jobs have finished successfully')
-            end_email(Rctx_run.run_name, final_pairs)
+            logger.info(f'Not finished correctly: {sample_info}')
+            bad_samples.append(sample_info)
 
-        # Run analysis_end for all samples in run, will check again which (if any) are ok
-        for t in end_threads:
-            t.start()
-        for u in end_threads:
-            u.join()
-            
-        # Combine all qc stats for the samples in the same run
-        # the defaults for base_directory and output_directory are defined in the launcher config file
-        # and don't need to be added as arguments
-        try:
-            logger.info(f'Combining qc stats for run {Rctx_run.run_name}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=outputdirs, runname=Rctx_run.run_name, logger=logger)
-            logger.info(f'Done with combining qc stats for run {Rctx_run.run_name}')
-        except Exception as e:
-            logger.error(f"Error combining qc stats: {e}")
-            error_admin_qc_email(Rctx_run.run_name)
-        # break out of for loop to avoid starting pipeline for a possible other run that was done sequenced at the same time.
-        # if cron runs every 30 mins it will find other runs at the next cron instance and run from there instead (and add to novaseq_runlist)
-        break
+    if bad_samples:
+        # send emails about which samples ok and which not ok
+        error_email(Rctx.run_name, ok_samples, bad_samples)
+    else:
+        logger.info('All jobs have finished successfully')
+        end_email(Rctx.run_name, final_pairs)
 
-    # only considers barncancer hg38 (GMS-AL + GMS-BT samples) right now.
-
+    # Run analysis_end for all samples in run, will check again which (if any) are ok
+    # Will add ok samples to yearly stats and copy results
+    for t in end_threads:
+        t.start()
+    for u in end_threads:
+        u.join()
+        
+    # Combine all qc stats for the samples in the same run
+    # the defaults for base_directory and output_directory are defined in the launcher config file
+    # and don't need to be added as arguments
+    try:
+        logger.info(f'Combining qc stats for run {Rctx.run_name}')
+        combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=outputdirs, runname=Rctx.run_name, logger=logger)
+        logger.info(f'Done with combining qc stats for run {Rctx.run_name}')
+    except Exception as e:
+        logger.error(f"Error combining qc stats: {e}")
+        error_admin_qc_email(Rctx.run_name)
+ 
 
 def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False):
     '''Manual pipeline submission'''
@@ -379,16 +376,7 @@ def main():
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
-        try:
-            wrapper(args.instrument, args.outpath)
-        except Exception as e:
-            try:
-                print("Error during automatic wrapper execution:", e)
-                print("Sending error setup email.")
-                error_setup_email(args.instrument)
-            except Exception as email_error:
-                print("Failed to send error setup email:", email_error)
-            raise e
+        wrapper(args.instrument, args.outpath)
     elif args.tumorsample or args.normalsample:
         manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary)
     else:
