@@ -372,6 +372,10 @@ def get_pair_dict(Sctx, Rctx, logger):
 
     # FIXME: using equals tumorNormalID here won't work when we change it to pairID...
     Sctx.slims_info = get_sample_slims_info(Sctx, run_tag)
+    if Sctx.slims_info['tumorNormalID'] is None:
+        logger.error(f"Sample {Sctx.slims_info['content_id']} does not have a tumorNormalID assigned in SLIMS, stopping execution.")
+        logger.info(f"Slims info: {Sctx.slims_info}")
+        raise ValueError(f"Sample {Sctx.slims_info['content_id']} does not have a tumorNormalID assigned in SLIMS.")
     pairs = slims_connection.fetch('Content', conjunction()
                               .add(equals('cntn_fk_contentType', 6))
                               .add(equals('cntn_cstm_tumorNormalID', 
