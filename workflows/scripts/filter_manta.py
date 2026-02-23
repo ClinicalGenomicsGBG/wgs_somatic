@@ -34,9 +34,9 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                     tumor_sample = record.samples[tumor_name]
                 except KeyError:
                     continue  # Skip if tumor sample is missing
-                
+
                 if no_pr_sr_filter:
-                    # Skip PR SR filter, get supporting reads where possible
+                    # Skip PR SR filter, get supporting reads where possible; mainly for debugging purposes
                     tumor_pr, tumor_sr = 0, 0
                     if "PR" in tumor_sample:
                         tumor_pr = tumor_sample["PR"][1]
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     parser.add_argument("--normal_name", help="Normal sample name (optional)", default=None)
     parser.add_argument("--min_tumor_support", type=int, help="Minimum tumor support (default: 3)", default=3)
     parser.add_argument("--max_normal_support", type=int, help="Maximum normal support (default: 2)", default=2)
-    parser.add_argument("--no_pr_sr_filter", action="store_true", help="Disable PR and SR filtering (optional)")
+    parser.add_argument("--no_pr_sr_filter", action="store_true", help="Disable PR and SR filtering (optional; mainly for debugging)")
 
     args = parser.parse_args()
 
