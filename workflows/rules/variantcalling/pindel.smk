@@ -1,6 +1,8 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 
+from workflows.scripts.pindel_excel import write_pindel_xlsx
+
 if normalid:
     rule pindel:
         input:
@@ -148,8 +150,15 @@ rule pindel_xlsx:
     params:
         python = pipeconfig["rules"]["pindel"]["python"],
         bed = pipeconfig["rules"]["pindel"]["bed"],
-        pindel_excel = pipeconfig["rules"]["pindel"].get("pindel_excel", f"{ROOT_DIR}/workflows/scripts/pindel_excel.py")
+        pindel_excel = pipeconfig["rules"]["pindel"].get("pindel_excel", f"{ROOT_DIR}/workflows/scripts/pindel_excel.py"),
+        tumorname = tumorname,
+        normalname = normalname
     shadow:
         pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
-        shell(f"{params.python} {params.pindel_excel} {input} {output} {params.bed}")
+        write_pindel_xlsx(
+            vcf_input = input[0],
+            xlsx_output = output[0],
+            bedfile = params.bed,
+            tumor = params.tumorname,
+            normal = params.normalname if params.normalname else None)
