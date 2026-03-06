@@ -9,7 +9,7 @@ def is_reciprocal_pair(bnd_pairs, key, mate_key):
     return mate_key in bnd_pairs and bnd_pairs[mate_key] == key
 
 
-def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tumor_support=3, max_normal_support=2, no_pr_sr_filter=False):
+def filter_vcf(input_vcf, output_vcf, tumor_name, normal_name=None, min_tumor_support=3, max_normal_support=2, no_pr_sr_filter=False):
     """
     Filters a VCF file based on the following criteria:
     - FILTER column must be "PASS".
@@ -29,44 +29,33 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                 continue
 
             # Extract tumor sample data
-            if tumor_name:
-                try:
-                    tumor_sample = record.samples[tumor_name]
-                except KeyError:
-                    continue  # Skip if tumor sample is missing
+            try:
+                tumor_sample = record.samples[tumor_name]
+            except KeyError:
+                raise ValueError(f"Tumor sample '{tumor_name}' not found in VCF samples.")
 
-                if no_pr_sr_filter:
-                    # Skip PR SR filter, get supporting reads where possible; mainly for debugging purposes
-                    tumor_pr, tumor_sr = 0, 0
-                    if "PR" in tumor_sample:
-                        tumor_pr = tumor_sample["PR"][1]
-                    if "SR" in tumor_sample:
-                        tumor_sr = tumor_sample["SR"][1]
-                    tumor_support = tumor_pr + tumor_sr
+            tumor_pr, tumor_sr = 0, 0
+            if "PR" in tumor_sample:
+                tumor_pr = tumor_sample["PR"][1]
+            if "SR" in tumor_sample:
+                tumor_sr = tumor_sample["SR"][1]
+            tumor_support = tumor_pr + tumor_sr
 
-                else:
-                    # Ensure both PR and SR are present in the tumor sample
-                    if "PR" not in tumor_sample or "SR" not in tumor_sample:
-                        continue
-
-                    # Extract PR and SR values for the tumor sample
-                    tumor_pr, tumor_sr = tumor_sample["PR"][1], tumor_sample["SR"][1]
-
-                    # Require both PR and SR supporting the variant
-                    if tumor_pr == 0 or tumor_sr == 0:
-                        continue
-                    tumor_support = tumor_pr + tumor_sr
-
-                # Apply the tumor support filter
-                if tumor_support < min_tumor_support:
+            if not no_pr_sr_filter:
+                # Ensure both PR and SR are present in the tumor sample
+                if "PR" not in tumor_sample or "SR" not in tumor_sample:
                     continue
+
+            # Apply the tumor support filter
+            if tumor_support < min_tumor_support:
+                continue
 
             # If a normal sample is provided, apply normal-specific filters
             if normal_name:
                 try:
                     normal_sample = record.samples[normal_name]
                 except KeyError:
-                    continue  # Skip if normal sample is missing
+                    raise ValueError(f"Normal sample '{normal_name}' not found in VCF samples.")
 
                 # Combine PR and SR support from the normal sample
                 normal_support = 0
@@ -75,10 +64,9 @@ def filter_vcf(input_vcf, output_vcf, tumor_name=None, normal_name=None, min_tum
                 if "SR" in normal_sample:
                     normal_support += normal_sample["SR"][1]
 
-                if tumor_name:
-                    # Apply the normal support filter
-                    if normal_support > max_normal_support:
-                        continue
+                # Apply the normal support filter
+                if normal_support > max_normal_support:
+                    continue
 
             # Handle reciprocal breakends (BNDs)
             if record.info.get("SVTYPE") == "BND" and "MATEID" in record.info:
