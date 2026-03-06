@@ -8,26 +8,16 @@ from pysam import VariantFile
 
 def position_gene(chr, position_start, position_stop, bed):
     """Function to get gene name based on start/stop position"""
-    gene_start = None
-    gene_stop = None
     gene = None
     with open(bed) as bed:
         for line in bed:
-            split_line = line.split()
-            if split_line[0] != chr:
+            chr_bed, start, end, gene = line.split()[:4]
+            if chr_bed != chr:
                 continue
-            if int(split_line[1]) <= position_start <= int(split_line[2]):
-                gene_start = split_line[3]
-            if int(split_line[1]) <= position_stop <= int(split_line[2]):
-                gene_stop = split_line[3]
-    if gene_stop is None:
-        gene = gene_start
-    elif gene_start is None:
-        gene = gene_stop
-    elif gene_start == gene_stop:
-        gene = gene_start
-    elif gene_start != gene_stop:
-        gene = "two different genes = weird"
+            if int(start) <= position_start <= int(end):
+                return gene
+            elif int(start) <= position_stop <= int(end):
+                return gene
     return gene
 
 
