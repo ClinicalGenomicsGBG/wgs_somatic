@@ -6,7 +6,8 @@ rule somalier_extract:
     params:
         sites = pipeconfig["rules"]["somalier"]["sites"],
         reference = pipeconfig["referencegenome"],
-        outdir = lambda wildcards: f"{wildcards.stype}/somalier"
+        outdir = lambda wildcards: f"{wildcards.stype}/somalier",
+        vstamp = f"{VDIR}/somalier_extract.txt"
     singularity:
         pipeconfig["singularities"]["somalier"]["sing"]
     threads:
@@ -15,6 +16,10 @@ rule somalier_extract:
         temp("{stype}/somalier/{sname}.somalier")
     shell:
         """
+        # Version info
+        somalier 2>&1 | head -n 1 > {params.vstamp}
+
+        # Run somalier extract
         somalier extract \
             -d {params.outdir} \
             --sites {params.sites} \
@@ -29,7 +34,8 @@ rule somalier_relate:
         normal_somalier = expand("{stype}/somalier/{sname}.somalier", sname=normalid, stype=stype_normal) if normalid else [],
         tumor_somalier = expand("{stype}/somalier/{sname}.somalier", sname=tumorid, stype=stype_tumor) if tumorid else [],
     params:
-        outpath = lambda wildcards: f"{wildcards.stype}/somalier/somalier"
+        outpath = lambda wildcards: f"{wildcards.stype}/somalier/somalier",
+        vstamp = f"{VDIR}/somalier_relate.txt"
     singularity:
         pipeconfig["singularities"]["somalier"]["sing"]
     shadow:
@@ -39,6 +45,10 @@ rule somalier_relate:
         samples = temp("{stype}/somalier/somalier.samples.tsv")
     shell:
         """
+        # Version info
+        somalier 2>&1 | head -n 1 > {params.vstamp}
+
+        # Run somalier relate
         somalier relate \
             -i \
             -o {params.outpath} \
