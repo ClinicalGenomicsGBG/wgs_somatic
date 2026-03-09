@@ -9,7 +9,7 @@ def is_reciprocal_pair(bnd_pairs, key, mate_key):
     return mate_key in bnd_pairs and bnd_pairs[mate_key] == key
 
 
-def filter_vcf(input_vcf, output_vcf, tumor_name, normal_name=None, min_tumor_support=3, max_normal_support=2, no_pr_sr_filter=False):
+def filter_vcf(input_vcf, output_vcf, tumor_name, normal_name=None, min_tumor_support=3, max_normal_support=2, pr_sr_filter=True):
     """
     Filters a VCF file based on the following criteria:
     - FILTER column must be "PASS".
@@ -41,9 +41,9 @@ def filter_vcf(input_vcf, output_vcf, tumor_name, normal_name=None, min_tumor_su
                 tumor_sr = tumor_sample["SR"][1]
             tumor_support = tumor_pr + tumor_sr
 
-            if not no_pr_sr_filter:
-                # Ensure both PR and SR are present in the tumor sample
-                if "PR" not in tumor_sample or "SR" not in tumor_sample:
+            if pr_sr_filter:
+                # Ensure both PR and SR alt reads present in the tumor sample
+                if tumor_pr == 0 or tumor_sr == 0:
                     continue
 
             # Apply the tumor support filter
