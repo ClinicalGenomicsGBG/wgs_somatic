@@ -1,6 +1,3 @@
-#!/bin/python3.6
-#import sys
-import argparse
 import xlsxwriter
 
 from pysam import VariantFile
@@ -22,6 +19,13 @@ def position_gene(chr, position_start, position_stop, bed):
 
 
 def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
+    """ 
+    Write pindel results to excel file. 
+
+    If tumor and normal sample in vcf, only write variants that 
+    - exist in tumor sample
+    - less than 3 reads in normal sample. 
+    """
     # Create excel file
     workbook = xlsxwriter.Workbook(xlsx_output)
 
@@ -60,7 +64,12 @@ def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
     # Write info from vcf to excel file
     # If only tumor sample in vcf
     if len(samples) == 1:
-        sample_tumor = tumor if tumor else samples[0]
+        if tumor:
+            sample_tumor = tumor
+        else:
+            print(f"Warning: Tumor sample not specified but only one sample in vcf file. Using {samples[0]} as tumor sample.")
+            sample_tumor = samples[0]
+
         if sample_tumor not in samples:
             raise ValueError(f"Tumor sample {sample_tumor} is not in vcf file")
         if normal:
@@ -132,15 +141,15 @@ def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
         for indel in vcf_input.fetch():
             svlen = indel.info["SVLEN"]
             alt = indel.alts[0] if indel.alts and len(indel.alts) == 1 else None
-            s1_dp = indel.samples[sample_tumor].get("DP")
-            s1_af = indel.samples[sample_tumor].get("AF")
-            s2_dp = indel.samples[sample_normal].get("DP")
-            s2_af = indel.samples[sample_normal].get("AF")
-            s1_reads = indel.samples[sample_tumor].get("AD")[1]
-            s2_reads = indel.samples[sample_normal].get("AD")[1]
+            st_dp = indel.samples[sample_tumor].get("DP")
+            st_af = indel.samples[sample_tumor].get("AF")
+            sn_dp = indel.samples[sample_normal].get("DP")
+            sn_af = indel.samples[sample_normal].get("AF")
+            st_reads = indel.samples[sample_tumor].get("AD")[1]
+            sn_reads = indel.samples[sample_normal].get("AD")[1]
 
             # Only write variant to excel if it exists in tumor sample and in less than 3 reads in normal sample
-            if s1_reads != 0 and s2_reads <= 3:
+            if st_reads != 0 and sn_reads <= 3:
                 worksheet.write_row(
                     row,
                     0,
@@ -152,12 +161,12 @@ def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
                         svlen,
                         indel.ref,
                         alt,
-                        s1_dp,
-                        s1_af,
-                        s2_dp,
-                        s2_af,
-                        s1_reads,
-                        s2_reads,
+                        st_dp,
+                        st_af,
+                        sn_dp,
+                        sn_af,
+                        st_reads,
+                        sn_reads,
                     ],
                 )
                 row += 1
@@ -165,17 +174,51 @@ def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
     workbook.close()
 
 
-def main():
-    parser = argparse.ArgumentParser()
+def fix_pindel_dpaf(vcf_input_path, vcf_output_path):
+    """
+    Add/repair per-sample DP and AF in a Pindel VCF.
 
-    parser.add_argument("--vcf_input", nargs="?", type=str, help=':Full path to your vcf input file')
-    parser.add_argument("--xlsx_output", nargs="?", type=str, help=':Specify full output path and filename of the vcf file you want to create')
-    parser.add_argument("--bedfile", nargs="?", type=str, help=':Full path to bedfile used by pindel')
-    parser.add_argument("--tumor", nargs="?", type=str, help=':Name of tumor sample in vcf file')
-    parser.add_argument("--normal", nargs="?", type=str, help=':Name of normal sample in vcf file', required=False)
-    args = parser.parse_args()
-    write_pindel_xlsx(args.vcf_input, args.xlsx_output, args.bedfile, args.tumor, args.normal)
+    DP = sum(AD)
+    AF = alt AD / sum(AD)
 
+    This is applied to every sample in each record, regardless of whether
+    the sample is tumor, normal, or something else.
+    """
+    vcf_in = VariantFile(vcf_input_path, "r")
+    new_header = vcf_in.header.copy()
 
-if __name__ == "__main__":
-    main()
+    # Add FORMAT fields if they do not already exist
+    if "DP" not in new_header.formats:
+        new_header.formats.add("DP", "1", "Integer", "Sum of AD fields")
+    if "AF" not in new_header.formats:
+        new_header.formats.add("AF", "1", "Float", "Alt AD / DP")
+
+    vcf_out = VariantFile(vcf_output_path, "w", header=new_header)
+
+    for record in vcf_in.fetch():
+        for sample_name, sample_data in record.samples.items():
+            ad = sample_data.get("AD")
+
+            # Handle missing or malformed AD safely
+            if not ad:
+                print(f"Warning: {sample_name} has no AD at {record.contig}:{record.pos}")
+                dp = 0
+                af = 0.0
+            else:
+                dp = sum(reads for reads in ad if reads is not None)
+
+                # Alt depth is the second element of AD if it exists and is not None
+                if len(ad) > 1 and ad[1] is not None:
+                    alt_depth = ad[1]
+                else:
+                    print(f"Warning: {sample_name} has no ALT depth in AD at {record.contig}:{record.pos}")
+                    alt_depth = 0
+                af = 0.0 if dp == 0 else alt_depth / dp
+
+            sample_data["DP"] = dp
+            sample_data["AF"] = af
+
+        vcf_out.write(record)
+
+    vcf_in.close()
+    vcf_out.close()

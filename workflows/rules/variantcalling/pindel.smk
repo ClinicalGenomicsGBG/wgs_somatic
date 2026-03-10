@@ -1,7 +1,8 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 
-from workflows.scripts.pindel_excel import write_pindel_xlsx
+from workflows.scripts.pindel_util import fix_pindel_dpaf, write_pindel_xlsx
+
 
 if normalid:
     rule pindel:
@@ -134,13 +135,13 @@ rule fixPindelDPoAF:
         "{stype}/pindel/{sname}_pindel_noDP.vcf"
     output:
         "{stype}/pindel/{sname}_pindel.vcf"
-    params:
-        python = pipeconfig["rules"]["pindel"]["python"],
-        fix_DPoAF = pipeconfig["rules"]["pindel"].get("fix_DPoAF", f"{ROOT_DIR}/workflows/scripts/fix_pindelDPoAF.py") 
     shadow:
         pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
-        shell(f"{params.python} {params.fix_DPoAF} {input} {output}")
+        fix_pindel_dpaf(
+            vcf_input = input[0],
+            vcf_output = output[0]
+        )
 
 rule pindel_xlsx:
     input:
@@ -148,7 +149,6 @@ rule pindel_xlsx:
     output:
         "{stype}/pindel/{sname}_pindel.xlsx"
     params:
-        python = pipeconfig["rules"]["pindel"]["python"],
         bed = pipeconfig["rules"]["pindel"]["bed"],
         pindel_excel = pipeconfig["rules"]["pindel"].get("pindel_excel", f"{ROOT_DIR}/workflows/scripts/pindel_excel.py"),
         tumorname = tumorname,
@@ -161,4 +161,5 @@ rule pindel_xlsx:
             xlsx_output = output[0],
             bedfile = params.bed,
             tumor = params.tumorname,
-            normal = params.normalname if params.normalname else None)
+            normal = params.normalname if params.normalname else None
+        )
