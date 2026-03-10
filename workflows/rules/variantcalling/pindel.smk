@@ -1,7 +1,7 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 
-from workflows.scripts.pindel_util import pinde_fix_dpaf, pindel_write_xlsx
+from workflows.scripts.pindel_util import pindel_fix_dpaf, pindel_write_xlsx
 
 
 if normalid:
