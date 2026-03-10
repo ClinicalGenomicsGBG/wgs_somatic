@@ -144,7 +144,7 @@
         },
         "pindel":
         {
-            "bed": "/clinical/exec/wgs_somatic/dependencies/in_house/new_twist_shortlist_pindel_hg38_padded50.bed",
+            "bed": "/clinical/exec/wgs_somatic/dependencies/in_house/new_twist_shortlist_pindel_hg38_padded50.bed"
         },
         "fixContigPindel":
         {
