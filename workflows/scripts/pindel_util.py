@@ -3,7 +3,7 @@ import xlsxwriter
 from pysam import VariantFile
 
 
-def position_gene(chr, position_start, position_stop, bed):
+def _position_gene(chr, position_start, position_stop, bed):
     """Function to get gene name based on start/stop position"""
     gene = None
     with open(bed) as bed:
@@ -18,7 +18,7 @@ def position_gene(chr, position_start, position_stop, bed):
     return gene
 
 
-def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
+def pindel_write_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
     """ 
     Write pindel results to excel file. 
 
@@ -99,7 +99,7 @@ def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
                 0,
                 [
                     indel.contig,
-                    position_gene(indel.contig, indel.pos, indel.stop, bedfile),
+                    _position_gene(indel.contig, indel.pos, indel.stop, bedfile),
                     indel.pos,
                     indel.stop,
                     svlen,
@@ -155,7 +155,7 @@ def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
                     0,
                     [
                         indel.contig,
-                        position_gene(indel.contig, indel.pos, indel.stop, bedfile),
+                        _position_gene(indel.contig, indel.pos, indel.stop, bedfile),
                         indel.pos,
                         indel.stop,
                         svlen,
@@ -174,7 +174,7 @@ def write_pindel_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
     workbook.close()
 
 
-def fix_pindel_dpaf(vcf_input_path, vcf_output_path):
+def pindel_fix_dpaf(vcf_input, vcf_output):
     """
     Add/repair per-sample DP and AF in a Pindel VCF.
 
@@ -184,7 +184,7 @@ def fix_pindel_dpaf(vcf_input_path, vcf_output_path):
     This is applied to every sample in each record, regardless of whether
     the sample is tumor, normal, or something else.
     """
-    vcf_in = VariantFile(vcf_input_path, "r")
+    vcf_in = VariantFile(vcf_input, "r")
     new_header = vcf_in.header.copy()
 
     # Add FORMAT fields if they do not already exist
@@ -193,7 +193,7 @@ def fix_pindel_dpaf(vcf_input_path, vcf_output_path):
     if "AF" not in new_header.formats:
         new_header.formats.add("AF", "1", "Float", "Alt AD / DP")
 
-    vcf_out = VariantFile(vcf_output_path, "w", header=new_header)
+    vcf_out = VariantFile(vcf_output, "w", header=new_header)
 
     for record in vcf_in.fetch():
         for sample_name, sample_data in record.samples.items():

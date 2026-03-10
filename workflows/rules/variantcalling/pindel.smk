@@ -1,7 +1,7 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 
-from workflows.scripts.pindel_util import fix_pindel_dpaf, write_pindel_xlsx
+from workflows.scripts.pindel_util import pinde_fix_dpaf, pindel_write_xlsx
 
 
 if normalid:
@@ -115,22 +115,22 @@ rule pindel2vcf:
         (pindel2vcf -P {wildcards.stype}/pindel/{wildcards.sname} -r {params.reference} -R {params.refname} -d {params.refdate} -v {output} -e {params.e} -mc {params.mc} -G -is {params.minsize})
         """
 
-rule fixContigPindel:
+rule pindel_fix_contig:
     input:
         "{stype}/pindel/{sname}_pindel_noDP_noContig.vcf"
     output:
         temp("{stype}/pindel/{sname}_pindel_noDP.vcf")
     params: 
         referencefai = pipeconfig["referencefai"],
-        vstamp = f"{VDIR}/fixContigPindel.txt",
-        bcftools = pipeconfig["rules"]["fixContigPindel"]["bcftools"]
+        vstamp = f"{VDIR}/pindel_fix_contig.txt",
+        bcftools = pipeconfig["rules"]["pindel_fix_contig"]["bcftools"]
     shell:
         """
         {params.bcftools} -v | head -n 2 > {params.vstamp}
         {params.bcftools} reheader --fai {params.referencefai} {input} > {output}
         """
 
-rule fixPindelDPoAF:
+rule pindel_fix_dpaf:
     input:
         "{stype}/pindel/{sname}_pindel_noDP.vcf"
     output:
@@ -138,7 +138,7 @@ rule fixPindelDPoAF:
     shadow:
         pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
-        fix_pindel_dpaf(
+        pindel_fix_dpaf(
             vcf_input = input[0],
             vcf_output = output[0]
         )
@@ -156,7 +156,7 @@ rule pindel_xlsx:
     shadow:
         pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
-        write_pindel_xlsx(
+        pindel_write_xlsx(
             vcf_input = input[0],
             xlsx_output = output[0],
             bedfile = params.bed,
