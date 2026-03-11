@@ -3,20 +3,27 @@ import xlsxwriter
 from pysam import VariantFile
 
 
-def _position_gene(chr, position_start, position_stop, bed):
-    """Function to get gene name based on start/stop position"""
-    gene = None
-    with open(bed) as bed:
-        for line in bed:
-            chr_bed, start, end, gene = line.split()[:4]
-            if chr_bed != chr:
-                continue
-            if int(start) <= position_start <= int(end):
-                return gene
-            elif int(start) <= position_stop <= int(end):
-                return gene
-    return gene
+def _position_gene(chrom, position_start, position_stop, bed):
+    """Get gene name based on start/stop position."""
 
+    # Normalize incoming positions.
+    position_start = int(position_start) if position_start is not None else None
+    position_stop = int(position_stop) if position_stop is not None else None
+
+    with open(bed) as bed_handle:
+        for line in bed_handle:
+            chr_bed, start, end, gene = line.split()[:4]
+            start = int(start)
+            end = int(end)
+
+            if chr_bed != chrom:
+                continue
+            if position_start is not None and start <= position_start <= end:
+                return gene
+            if position_stop is not None and start <= position_stop <= end:
+                return gene
+
+    return None
 
 def pindel_write_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
     """ 

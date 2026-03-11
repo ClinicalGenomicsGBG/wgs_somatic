@@ -150,7 +150,6 @@ rule pindel_xlsx:
         "{stype}/pindel/{sname}_pindel.xlsx"
     params:
         bed = pipeconfig["rules"]["pindel"]["bed"],
-        pindel_excel = pipeconfig["rules"]["pindel"].get("pindel_excel", f"{ROOT_DIR}/workflows/scripts/pindel_excel.py"),
         tumorname = tumorname,
         normalname = normalname
     shadow:
