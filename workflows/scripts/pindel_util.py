@@ -185,7 +185,7 @@ def pindel_fix_dpaf(vcf_input, vcf_output):
     the sample is tumor, normal, or something else.
     """
     vcf_in = VariantFile(vcf_input, "r")
-    new_header = vcf_in.header.copy()
+    new_header = vcf_in.header
 
     # Add FORMAT fields if they do not already exist
     if "DP" not in new_header.formats:
