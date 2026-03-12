@@ -193,20 +193,21 @@ def copy_results(outputdir, tumorname=None, normalname=None):
                         f"Warning: Source file {src_path} does not exist, skipping copy."
                     )
 
-        try:
-            # webstore API call to make path searchable
-            config = read_config(LAUNCHER_CONFIG_PATH)
-            webstore_api_url = config.get("webstore_api_url")
-            json_payload = {"path": resultdir}
-            response = requests.post(webstore_api_url, json=json_payload)
-            if response.status_code == 200:
-                logger(f"Successfully notified webstore about new files in {resultdir}")
-            else:
-                logger(
-                    f"Failed to notify webstore about new files in {resultdir}. Status code: {response.status_code}, Response: {response.text}"
-                )
-        except Exception as e:
-            logger(f"Error occurred while notifying webstore: {e}")
+        # Turn off API call webstore for now
+        # try:
+        #     # webstore API call to make path searchable
+        #     config = read_config(LAUNCHER_CONFIG_PATH)
+        #     webstore_api_url = config.get("webstore_api_url")
+        #     json_payload = {"path": resultdir}
+        #     response = requests.post(webstore_api_url, json=json_payload)
+        #     if response.status_code == 200:
+        #         logger(f"Successfully notified webstore about new files in {resultdir}")
+        #     else:
+        #         logger(
+        #             f"Failed to notify webstore about new files in {resultdir}. Status code: {response.status_code}, Response: {response.text}"
+        #         )
+        # except Exception as e:
+        #     logger(f"Error occurred while notifying webstore: {e}")
 
     except Exception as e:
         logger(f"Unhandled error in copy_results: {e}")
@@ -415,7 +416,7 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             "--bind", "/seqstore",
             "--bind", "/apps",
             "--bind", "/clinical",
-            "--bind", "/webstore",
+            "--bind", "/oldseqstore/workspace/webstore_temp",
             "--bind", ROOT_DIR
         ]
 

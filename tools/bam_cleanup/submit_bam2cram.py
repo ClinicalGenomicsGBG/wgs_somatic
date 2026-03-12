@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 @click.command(help="Replace BAM files with CRAM files in webstore")
-@click.option('--webstore_dir', type=click.Path(exists=True), required=True, default="/webstore/clinical/routine/wgs_somatic/current", help='Base webstore directory', show_default=True)
+@click.option('--webstore_dir', type=click.Path(exists=True), required=True, default="/oldseqstore/workspace/webstore_temp/clinical/routine/wgs_somatic/current", help='Base webstore directory', show_default=True)
 @click.option('--workdir', type=click.Path(), required=True, default="/clinical/data/wgs_somatic/bam_cleanup_workdir", help='Base execution directory where snakemake will create cram and crai', show_default=True)
 @click.option('--age_threshold', type=int, default=50, help='Age threshold in days', show_default=True)
 @click.option('--dry_run', is_flag=True, help='Perform a dry run without making any changes', show_default=True)
