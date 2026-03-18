@@ -3,25 +3,25 @@ import xlsxwriter
 from pysam import VariantFile
 
 
-def _position_gene(chrom, position_start, position_stop, bed):
-    """Get gene name based on start/stop position."""
+def _position_gene(indel_chrom, indel_start, indel_stop, bed):
+    """Match gene name based on the indel position from bed with genes"""
 
     # Normalize incoming positions.
-    position_start = int(position_start) if position_start is not None else None
-    position_stop = int(position_stop) if position_stop is not None else None
+    indel_start = int(indel_start) if indel_start is not None else None
+    indel_stop = int(indel_stop) if indel_stop is not None else None
 
     with open(bed) as bed_handle:
         for line in bed_handle:
-            chr_bed, start, end, gene = line.split()[:4]
-            start = int(start)
-            end = int(end)
+            gene_chrom, gene_start, gene_end, gene_name = line.split()[:4]
+            gene_start = int(gene_start)
+            gene_end = int(gene_end)
 
-            if chr_bed != chrom:
+            if gene_chrom != indel_chrom:
                 continue
-            if position_start is not None and start <= position_start <= end:
-                return gene
-            if position_stop is not None and start <= position_stop <= end:
-                return gene
+            if indel_start is not None and gene_start <= indel_start <= gene_end:
+                return gene_name
+            if indel_stop is not None and gene_start <= indel_stop <= gene_end:
+                return gene_name
 
     return None
 
