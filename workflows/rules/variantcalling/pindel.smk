@@ -1,6 +1,9 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 
+from workflows.scripts.pindel_util import pindel_fix_dpaf, pindel_write_xlsx
+
+
 if normalid:
     rule pindel:
         input:
@@ -112,33 +115,33 @@ rule pindel2vcf:
         (pindel2vcf -P {wildcards.stype}/pindel/{wildcards.sname} -r {params.reference} -R {params.refname} -d {params.refdate} -v {output} -e {params.e} -mc {params.mc} -G -is {params.minsize})
         """
 
-rule fixContigPindel:
+rule pindel_fix_contig:
     input:
         "{stype}/pindel/{sname}_pindel_noDP_noContig.vcf"
     output:
         temp("{stype}/pindel/{sname}_pindel_noDP.vcf")
     params: 
         referencefai = pipeconfig["referencefai"],
-        vstamp = f"{VDIR}/fixContigPindel.txt",
-        bcftools = pipeconfig["rules"]["fixContigPindel"]["bcftools"]
+        vstamp = f"{VDIR}/pindel_fix_contig.txt",
+        bcftools = pipeconfig["rules"]["pindel_fix_contig"]["bcftools"]
     shell:
         """
         {params.bcftools} -v | head -n 2 > {params.vstamp}
         {params.bcftools} reheader --fai {params.referencefai} {input} > {output}
         """
 
-rule fixPindelDPoAF:
+rule pindel_fix_dpaf:
     input:
         "{stype}/pindel/{sname}_pindel_noDP.vcf"
     output:
         "{stype}/pindel/{sname}_pindel.vcf"
-    params:
-        python = pipeconfig["rules"]["pindel"]["python"],
-        fix_DPoAF = pipeconfig["rules"]["pindel"].get("fix_DPoAF", f"{ROOT_DIR}/workflows/scripts/fix_pindelDPoAF.py") 
     shadow:
         pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
-        shell(f"{params.python} {params.fix_DPoAF} {input} {output}")
+        pindel_fix_dpaf(
+            vcf_input = input[0],
+            vcf_output = output[0]
+        )
 
 rule pindel_xlsx:
     input:
@@ -146,10 +149,16 @@ rule pindel_xlsx:
     output:
         "{stype}/pindel/{sname}_pindel.xlsx"
     params:
-        python = pipeconfig["rules"]["pindel"]["python"],
         bed = pipeconfig["rules"]["pindel"]["bed"],
-        pindel_excel = pipeconfig["rules"]["pindel"].get("pindel_excel", f"{ROOT_DIR}/workflows/scripts/pindel_excel.py")
+        tumorname = tumorname,
+        normalname = normalname
     shadow:
         pipeconfig["rules"].get("pindel", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
-        shell(f"{params.python} {params.pindel_excel} {input} {output} {params.bed}")
+        pindel_write_xlsx(
+            vcf_input = input[0],
+            xlsx_output = output[0],
+            bedfile = params.bed,
+            tumor = params.tumorname,
+            normal = params.normalname if params.normalname else None
+        )
