@@ -252,7 +252,7 @@ def wrapper(instrument=None, outpath=None):
             paired = False
             for n_key, n_value in normal_samples.items():
                 n_ID = n_value[1]  # tumorNormalID
-                if t_ID == n_ID or t_ID == n_key.split("DNA")[1] or n_ID == t_key.split("DNA")[1]:
+                if t_ID == n_ID:
                     paired_samples.append((t_key, n_key))
                     paired = True
                     outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads)
