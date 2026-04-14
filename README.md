@@ -93,9 +93,7 @@ python launch_snakemake.py \
     ```{bash}
     python launch_snakemake.py \
       --outputdir <Same directory as specified when running the pipeline> \
-      --onlycopyresults \
-      --tumorsample <[Optional] e.g. "DNA654321" to match config with resultdir path> \
-      --normalsample <[Optional] If neither tumorsample or normalsample are given, will match with DNA*_config.json>
+      --onlycopyresults
     ```
 
 ### Dependencies
