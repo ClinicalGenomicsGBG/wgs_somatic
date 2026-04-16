@@ -10,14 +10,17 @@ import glob
 from datetime import datetime
 import json
 import threading
+from collections import defaultdict
 
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
+from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir, return_pending_samples, add_merge_samples, add_matched_samples, Sample, Run
 from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
+
+RUN_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def look_for_runs(config, instrument):
@@ -180,14 +183,14 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
     return outputdir
 
 
-def wrapper(instrument=None, outpath=None):
+def wrapper(outpath=None):
     '''Automatic wrapper function'''
     
     # === Setup run ===
     try:
         config = read_config(WRAPPER_CONFIG_PATH)
         wrapper_log_path = config["wrapper_log_path"]
-        logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
+        logger = setup_logger('wrapper', os.path.join(wrapper_log_path, "wrapper.log"))
 
         # Empty dict, will update later with T/N pair info
         pair_dict_all_pairs = {}
@@ -209,23 +212,25 @@ def wrapper(instrument=None, outpath=None):
                 logger.error('Output path for cron job not specified in the configuration.')
                 raise ValueError('Output path for cron job not specified in the configuration.')
 
-        # NOTE: we only process one run at a time. The next run will start upon the next cron execution
-        Rctx = return_first_new_run(config, instrument, logger)
+        samples: list[Sample] = return_pending_samples(config, logger)
+        samples = add_matched_samples(samples, config, logger)
+        samples = add_merge_samples(samples, config, logger)
 
-        if Rctx is None:
+        runs: defaultdict[str, list[Sample]] = defaultdict(list)
+        for sample in samples:
+            if not sample.subject_barcode:
+                logger.warning(f"Sample {sample.id} does not have a subject barcode, skipping.")
+                continue
+            runs[sample.subject_barcode].append(sample)
+
+        if not runs:
+            logger.info("No pending samples found for wgs_somatic. Exiting wrapper.")
             sys.exit(0)
 
-        logger.info(f'Found {len(Rctx.sample_contexts)} samples for wgs_somatic in run {Rctx.run_name}.')
+        threads = []
+        end_threads = []
 
-        # Register start time
-        start_time = datetime.now()
-        logger.info(f'Started {Rctx.run_name} at {start_time}')
-
-        # Get T/N pair info in a dict for samples and link additional fastqs from other runs
-        for sctx in Rctx.sample_contexts:
-            pair_dict = get_pair_dict(sctx, Rctx, logger)
-            pair_dict_all_pairs.update(pair_dict)
-            logger.info(f'Sample {sctx.sample_name} info: {pair_dict[sctx.sample_name]}')
+        pre_pipeline(runs)
 
         # Uses the dictionary of T/N samples to put the correct pairs together and finds the correct input arguments to the pipeline
         threads = []
@@ -365,7 +370,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736', required=False)
+    parser.add_argument('-i', '--integrated', help='Integrated run querying for novel samples in slims', required=False, action='store_true', default=False)
     parser.add_argument('-t','--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
     parser.add_argument('-n','--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
@@ -373,10 +378,10 @@ def main():
     parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
     args = parser.parse_args()
 
-    if args.instrument:
+    if args.integrated:
         if args.tumorsample or args.normalsample or args.copyresults:
-            parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
-        wrapper(args.instrument, args.outpath)
+            parser.warning("When specifying --integrated, --tumorsample, --normalsample and --copyresults are ignored.")
+        wrapper(args.outpath)
     elif args.tumorsample or args.normalsample:
         manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary)
     else:
