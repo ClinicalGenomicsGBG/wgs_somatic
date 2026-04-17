@@ -8,7 +8,7 @@ from pathlib import Path
 from datetime import datetime
 
 from slims.slims import Slims
-from slims.criteria import equals, conjunction, not_equals
+from slims.criteria import equals, conjunction, not_equals, is_one_of
 
 from tools.helpers import read_config
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
@@ -253,7 +253,7 @@ def return_pending_samples(config, logger) -> list[Sample]:
         #     r.update({"rslt_value": "Successfull"})
         #     continue
         logger.info(f"Setting {sample.id} status to In progress")
-        #r.update({"rslt_value": "In progress"})
+        #slims_record.update({"rslt_value": "In progress"})
         pending_samples.append(sample)
 
     return pending_samples
@@ -286,7 +286,10 @@ def add_matched_samples(samples: list[Sample], config, logger) -> list[Sample]:
 
         query = conjunction()
         query.add(equals("rslt_cf_subjectBarcode", sample.subject_barcode))
-        query.add(equals("rslt_cf_sampleTypeSomatic", opposite_type))
+        if opposite_type == "tumor":
+            query.add(is_one_of("rslt_cf_sampleTypeSomatic", ["tumor", "tumour", "Tumor", "Tumour"]))
+        else:
+            query.add(equals("rslt_cf_sampleTypeSomatic", opposite_type))
         query.add(not_equals("pk", sample.pk))
 
         slims_record = latest_result(slims_connection.fetch("Result", query))
