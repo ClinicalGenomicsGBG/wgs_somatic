@@ -7,20 +7,19 @@ import argparse
 import os
 import re
 import glob
-from datetime import datetime
 import json
 import threading
 from collections import defaultdict
+from pathlib import Path
 
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir, return_pending_samples, add_merge_samples, add_matched_samples, Sample, Run
+from tools.slims import get_sample_slims_info, find_or_download_fastqs, link_fastqs_to_outputdir, return_pending_samples, add_merge_samples, add_matched_samples, Sample, Run
+from tools.pre_pipeline import pre_pipeline
 from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
-
-RUN_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def look_for_runs(config, instrument):
@@ -192,9 +191,6 @@ def wrapper(outpath=None):
         wrapper_log_path = config["wrapper_log_path"]
         logger = setup_logger('wrapper', os.path.join(wrapper_log_path, "wrapper.log"))
 
-        # Empty dict, will update later with T/N pair info
-        pair_dict_all_pairs = {}
-
         # prepare hcp download directory
         hcptmp = config["hcp_download_dir"]
         if not os.path.isdir(hcptmp):
@@ -216,66 +212,61 @@ def wrapper(outpath=None):
         samples = add_matched_samples(samples, config, logger)
         samples = add_merge_samples(samples, config, logger)
 
-        runs: defaultdict[str, list[Sample]] = defaultdict(list)
+        barcode_grouped_samples: defaultdict[str, list[Sample]] = defaultdict(list)
         for sample in samples:
             if not sample.subject_barcode:
                 logger.warning(f"Sample {sample.id} does not have a subject barcode, skipping.")
                 continue
-            runs[sample.subject_barcode].append(sample)
+            barcode_grouped_samples[sample.subject_barcode].append(sample)
 
-        if not runs:
+        if not barcode_grouped_samples:
             logger.info("No pending samples found for wgs_somatic. Exiting wrapper.")
             sys.exit(0)
 
-        threads = []
-        end_threads = []
+        runs: list[Run] = []
+        for samples_in_barcode_group in barcode_grouped_samples.values():
+            runs.append(Run(logger=logger, samples=samples_in_barcode_group, run_root_dir=Path(outpath)))
 
-        pre_pipeline(runs)
+        prepared_runs = pre_pipeline(runs, config, logger)
 
-        # Uses the dictionary of T/N samples to put the correct pairs together and finds the correct input arguments to the pipeline
         threads = []
         outputdirs = []
         end_threads = []
         final_pairs = []
-        paired_samples = []
 
-        tumor_samples = {}
-        normal_samples = {}
+        for run in prepared_runs:
+            if not run.ready_for_pipeline:
+                logger.info(f"Run {run.run_work_dir} is not ready for pipeline, skipping.")
+                continue
 
-        # Separate tumor and normal samples
-        for key, value in pair_dict_all_pairs.items():
-            if value[0] == 'tumor':
-                tumor_samples[key] = value
-            elif value[0] == 'normal':
-                normal_samples[key] = value
+            outputdir = str(run.run_work_dir)
+            pipeline_args = {"outputdir": outputdir}
+            has_tumor = bool(run.tumor_name and run.prepared_tumor_r1 and run.prepared_tumor_r2)
+            has_normal = bool(run.normal_name and run.prepared_normal_r1 and run.prepared_normal_r2)
 
-        logger.info(f"tumor_samples: {tumor_samples}")
-        logger.info(f"normal_samples: {normal_samples}\n")
-        # Pair samples based on tumorNormalID
-        for t_key, t_value in tumor_samples.items():
-            t_ID = t_value[1]  # tumorNormalID
-            paired = False
-            for n_key, n_value in normal_samples.items():
-                n_ID = n_value[1]  # tumorNormalID
-                if t_ID == n_ID or t_ID == n_key.split("DNA")[1] or n_ID == t_key.split("DNA")[1]:
-                    paired_samples.append((t_key, n_key))
-                    paired = True
-                    outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads)
-                    outputdirs.append(outputdir)
-                    end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, n_key)))
-                    final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
-                    break
+            if has_tumor:
+                pipeline_args["tumorname"] = run.tumor_name
+                pipeline_args["tumorfastqs"] = str(run.prepared_fastq_dir)
+            if has_normal:
+                pipeline_args["normalname"] = run.normal_name
+                pipeline_args["normalfastqs"] = str(run.prepared_fastq_dir)
 
-            if not paired:
-                outputdir = submit_pipeline(t_key, None, outpath, config, logger, threads)
-                outputdirs.append(outputdir)
-                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, None)))
-                final_pairs.append(f'{t_key} (T), {t_value[2]} {["prio" if t_value[3] else ""][0]}')
+            if has_tumor and has_normal:
+                final_pairs.append(f"{run.tumor_name} (T) {run.normal_name} (N)")
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, run.tumor_name, run.normal_name)))
+            elif has_tumor:
+                final_pairs.append(f"{run.tumor_name} (T)")
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, run.tumor_name, None)))
+            elif has_normal:
+                final_pairs.append(f"{run.normal_name} (N)")
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, None, run.normal_name)))
+            else:
+                logger.warning(f"Run {run.run_work_dir} marked ready but has no prepared tumor/normal fastqs, skipping.")
+                continue
 
-        # We are currently not running the normal-only samples
-        for n_key, n_value in normal_samples.items():
-            if not any(n_key == pair[1] for pair in paired_samples):
-                logger.info(f'Skipping normal-only sample {n_key} as it is not paired with a tumor sample.')
+            threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
+            logger.info(f"Starting wgs_somatic with prepared arguments {pipeline_args}")
+            outputdirs.append(outputdir)
 
         # If there are no samples to process, skip the rest of the code
         if not threads:

@@ -3,16 +3,17 @@ import json
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 from pathlib import Path
+from datetime import datetime
 
 from slims.slims import Slims
-from slims.criteria import is_one_of, equals, conjunction, not_equals
+from slims.criteria import equals, conjunction, not_equals
 
 from tools.helpers import read_config
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
-from wrapper import RUN_TIMESTAMP
+
+RUN_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 def latest_result(results):
@@ -42,6 +43,107 @@ class Sample:
 
         self.r1_remote = None  # FIXME: Some info from the remote key field in slims should go here to be used for downloading if the files are not local
         self.r2_remote = None
+
+    def missing_required_fields(self) -> list[str]:
+        missing: list[str] = []
+        if not self.id:
+            missing.append("id")
+        if not self.subject_barcode:
+            missing.append("subject_barcode")
+        if not self.date_created:
+            missing.append("date_created")
+        if not self.type_somatic:
+            missing.append("type_somatic")
+        return missing
+
+    def validate_required_fields(self) -> None:
+        missing = self.missing_required_fields()
+        if missing:
+            raise ValueError(f"Sample is missing required fields: {', '.join(missing)}")
+
+    def _existing_fastq_paths(self) -> list[Path]:
+        if not self.fastq_file_paths:
+            return []
+        return [Path(path) for path in self.fastq_file_paths if path and Path(path).exists()]
+
+    def _refresh_fastq_state(self) -> None:
+        if self.fastq_file_paths and len(self.fastq_file_paths) > 1:
+            r1_candidate = Path(self.fastq_file_paths[0])
+            r2_candidate = Path(self.fastq_file_paths[1])
+            self.r1_path = r1_candidate if r1_candidate.exists() else None
+            self.r2_path = r2_candidate if r2_candidate.exists() else None
+        else:
+            self.r1_path = None
+            self.r2_path = None
+        self.fastq_local = bool(self.r1_path and self.r2_path and self.r1_path.exists() and self.r2_path.exists())
+
+    def has_local_fastqs(self) -> bool:
+        self._refresh_fastq_state()
+        return self.fastq_local
+
+    def _parse_long_term_storage_info(self) -> tuple[list[str], str | None]:
+        info: Any = self.long_term_storage_info
+        if not info:
+            return [], None
+
+        if isinstance(info, str):
+            try:
+                info = json.loads(info)
+            except json.JSONDecodeError:
+                return [], None
+
+        remote_keys: list[str] = []
+        bucket: str | None = None
+
+        def _collect(obj: Any) -> None:
+            nonlocal bucket
+            if isinstance(obj, dict):
+                keys = obj.get("remote_keys")
+                if isinstance(keys, list):
+                    remote_keys.extend([key for key in keys if isinstance(key, str)])
+                if bucket is None and isinstance(obj.get("bucket"), str):
+                    bucket = obj["bucket"]
+                for value in obj.values():
+                    _collect(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _collect(item)
+
+        _collect(info)
+        deduped_remote_keys = list(dict.fromkeys(remote_keys))
+        return deduped_remote_keys, bucket
+
+    def has_remote_keys(self) -> bool:
+        remote_keys, _ = self._parse_long_term_storage_info()
+        return bool(remote_keys)
+
+    def download(self, config, logger, hcp_runtag: str | None = None) -> list[Path]:
+        if self.has_local_fastqs():
+            return self._existing_fastq_paths()
+
+        remote_keys, bucket = self._parse_long_term_storage_info()
+        downloaded_paths: list[Path] = []
+        runtag = hcp_runtag or self.subject_barcode or self.id
+
+        if not remote_keys:
+            raise ValueError(
+                f"Sample {self.id} has no local FASTQs and no remote_keys in long_term_storage_info"
+            )
+
+        logger.info(f"Downloading missing FASTQs for sample {self.id} from {len(remote_keys)} remote keys")
+        with ThreadPoolExecutor() as executor:
+            for downloaded in executor.map(
+                lambda remote_key: download_and_decompress(bucket, remote_key, logger, runtag), remote_keys
+            ):
+                if downloaded:
+                    downloaded_paths.append(Path(downloaded))
+
+        existing = self._existing_fastq_paths()
+        merged = existing + [path for path in downloaded_paths if path.exists()]
+        deduped = [str(path) for path in dict.fromkeys(str(path) for path in merged)]
+        self.fastq_file_paths = deduped
+        self._refresh_fastq_state()
+        return [Path(path) for path in self.fastq_file_paths]
 
 
     def _value(self, record, name, default=None):
@@ -85,6 +187,14 @@ class Run:
         self.main_id = main_id
         self.est_tumor_cov = est_tumor_cov
         self.est_normal_cov = est_normal_cov
+        self.ready_for_pipeline = False
+        self.prepared_fastq_dir: Optional[Path] = None
+        self.prepared_tumor_r1: Optional[Path] = None
+        self.prepared_tumor_r2: Optional[Path] = None
+        self.prepared_normal_r1: Optional[Path] = None
+        self.prepared_normal_r2: Optional[Path] = None
+        self.tumor_name: Optional[str] = None
+        self.normal_name: Optional[str] = None
 
         if run_work_dir is not None:
             self.run_work_dir = run_work_dir
@@ -108,6 +218,18 @@ class Run:
             return max(normal_samples, key=lambda s: s.date_created).id
 
         raise ValueError("No tumor or normal samples found")
+
+    def latest_sample_id(self, sample_type: str) -> str | None:
+        if sample_type == "tumor":
+            samples = self.tumor_samples
+        elif sample_type == "normal":
+            samples = self.normal_samples
+        else:
+            raise ValueError(f"Unknown sample_type: {sample_type}")
+
+        if not samples:
+            return None
+        return max(samples, key=lambda sample: sample.date_created).id
         
 
 def return_pending_samples(config, logger) -> list[Sample]:
@@ -120,14 +242,16 @@ def return_pending_samples(config, logger) -> list[Sample]:
     pending_samples = []
     for slims_record in slims_records:
         sample = Sample(slims_record)
+        try:
+            sample.validate_required_fields()
+        except ValueError as exc:
+            logger.warning(f"Skipping sample due to missing required fields: {exc}")
+            continue
         # if not sample.fastq_merge:  # FIXME: Change to "StartPipeline" or similar
         #     logger.info(f"Skipping sample {sample.id} because it is not marked with StartPipeline")
         #     logger.info(f"Setting {sample.id} status to Successfull")
         #     r.update({"rslt_value": "Successfull"})
         #     continue
-        if not sample.type_somatic:
-            logger.warning(f"Sample {sample.id} does not have a tumorNormalType assigned, skipping")
-            continue
         logger.info(f"Setting {sample.id} status to In progress")
         #r.update({"rslt_value": "In progress"})
         pending_samples.append(sample)
