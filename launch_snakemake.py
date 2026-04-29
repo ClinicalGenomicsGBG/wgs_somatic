@@ -94,40 +94,20 @@ def yearly_stats(tumorname, normalname):
         )
 
 
-def copy_results(outputdir, tumorname=None, normalname=None):
+def copy_results(outputdir):
     """Rsync result files from outputdir to resultdir"""
     try:
         # Automatic detection of runconfig
-        config_dir = os.path.join(outputdir, "configs")
-        if tumorname:
-            config_pattern = re.compile(rf"^{tumorname}.*_config\.json$")
-        elif normalname:
-            config_pattern = re.compile(rf"^{normalname}.*_config\.json$")
-        else:
-            # Fallback to a generic pattern if no specific names are provided
-            config_pattern = re.compile(r"^DNA[\dA-Za-z]+_.+_.+_config\.json$")
+        snakemake_config = os.path.join(outputdir, "configs", "snakemake_config.json")
 
-        if os.path.isdir(config_dir):
-            for f in os.listdir(config_dir):
-                if config_pattern.match(f):
-                    runconfig = os.path.join(config_dir, f)
-                    logger(f"Found runconfig: {runconfig}")
-                    break
-            else:
-                logger(
-                    f"Automatic detection of config file failed. No matching configuration file found in {config_dir}"
-                )
-                logger(
-                    f"Pattern used to match the config file: {config_pattern.pattern}"
-                )
-                raise ValueError(
-                    "Automatic detection of config file failed. No matching configuration file found."
-                )
+        if not os.path.isfile(snakemake_config):
+            logger(f"Config file not found at expected location: {snakemake_config}")
+            raise FileNotFoundError(f"Config file not found at expected location: {snakemake_config}")
 
         try:
             # Read the runconfig file to get resultdir and resultsconf
-            with open(runconfig, "r") as cf:
-                config_data = json.load(cf)
+            with open(snakemake_config, "r") as sc:
+                config_data = json.load(sc)
                 try:
                     resultdir = config_data.get("resultdir")
                     logger(f"Resultdir found in config file: {resultdir}")
@@ -377,10 +357,9 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
                 analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'
             else:
                 analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_outputdir}'
-            snakemake_config = f"{runconfigs}/{tumorid}_config.json"
         else:
             analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_outputdir}'
-            snakemake_config = f"{runconfigs}/{normalid}_config.json"
+        snakemake_config = f"{runconfigs}/snakemake_config.json"
 
         with open(snakemake_config, 'w') as analysisconf:
             json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
@@ -495,7 +474,7 @@ if __name__ == '__main__':
         args.outputdir = os.path.abspath(args.outputdir)
         logger(f"Adjusted outputdir to {args.outputdir}")
     if args.onlycopyresults:
-        copy_results(args.outputdir, args.tumorsample, args.normalsample)
+        copy_results(args.outputdir)
     else:
         if args.tumorfastqs:
             if not args.tumorfastqs.startswith("/"):
@@ -512,12 +491,12 @@ if __name__ == '__main__':
                 # these functions are only executed if snakemake workflow has finished successfully
                 yearly_stats(args.tumorsample, args.normalsample)
                 if args.copyresults:
-                    copy_results(args.outputdir, args.tumorsample, args.normalsample)
+                    copy_results(args.outputdir)
             else:
                 yearly_stats(args.tumorsample, 'None')
                 if args.copyresults:
-                    copy_results(args.outputdir, args.tumorsample, None)
+                    copy_results(args.outputdir)
         else:
             yearly_stats('None', args.normalsample)
             if args.copyresults:
-                copy_results(args.outputdir, None, args.normalsample)
+                copy_results(args.outputdir)
