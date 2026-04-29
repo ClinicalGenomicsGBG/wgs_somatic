@@ -393,6 +393,5 @@ def get_pair_dict(Sctx, Rctx, logger):
         if pair_slims_sample['content_id'] == Sctx.slims_info['content_id'] or\
                 pair_slims_sample['tumorNormalType'] == pair_type:
             pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
-            # Check if there are additional fastqs in other runs and symlink fastqs
 
     return pair_dict
