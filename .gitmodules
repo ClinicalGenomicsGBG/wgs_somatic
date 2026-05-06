@@ -7,7 +7,3 @@
 	path = workflows/scripts/b_allele_igv_plot
 	url = https://github.com/ClinicalGenomicsGBG/b_allele_igv_plot.git
 	branch = update_sentieon        
-[submodule "workflows/scripts/canvas_to_interpreter"]
-	path = workflows/scripts/canvas_to_interpreter
-	url = https://github.com/ClinicalGenomicsGBG/canvas_to_interpreter.git
-    ignore = dirty
