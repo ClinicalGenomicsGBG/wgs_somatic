@@ -3,8 +3,8 @@
 
 rule cram:
     input:
-        bam = "{stype}/realign/{sname}_REALIGNED.bam",
-        bai = "{stype}/realign/{sname}_REALIGNED.bam.bai"
+        bam = "{path}/{file}.bam",
+        bai = "{path}/{file}.bam.bai"
     singularity:
         pipeconfig["singularities"]["samtools"]["sing"]
     params:
@@ -14,8 +14,8 @@ rule cram:
     shadow:
         pipeconfig["rules"].get("cram", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
-        cram = "{stype}/realign/{sname}_REALIGNED.cram",
-        crai = "{stype}/realign/{sname}_REALIGNED.cram.crai",
+        cram = "{path}/{file}.cram",
+        crai = "{path}/{file}.cram.crai",
     shell:
         """
         samtools --version | head -n 2 > {params.vstamp}
