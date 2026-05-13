@@ -8,9 +8,10 @@ rule cram:
     singularity:
         pipeconfig["singularities"]["samtools"]["sing"]
     params:
-        threads = clusterconf["cram"]["threads"],
         referencegenome = pipeconfig["referencegenome"],
         vstamp = f"{VDIR}/cram.txt"
+    threads:
+        clusterconf["cram"]["threads"]
     shadow:
         pipeconfig["rules"].get("cram", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
@@ -19,6 +20,6 @@ rule cram:
     shell:
         """
         samtools --version | head -n 2 > {params.vstamp}
-        samtools view -C --threads {params.threads} -T {params.referencegenome} -o {output.cram} {input.bam}
-        samtools index {output.cram}
+        samtools view -C -@ {threads} -T {params.referencegenome} -o {output.cram} {input.bam}
+        samtools index -@ {threads} {output.cram}
         """
