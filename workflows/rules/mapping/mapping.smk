@@ -112,8 +112,8 @@ rule realign_mapping:
     shadow:
         pipeconfig["rules"].get("realign_mapping", {}).get("shadow", pipeconfig.get("shadow", False))
     output:
-        bam = "{stype}/realign/{sname}_REALIGNED.bam",
-        bai = "{stype}/realign/{sname}_REALIGNED.bam.bai"
+        bam = temp("{stype}/realign/{sname}_REALIGNED.bam"),
+        bai = temp("{stype}/realign/{sname}_REALIGNED.bam.bai")
     shell:
         """
         # Version info
