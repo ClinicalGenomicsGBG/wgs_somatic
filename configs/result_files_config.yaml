@@ -19,11 +19,11 @@ tumor-normal:
 
   IGV_files:
     # Read mapping
-    - "{tumor}/realign/{tumorid}_REALIGNED.bam"
-    - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
-    - "{normal}/realign/{normalid}_REALIGNED.bam"
-    - "{normal}/realign/{normalid}_REALIGNED.bam.bai"
+    - "{normal}/realign/{normalid}_REALIGNED.cram"
+    - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
     - "{normal}/realign/{normalid}_REALIGNED.bam.tdf"
     # CNV_seg
     ## Ascat
@@ -86,8 +86,8 @@ tumor-only:
 
   IGV_files:
     # Read mapping
-    - "{tumor}/realign/{tumorid}_REALIGNED.bam"
-    - "{tumor}/realign/{tumorid}_REALIGNED.bam.bai"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram"
+    - "{tumor}/realign/{tumorid}_REALIGNED.cram.crai"
     - "{tumor}/realign/{tumorid}_REALIGNED.bam.tdf"
     # CNV_seg
     ## Ascat
@@ -129,8 +129,8 @@ normal-only:
 
   IGV_files:
     # Read mapping
-    - "{normal}/realign/{normalid}_REALIGNED.bam"
-    - "{normal}/realign/{normalid}_REALIGNED.bam.bai"
+    - "{normal}/realign/{normalid}_REALIGNED.cram"
+    - "{normal}/realign/{normalid}_REALIGNED.cram.crai"
     - "{normal}/realign/{normalid}_REALIGNED.bam.tdf"
     # CNV_seg
     ## Canvas

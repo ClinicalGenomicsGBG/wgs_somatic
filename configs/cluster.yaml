@@ -14,6 +14,9 @@ mapping:
 
 cram:
   threads: 40
+  name: "WGSsomatic_{rule}_{wildcards.file}"
+  output: "WGSsomatic_{rule}_{wildcards.file}.stdout"
+  error: "WGSsomatic_{rule}_{wildcards.file}.stderr"
 
 rtgtools_eval:
   threads: 10

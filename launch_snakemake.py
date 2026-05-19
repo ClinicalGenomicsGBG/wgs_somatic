@@ -2,7 +2,6 @@
 import json
 import argparse
 import os
-import re
 import glob
 from tools.helpers import read_config
 import sys
@@ -12,7 +11,6 @@ from shutil import copyfile
 import subprocess
 import stat
 import yaml
-import requests
 import random
 import string
 import zipfile
@@ -102,7 +100,9 @@ def copy_results(outputdir):
 
         if not os.path.isfile(snakemake_config):
             logger(f"Config file not found at expected location: {snakemake_config}")
-            raise FileNotFoundError(f"Config file not found at expected location: {snakemake_config}")
+            raise FileNotFoundError(
+                f"Config file not found at expected location: {snakemake_config}"
+            )
 
         try:
             # Read the runconfig file to get resultdir and resultsconf
@@ -173,27 +173,22 @@ def copy_results(outputdir):
                         f"Warning: Source file {src_path} does not exist, skipping copy."
                     )
 
-        try:
-            # webstore API call to make path searchable
-            config = read_config(LAUNCHER_CONFIG_PATH)
-            webstore_api_url = config.get("webstore_api_url")
-            json_payload = {"path": resultdir}
-            response = requests.post(webstore_api_url, json=json_payload)
-            if response.status_code == 200:
-                logger(f"Successfully notified webstore about new files in {resultdir}")
-            else:
-                logger(
-                    f"Failed to notify webstore about new files in {resultdir}. Status code: {response.status_code}, Response: {response.text}"
-                )
-        except Exception as e:
-            logger(f"Error occurred while notifying webstore: {e}")
-
     except Exception as e:
         logger(f"Unhandled error in copy_results: {e}")
         raise
 
 
-def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorname=False, tumorfastqs=False, starttype=False, notemp=False, dag=False):
+def analysis_main(
+    args,
+    outputdir,
+    normalname=False,
+    normalfastqs=False,
+    tumorname=False,
+    tumorfastqs=False,
+    starttype=False,
+    notemp=False,
+    dag=False,
+):
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -235,18 +230,26 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         else:
             if normalfastqs:
                 if not os.path.isdir(normalfastqs):
-                    error_list.append(f"{normalfastqs} does not appear to be a directory")
+                    error_list.append(
+                        f"{normalfastqs} does not appear to be a directory"
+                    )
                 else:
                     f_normalfastqs = glob.glob(f"{normalfastqs}/*{normalname}*fastq.gz")
                     if not f_normalfastqs:
                         logger("Warning: No fastqs found in normaldir")
-                        f_normalfastqs = glob.glob(f"{normalfastqs}/*{normalname}*fasterq")
+                        f_normalfastqs = glob.glob(
+                            f"{normalfastqs}/*{normalname}*fasterq"
+                        )
                         if not f_normalfastqs:
-                            error_list.append("No fastqs or fasterqs found in normaldir")
+                            error_list.append(
+                                "No fastqs or fasterqs found in normaldir"
+                            )
 
             if tumorfastqs:
                 if not os.path.isdir(tumorfastqs):
-                    error_list.append(f"{tumorfastqs} does not appear to be a directory")
+                    error_list.append(
+                        f"{tumorfastqs} does not appear to be a directory"
+                    )
                 else:
                     f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fastq.gz")
                     if not f_tumorfastqs:
@@ -260,7 +263,9 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             try:
                 os.mkdir(outputdir)
             except Exception as e:
-                error_list.append(f"outputdirectory: {outputdir} does not exist and could not be created: {e}")
+                error_list.append(
+                    f"outputdirectory: {outputdir} does not exist and could not be created: {e}"
+                )
 
         if error_list:
             logger("Errors found in arguments to script:")
@@ -274,7 +279,9 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         #################################################################
         # Prepare AnalysisFolder
         #################################################################
-        normalid, tumorid = get_normalid_tumorid(normalfastqs, normalname, tumorfastqs, tumorname)
+        normalid, tumorid = get_normalid_tumorid(
+            normalfastqs, normalname, tumorfastqs, tumorname
+        )
         samplelogs = f"{outputdir}/logs"
         if not os.path.isdir(samplelogs):
             os.mkdir(samplelogs)
@@ -286,18 +293,28 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         clusterconf = config["clusterconf"]
         filterconf = config["filterconf"]
         datavzrdconf = config["datavzrdconf"]
-        copyfile(os.path.join(configdir, clusterconf), os.path.join(runconfigs, clusterconf))
-        copyfile(os.path.join(configdir, filterconf), os.path.join(runconfigs, filterconf))
-        copyfile(os.path.join(configdir, datavzrdconf), os.path.join(runconfigs, datavzrdconf))
-        copyfile(os.path.join(configdir, mainconf_name), os.path.join(runconfigs, mainconf_name))
+        copyfile(
+            os.path.join(configdir, clusterconf), os.path.join(runconfigs, clusterconf)
+        )
+        copyfile(
+            os.path.join(configdir, filterconf), os.path.join(runconfigs, filterconf)
+        )
+        copyfile(
+            os.path.join(configdir, datavzrdconf),
+            os.path.join(runconfigs, datavzrdconf),
+        )
+        copyfile(
+            os.path.join(configdir, mainconf_name),
+            os.path.join(runconfigs, mainconf_name),
+        )
 
         # Use wildcards to fill in the resultfiles templates
         wildcards = {
-                "tumor": "tumor",
-                "normal": "normal",
-                "tumorid": tumorid,
-                "normalid": normalid
-            }
+            "tumor": "tumor",
+            "normal": "normal",
+            "tumorid": tumorid,
+            "normalid": normalid,
+        }
 
         # Read result_files templates from config
         resultsconf = config["resultfilesconf"]
@@ -310,12 +327,12 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
             results_headers = read_config(resultsconf_path)["normal-only"]
 
         results = {
-            cat: [ pattern.format(**wildcards) for pattern in patterns ]
+            cat: [pattern.format(**wildcards) for pattern in patterns]
             for cat, patterns in results_headers.items()
         }
 
         # Write the result_files configuration to the working directory
-        with open(os.path.join(runconfigs, resultsconf), 'w') as results_file:
+        with open(os.path.join(runconfigs, resultsconf), "w") as results_file:
             yaml.dump(results, results_file)
 
         # Prepare log
@@ -354,14 +371,20 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         analysisdict["reference"] = "hg38"
         if tumorname:
             if normalname:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/{basename_outputdir}'
+                analysisdict["resultdir"] = (
+                    f"{config['resultdir_hg38']}/{basename_outputdir}"
+                )
             else:
-                analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/tumor_only/{basename_outputdir}'
+                analysisdict["resultdir"] = (
+                    f"{config['resultdir_hg38']}/tumor_only/{basename_outputdir}"
+                )
         else:
-            analysisdict["resultdir"] = f'{config["resultdir_hg38"]}/normal_only/{basename_outputdir}'
+            analysisdict["resultdir"] = (
+                f"{config['resultdir_hg38']}/normal_only/{basename_outputdir}"
+            )
         snakemake_config = f"{runconfigs}/snakemake_config.json"
 
-        with open(snakemake_config, 'w') as analysisconf:
+        with open(snakemake_config, "w") as analysisconf:
             json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
 
     except Exception as e:
@@ -376,8 +399,8 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         ###################################################################
         # Generate random hash for shadow directory
         letters = string.ascii_lowercase
-        letters = ''.join(random.choice(letters) for i in range(10))
-        shadow_dir = os.path.join('/tmp', letters)
+        letters = "".join(random.choice(letters) for i in range(10))
+        shadow_dir = os.path.join("/tmp", letters)
 
         snakemake_path = config["snakemake_env"]
         os.environ["PATH"] += os.pathsep + snakemake_path
@@ -390,57 +413,96 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
 
         singularity_args = [
             "-e",
-            "--bind", "/medstore",
-            "--bind", "/seqstore",
-            "--bind", "/apps",
-            "--bind", "/clinical",
-            "--bind", "/webstore",
-            "--bind", ROOT_DIR
+            "--bind",
+            "/medstore",
+            "--bind",
+            "/seqstore",
+            "--bind",
+            "/apps",
+            "--bind",
+            "/clinical",
+            "--bind",
+            "/webstore",
+            "--bind",
+            ROOT_DIR,
         ]
 
         cluster_args = [
             "qsub",
-            "-S", "/bin/bash",
-            "-pe", "mpi", "{cluster.threads}",
-            "-q", "{cluster.queue}",
-            "-N", "{cluster.name}",
-            "-o", f"{samplelogs}/{{cluster.output}}",
-            "-e", f"{samplelogs}/{{cluster.error}}",
-            "-l", "{cluster.excl}"
+            "-S",
+            "/bin/bash",
+            "-pe",
+            "mpi",
+            "{cluster.threads}",
+            "-q",
+            "{cluster.queue}",
+            "-N",
+            "{cluster.name}",
+            "-o",
+            f"{samplelogs}/{{cluster.output}}",
+            "-e",
+            f"{samplelogs}/{{cluster.error}}",
+            "-l",
+            "{cluster.excl}",
         ]
 
         if dag:
             snakemake_args_dag = [
-                "snakemake", "-s", "Snakefile",
-                "--configfile", snakemake_config,
-                "--directory", outputdir,
-                "--dag", "|", "dot", "-Tsvg", ">", f"{samplelogs}/dag.svg"
+                "snakemake",
+                "-s",
+                "Snakefile",
+                "--configfile",
+                snakemake_config,
+                "--directory",
+                outputdir,
+                "--dag",
+                "|",
+                "dot",
+                "-Tsvg",
+                ">",
+                f"{samplelogs}/dag.svg",
             ]
             snakemake_args_dag_command = " ".join(snakemake_args_dag)
             subprocess.run(snakemake_args_dag_command, env=my_env, shell=True)
 
         snakemake_args = [
-            "snakemake", "-s", "Snakefile",
-            "--configfile", snakemake_config,
-            "--use-singularity", "--singularity-args", " ".join(singularity_args),
-            "--cluster-config", "configs/cluster.yaml",
-            "--cluster", " ".join(cluster_args),
-            "--jobs", "999",
-            "--latency-wait", "60",
-            "--directory", outputdir,
-            "--shadow-prefix", shadow_dir,
-            "--rerun-incomplete"
+            "snakemake",
+            "-s",
+            "Snakefile",
+            "--configfile",
+            snakemake_config,
+            "--use-singularity",
+            "--singularity-args",
+            " ".join(singularity_args),
+            "--cluster-config",
+            "configs/cluster.yaml",
+            "--cluster",
+            " ".join(cluster_args),
+            "--jobs",
+            "999",
+            "--latency-wait",
+            "60",
+            "--directory",
+            outputdir,
+            "--shadow-prefix",
+            shadow_dir,
+            "--rerun-incomplete",
         ] + notemp_arg
 
         # Execute Snakemake command with outputdir redirection
         with open(samplelog, "a") as log_file:
-            subprocess.run(snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file)
+            subprocess.run(
+                snakemake_args, env=my_env, check=True, stdout=log_file, stderr=log_file
+            )
 
         snakemake_args_report = [
             "snakemake",
-            "--configfile", snakemake_config,
-            "--directory", outputdir,
-            "--report", f"{samplelogs}/report.zip"
+            "--configfile",
+            snakemake_config,
+            "--directory",
+            outputdir,
+            "--report",
+            f"{samplelogs}/report.zip",
         ]
 
         subprocess.run(snakemake_args_report, env=my_env, check=True)
@@ -456,18 +518,68 @@ def analysis_main(args, outputdir, normalname=False, normalfastqs=False, tumorna
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--outputdir', nargs='?', help='output directory, where to put results', required=True)
-    parser.add_argument('-ns', '--normalsample', nargs='?', help='normal samplename', required=False)
-    parser.add_argument('-nf', '--normalfastqs', nargs='?', help='path to directory containing normal fastqs', required=False)
-    parser.add_argument('-ts', '--tumorsample', nargs='?', help='tumor samplename', required=False)
-    parser.add_argument('-tf', '--tumorfastqs', nargs='?', help='path to directory containing tumor fastqs', required=False)
-    parser.add_argument('-stype', '--starttype', nargs='?', help='write forcestart if you want to ignore fastqs', required=False)
-    parser.add_argument('-cr', '--copyresults', action="store_true", help='Copy results to resultdir on webstore', required=False)
-    parser.add_argument('--notemp', action="store_true", help='Run the pipeline in notemp mode (all intermediate files kept)', required=False)
-    parser.add_argument('-onlycopy', '--onlycopyresults', action="store_true", help='Only run the copy_results function', required=False)
-    parser.add_argument('--dag', action="store_true", help="Also generate a separate DAG svg in logs", required=False)
+    parser.add_argument(
+        "-o",
+        "--outputdir",
+        nargs="?",
+        help="output directory, where to put results",
+        required=True,
+    )
+    parser.add_argument(
+        "-ns", "--normalsample", nargs="?", help="normal samplename", required=False
+    )
+    parser.add_argument(
+        "-nf",
+        "--normalfastqs",
+        nargs="?",
+        help="path to directory containing normal fastqs",
+        required=False,
+    )
+    parser.add_argument(
+        "-ts", "--tumorsample", nargs="?", help="tumor samplename", required=False
+    )
+    parser.add_argument(
+        "-tf",
+        "--tumorfastqs",
+        nargs="?",
+        help="path to directory containing tumor fastqs",
+        required=False,
+    )
+    parser.add_argument(
+        "-stype",
+        "--starttype",
+        nargs="?",
+        help="write forcestart if you want to ignore fastqs",
+        required=False,
+    )
+    parser.add_argument(
+        "-cr",
+        "--copyresults",
+        action="store_true",
+        help="Copy results to resultdir on webstore",
+        required=False,
+    )
+    parser.add_argument(
+        "--notemp",
+        action="store_true",
+        help="Run the pipeline in notemp mode (all intermediate files kept)",
+        required=False,
+    )
+    parser.add_argument(
+        "-onlycopy",
+        "--onlycopyresults",
+        action="store_true",
+        help="Only run the copy_results function",
+        required=False,
+    )
+    parser.add_argument(
+        "--dag",
+        action="store_true",
+        help="Also generate a separate DAG svg in logs",
+        required=False,
+    )
     args = parser.parse_args()
 
     if not args.outputdir.startswith("/"):
@@ -484,7 +596,17 @@ if __name__ == '__main__':
             if not args.normalfastqs.startswith("/"):
                 args.normalfastqs = os.path.abspath(args.normalfastqs)
                 logger(f"Adjusted normalfastqs to {args.normalfastqs}")
-        analysis_main(args, args.outputdir, args.normalsample, args.normalfastqs, args.tumorsample, args.tumorfastqs, args.starttype, args.notemp, args.dag)
+        analysis_main(
+            args,
+            args.outputdir,
+            args.normalsample,
+            args.normalfastqs,
+            args.tumorsample,
+            args.tumorfastqs,
+            args.starttype,
+            args.notemp,
+            args.dag,
+        )
 
         if args.tumorsample:
             if args.normalsample:
@@ -493,10 +615,10 @@ if __name__ == '__main__':
                 if args.copyresults:
                     copy_results(args.outputdir)
             else:
-                yearly_stats(args.tumorsample, 'None')
+                yearly_stats(args.tumorsample, "None")
                 if args.copyresults:
                     copy_results(args.outputdir)
         else:
-            yearly_stats('None', args.normalsample)
+            yearly_stats("None", args.normalsample)
             if args.copyresults:
                 copy_results(args.outputdir)
