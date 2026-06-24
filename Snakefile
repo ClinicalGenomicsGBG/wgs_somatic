@@ -114,7 +114,7 @@ include:    "workflows/rules/mapping/generate_tdf.smk"
 
 #########################################
 # Control coverage
-include: "workflows/rules/qc/qc_pass.smk"
+#include: "workflows/rules/qc/qc_pass.smk"
 
 #########################################
 # VariantCalling
