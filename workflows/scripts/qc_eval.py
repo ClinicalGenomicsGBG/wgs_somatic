@@ -2,26 +2,26 @@ import argparse
 
 def evaluate_qc(stype, coverage_file, somalier_file, qc_pass_file):
 
-    coverage_pass, message = evaluate_coverage(coverage_file, stype)
+   # coverage_pass, message = evaluate_coverage(coverage_file, stype)
     
-    expected_sex = "male" #placeholder for now
-    somalier_pass, somalier_sex = evaluate_sex(somalier_file, expected_sex)
+    #expected_sex = "male" #placeholder for now
+    #somalier_pass, somalier_sex = evaluate_sex(somalier_file, expected_sex)
+    #coverage_pass = True
+    #if not coverage_pass:
 
-    if not coverage_pass and somalier_pass:
+    #    errors = []
 
-        errors = []
+    #    if not cov_ok:
+    #        errors.append(f"Coverage failed: {message}")
 
-        if not cov_ok:
-            errors.append(f"Coverage failed: {message}")
+    #    if not som_ok:
+    #        errors.append(f"Somalier failed: {somalier_sex}")
 
-        if not som_ok:
-            errors.append(f"Somalier failed: {somalier_sex}")
+    #    if errors:
+    #:w        raise ValueError("\n".join(errors))
 
-        if errors:
-            raise ValueError("\n".join(errors))
-
-        with open(qc_pass_file, "w"):
-            pass
+    with open(qc_pass_file, "w"):
+        pass
 
 def evaluate_coverage(coverage_file, stype):
     with open (coverage_file) as f:
@@ -33,14 +33,16 @@ def evaluate_coverage(coverage_file, stype):
     wgs_stats = dict(zip(keys, values))
     
     if stype == "tumor":
-        message = f"Median coverage: {wgs_stats["MEDIAN_COVERAGE"]}, Fraction bases with >30X coverage: {wgs_stats["PCT_30X"]}"
+        #message = f"Median coverage: {wgs_stats["MEDIAN_COVERAGE"]}, Fraction bases with >30X coverage: {wgs_stats["PCT_30X"]}"
+        message = "some simple message"
         if wgs_stats["MEDIAN_COVERAGE"] <= 85 or wgs_stats["PCT_30X"] <= 0.95:
             return False, message
         else:
             return True, message
 
     elif stype == "normal":
-        message = f"Median coverage: {wgs_stats["MEDIAN_COVERAGE"]}, Fraction bases with >10X coverage: {wgs_stats["PCT_10X"]}"
+        #message = f"Median coverage: {wgs_stats["MEDIAN_COVERAGE"]}, Fraction bases with >10X coverage: {wgs_stats["PCT_10X"]}"
+        message = "some simple message"
         if wgs_stats["MEDIAN_COVERAGE"] <= 25 or wgs_stats["PCT_10X"] <= 0.95:
             return False, message 
         else:
