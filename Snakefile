@@ -113,6 +113,10 @@ include:    "workflows/rules/mapping/cram.smk"
 include:    "workflows/rules/mapping/generate_tdf.smk"
 
 #########################################
+# Control coverage
+include: "workflows/rules/qc/qc_pass.smk"
+
+#########################################
 # VariantCalling
 if tumorid:
     include:        "workflows/rules/variantcalling/tnscope.smk"
