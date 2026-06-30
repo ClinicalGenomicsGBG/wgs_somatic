@@ -392,6 +392,12 @@ def get_pair_dict(Sctx, Rctx, logger):
         # Check if the sample we have found is either our newly sequenced sample (including the same sample previously sequenced) OR a complementing tumorNormalType to our newly sequenced sample
         if pair_slims_sample['content_id'] == Sctx.slims_info['content_id'] or\
                 pair_slims_sample['tumorNormalType'] == pair_type:
-            pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
+            pair_dict[pair_slims_sample['content_id']] = [
+                    pair_slims_sample['tumorNormalType'],
+                    pair_slims_sample['tumorNormalID'],
+                    pair_slims_sample['department'],
+                    pair_slims_sample['is_priority'],
+                    pair_slims_sample['gender'],
+                    ]
 
     return pair_dict

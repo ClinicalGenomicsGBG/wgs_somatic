@@ -18,6 +18,8 @@ tumorfastqdirs = config["tumorfastqs"]
 tumorname = config["tumorname"]
 tumorid = config["tumorid"]
 
+gender = config["gender"]
+
 reference = config["reference"]
 
 # It uses the following configs from the working directory
@@ -114,7 +116,7 @@ include:    "workflows/rules/mapping/generate_tdf.smk"
 
 #########################################
 # Control coverage
-#include: "workflows/rules/qc/qc_pass.smk"
+include: "workflows/rules/qc/qc_pass.smk"
 
 #########################################
 # VariantCalling

@@ -132,7 +132,7 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None):
         pass
 
 
-def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads):
+def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads):
     timestamp = get_timestamp()
     if tumorsample and normalsample:
         logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
@@ -147,7 +147,8 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
-                         'tumorfastqs': f'{tumor_fastq_dir}'}
+                         'tumorfastqs': f'{tumor_fastq_dir}',
+                         'gender': f'{gender}'}
 
     elif tumorsample:
         logger.info(f'Preparing run: Tumor-only {tumorsample}')
@@ -160,7 +161,9 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
         tumor_fastq_dir = link_fastqs_to_outputdir(fastq_dict_tumor, outputdir, logger)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
-                         'tumorfastqs': f'{tumor_fastq_dir}'}
+                         'tumorfastqs': f'{tumor_fastq_dir}',
+                         'gender': f'{gender}'}
+
 
     elif normalsample:
         logger.info(f'Preparing run: Normal-only {normalsample}')
@@ -173,7 +176,8 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
         normal_fastq_dir = link_fastqs_to_outputdir(fastq_dict_normal, outputdir, logger)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
-                         'normalfastqs': f'{normal_fastq_dir}'}
+                         'normalfastqs': f'{normal_fastq_dir}',
+                         'gender': f'{gender}'}
 
     threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
     logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
@@ -223,7 +227,7 @@ def wrapper(instrument=None, outpath=None):
 
         # Get T/N pair info in a dict for samples and link additional fastqs from other runs
         for sctx in Rctx.sample_contexts:
-            pair_dict = get_pair_dict(sctx, Rctx, logger)
+            pair_dict = get_pair_dict(sctx, Rctx, logger) #TODO Evaluate how good this is: Returns a dictionary with two lists. gender is added as [4] 
             pair_dict_all_pairs.update(pair_dict)
             logger.info(f'Sample {sctx.sample_name} info: {pair_dict[sctx.sample_name]}')
 
@@ -249,20 +253,21 @@ def wrapper(instrument=None, outpath=None):
         # Pair samples based on tumorNormalID
         for t_key, t_value in tumor_samples.items():
             t_ID = t_value[1]  # tumorNormalID
+            t_gender = t_value[4] # gender for tumor sample
             paired = False
             for n_key, n_value in normal_samples.items():
                 n_ID = n_value[1]  # tumorNormalID
                 if t_ID == n_ID:
                     paired_samples.append((t_key, n_key))
                     paired = True
-                    outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads)
+                    outputdir = submit_pipeline(t_key, n_key, t_gender, outpath, config, logger, threads)
                     outputdirs.append(outputdir)
                     end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, n_key)))
                     final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
                     break
 
             if not paired:
-                outputdir = submit_pipeline(t_key, None, outpath, config, logger, threads)
+                outputdir = submit_pipeline(t_key, None, t_gender, outpath, config, logger, threads)
                 outputdirs.append(outputdir)
                 end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, None)))
                 final_pairs.append(f'{t_key} (T), {t_value[2]} {["prio" if t_value[3] else ""][0]}')
@@ -345,7 +350,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
             raise ValueError('Output path for manual submission not specified in the configuration.')
 
     threads = []
-    outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
+    outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads)
     threads[0].start()  # For manual runs we only have one thread
 
     threads[0].join()  # Wait for the thread to finish
