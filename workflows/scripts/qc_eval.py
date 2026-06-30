@@ -20,7 +20,7 @@ Coverage threshold not reached
 ----------------------------------------------------------------------------------------
 """
     if not somalier_pass:
-        if somalier_sex == "Missing":
+        if somalier_sex == "missing":
             message += """
 Somalier warning:
 No information regarding sex for patient. 
@@ -96,7 +96,7 @@ def main():
     parser.add_argument("-t", "--stype", choices=["tumor", "normal"], default="tumor")
     parser.add_argument("-g", "--sex", choices=["male", "female"])
     parser.add_argument("-n", "--name")
-    parser.add_argument("-e", "--evaluate_qc", action="store_true", help = "Run evaluate_qc() to call coverage and sex functions as in pipeline")
+    parser.add_argument("-e", "--evaluate_qc", action="store_true", help = "Run pipeline behavior: evaluate_qc()")
     args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
     if args.evaluate_qc:
