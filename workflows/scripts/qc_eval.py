@@ -1,8 +1,42 @@
+"""
+Evaluate WGS QC based on Sentieon coverage metrics and Somalier sex prediction.
+
+Modes:
+    Default
+            If --coverage is provided, evaluate_coverage is run.
+            If --somalier is provided, evaluate_sex is run.
+
+    --evaluate_qc
+        evaluate_sex and evaluate_coverage for a sample. Creates a QC_PASS file on success,
+        and optionally sends a QC email on fail. 
+        Exits with a non-zero status if sample type is not 'tumor' or 'normal'.
+
+Input files:
+    --coverage
+        Tab-separated output from Sentieon WgsMetricsAlgo.
+
+    --somalier
+        Somalier calculated_sex.txt containing the predicted sex.
+
+Outputs:
+    - QC_PASS file (if QC passes)
+    - Optionally send warning email
+"""
+
 import argparse
 import sys
+import os
+from tools.helpers import read_config
+from textwrap import dedent
 from tools.custom_email import send_email_qc 
+from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
 
-def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False):
+launcher_config = read_config(LAUNCHER_CONFIG_PATH)
+filterconfig = read_config(
+    os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"])
+)
+
+def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, email=False):
 
     coverage_pass, coverage_message = evaluate_coverage(coverage_file, stype)
     
@@ -10,42 +44,48 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
         somalier_pass, somalier_sex = evaluate_sex(somalier_file, expected_sex)
     else:
         somalier_pass = False
-        somalier_sex = "Missing"
+        somalier_sex = "missing"
     
     message = ''
     if not coverage_pass:
         message += f"""
-Coverage threshold not reached
-{coverage_message}
-----------------------------------------------------------------------------------------
-"""
+                    Coverage threshold not reached
+                    {coverage_message}
+                    ----------------------------------------------------------------------------------------
+                    """
     if not somalier_pass:
         if somalier_sex == "missing":
             message += """
-Somalier warning:
-No information regarding sex for patient. 
-"""
+                    Somalier warning:
+                    No information regarding sex for patient. 
+                    """
         else:
             message += f"""
-Somalier warning:
-Patient is: {expected_sex}
-Somalier estimate: {somalier_sex}
-""" 
+                    Somalier warning:
+                    Patient is: {expected_sex}
+                    Somalier estimate: {somalier_sex}
+                    """
 
     if message:
-        message = f"""
-WGS-somatic pipeline is running with warnings for sample:
-{sname}
-========================================================================================
-{message}
-"""
-        send_email_qc("QC warning", message)
+        message = dedent(f"""
+                    WGS-somatic pipeline has stopped due to QC warning for sample:
+                    {sname}
+                    ========================================================================================
+                    {message}
+                    """)
+        if email:
+            send_email_qc("QC warning", message)
+            #TODO add mail to geneticists
+        else:
+            print(message)
+    
+    else:
+        with open(qc_pass_file, "w"):
+            pass
 
-
-    with open(qc_pass_file, "w"):
-        pass
 
 def evaluate_coverage(coverage_file, stype):
+
     with open (coverage_file) as f:
         lines = f.readlines()
 
@@ -53,33 +93,38 @@ def evaluate_coverage(coverage_file, stype):
     values = [float(x) for x in lines[2].strip().split("\t")]
 
     wgs_stats = dict(zip(keys, values))
+    
+    pct_horizontal = filterconfig["qc_pass"]["pct_horizontal"]
     if stype == "tumor":
-        horizontal_coverage = wgs_stats['PCT_30X']
-        cov_threshold = 85
-        hor_threshold = 30
+        cov_threshold = filterconfig["qc_pass"]["tumor_thresholds"]["coverage"] 
+        hor_threshold = filterconfig["qc_pass"]["tumor_thresholds"]["horizontal"]
     elif stype == "normal":
-        cov_threshold = 25
-        hor_threshold = 10
+        cov_threshold = filterconfig["qc_pass"]["normal_thresholds"]["coverage"]
+        hor_threshold = filterconfig["qc_pass"]["normal_thresholds"]["horizontal"]
     else:
-        raise ValueError(f"""Unsupported sample type: {stype}
-Median coverage: {wgs_stats['MEDIAN_COVERAGE']} 
-Fraction bases >10X coverage: {wgs_stats['PCT_10X']}
-Fraction bases >30X coverage: {wgs_stats['PCT_30X']}
-""")
+        raise ValueError(dedent(f"""\
+                Unsupported sample type: {stype}
+                Median coverage: {wgs_stats['MEDIAN_COVERAGE']} 
+                Fraction bases >10X coverage: {wgs_stats['PCT_10X']}
+                Fraction bases >30X coverage: {wgs_stats['PCT_30X']}
+                """)
+                         )
 
     median_coverage = wgs_stats['MEDIAN_COVERAGE']
     horizontal_coverage = round(wgs_stats[f'PCT_{hor_threshold}X'] * 100, 1)
 
-    message = f"""Median coverage: {median_coverage} 
-Threshold: {cov_threshold}
+    message = f"""
+                    Median coverage: {median_coverage} 
+                    Threshold: {cov_threshold}
 
-Bases >{hor_threshold}X coverage: {horizontal_coverage}% 
-Threshold: 95% of bases >{hor_threshold}X coverage
-"""
+                    Bases >{hor_threshold}X coverage: {horizontal_coverage}% 
+                    Threshold: {pct_horizontal}% of bases >{hor_threshold}X coverage
+                    """
     
-    if median_coverage <= cov_threshold or horizontal_coverage <= 95:
+    if median_coverage <= cov_threshold or horizontal_coverage <= pct_horizontal:
         return False, message
     return True, message
+
 
 def evaluate_sex(somalier_file, expected_sex):
     with open(somalier_file) as f:
@@ -87,23 +132,49 @@ def evaluate_sex(somalier_file, expected_sex):
     
     if sex == expected_sex:
         return True, sex 
+
     return False, sex 
 
+
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--coverage")
-    parser.add_argument("-s", "--somalier")
-    parser.add_argument("-t", "--stype", choices=["tumor", "normal"], default="tumor")
-    parser.add_argument("-g", "--sex", choices=["male", "female"])
-    parser.add_argument("-n", "--name")
+    parser = argparse.ArgumentParser(
+            formatter_class=argparse.RawTextHelpFormatter
+            )
+    parser.add_argument("-c", "--coverage", help=dedent('''\
+                                                        Coverage file. Output from Sentieon WgsMetricsAlgo.
+
+                                                        Expected format:
+                                                          - Line 1: Comment beginning with '#'
+                                                          - Line 2: Tab-separated column names
+                                                          - Line 3: Tab-separated values
+                                                        ''')
+                        )
+    parser.add_argument("-s", "--somalier", help = dedent('''\
+                                                        Output from somalier: "calculated_sex.txt".
+
+                                                        Expected format:
+                                                          - One line with "male" or "female"''')
+                        )
+    parser.add_argument("-t", "--stype", choices=["tumor", "normal"], default="tumor", help = "Sample type")
+    parser.add_argument("-g", "--sex", choices=["male", "female", "missing"], default = "missing", help = "Sample sex")
+    parser.add_argument("-n", "--name", help = "Sample name")
     parser.add_argument("-e", "--evaluate_qc", action="store_true", help = "Run pipeline behavior: evaluate_qc()")
+    parser.add_argument("--email", action="store_true", help = "Send warning email if thresholds are not met")
     args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
     if args.evaluate_qc:
-        try:
-            evaluate_qc(args.stype, args.name, args.coverage, args.somalier, "/dev/null" , args.sex)
-        except:
-            parser.parse_args(['--help'])
+        required = {
+        "--coverage": args.coverage,
+        "--somalier": args.somalier,
+        "--name": args.name
+        }
+        missing = [arg for arg, value in required.items() if value is None]
+
+        if missing:
+            parser.error("--evaluate_qc requires: " + ", ".join(missing))
+
+        evaluate_qc(args.stype, args.name, args.coverage, args.somalier, f"{args.name}.QC_PASS", args.sex, args.email)
+       
     else:
         if args.coverage:
             coverage_pass, coverage_metrics = evaluate_coverage(args.coverage, args.stype)

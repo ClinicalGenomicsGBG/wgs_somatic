@@ -12,4 +12,5 @@ rule qc_pass:
                     input.coverage,
                     input.somalier,
                     output.passfile,
-                    gender)
+                    gender,
+                    email=False)
