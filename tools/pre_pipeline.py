@@ -4,7 +4,7 @@ from pathlib import Path
 from tools.slims import Sample, Run
 
 def _resolve_sample_fastq_pair(sample: Sample, config, logger) -> tuple[Path, Path]:
-    if sample.has_local_fastqs():
+    if sample.has_local_fastqs(logger):
         logger.info(f"Using local FASTQs from Sample record for {sample.id}")
         return sample.r1_path, sample.r2_path
 

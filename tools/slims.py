@@ -26,7 +26,9 @@ class Sample:
         self.date_created = self._value(slims_record, "rslt_createdOn")
         self.subject_barcode = self._value(slims_record, "rslt_cf_subjectBarcode")
         self.id = self._value(slims_record, "rslt_cf_sampleId")
-        self.fastq_file_paths = self._value(slims_record, "rslt_cf_fastqFilePaths")
+        self.fastq_file_paths = self._parse_fastq_file_paths(
+            self._value(slims_record, "rslt_cf_pipelineFilePaths")
+        )
         self.long_term_storage_info = self._value(slims_record, "rslt_cf_longTermStorageInfo")
         self.family_id = self._value(slims_record, "rslt_cf_familyId")
         self.type_somatic = self._normalize_type(self._value(slims_record, "rslt_cf_sampleTypeSomatic"))
@@ -61,15 +63,44 @@ class Sample:
         if missing:
             raise ValueError(f"Sample is missing required fields: {', '.join(missing)}")
 
+    @staticmethod
+    def _parse_fastq_file_paths(value):
+        if value is None:
+            return []
+
+        if isinstance(value, list):
+            return value
+
+        if isinstance(value, str):
+            value = value.strip()
+
+            if not value:
+                return []
+
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                # Fallback: treat a plain string as one path
+                return [value]
+
+            if isinstance(parsed, list):
+                return parsed
+
+            if isinstance(parsed, str):
+                return [parsed]
+
+        return []
+
     def _existing_fastq_paths(self) -> list[Path]:
         if not self.fastq_file_paths:
             return []
         return [Path(path) for path in self.fastq_file_paths if path and Path(path).exists()]
 
-    def _refresh_fastq_state(self) -> None:
+    def _refresh_fastq_state(self, logger) -> None:
         if self.fastq_file_paths and len(self.fastq_file_paths) > 1:
             r1_candidate = Path(self.fastq_file_paths[0])
             r2_candidate = Path(self.fastq_file_paths[1])
+            logger.info(f"following paths set locally: {r1_candidate}, {r2_candidate}")
             self.r1_path = r1_candidate if r1_candidate.exists() else None
             self.r2_path = r2_candidate if r2_candidate.exists() else None
         else:
@@ -77,8 +108,8 @@ class Sample:
             self.r2_path = None
         self.fastq_local = bool(self.r1_path and self.r2_path and self.r1_path.exists() and self.r2_path.exists())
 
-    def has_local_fastqs(self) -> bool:
-        self._refresh_fastq_state()
+    def has_local_fastqs(self, logger) -> bool:
+        self._refresh_fastq_state(logger)
         return self.fastq_local
 
     def _parse_long_term_storage_info(self) -> tuple[list[str], str | None]:
