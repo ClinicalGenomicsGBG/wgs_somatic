@@ -21,6 +21,8 @@ cron_outpath: '/clinical/data/wgs_somatic/cron'
 
 manual_outpath: '/clinical/data/wgs_somatic/manual/'
 
+development_outpath: '/clinical/data/wgs_somatic/development/' 
+
 hcp_download_dir: '/clinical/data/wgs_somatic/hcp_downloads'
 
 hcp:
@@ -44,3 +46,6 @@ hcp:
   retries: 20
 
 slims_credentials_path: '/clinical/exec/wgs_somatic/dependencies/credentials/slims_credentials.yaml'
+
+email_config_path: '/clinical/exec/wgs_somatic/dependencies/credentials/mail_config.yaml'
+

@@ -1,9 +1,18 @@
 import os
 import smtplib
 
+from definitions import WRAPPER_CONFIG_PATH
+from tools.helpers import read_config
 from email.message import EmailMessage
 
-new_line = "\n"
+config = read_config(WRAPPER_CONFIG_PATH)
+email_config_path = config['email_config_path']
+email_config = read_config(email_config_path)
+smtp = email_config["smtp_server"]
+sender = email_config["sender"]
+mode = "development" if develop else "default" #TODO add develop, right now it defaults to default
+success_recipients = ", ".join(email_config[mode]["recipients"])
+qc_recipients = ", ".join(email_config[mode]["qc"])
 
 
 def send_email(subject, body):
@@ -13,17 +22,14 @@ def send_email(subject, body):
     msg.set_content(body)
 
     msg["Subject"] = subject
-    msg["From"] = "cgg-cancer@gu.se"  # TODO Get from config
-    msg["To"] = (
-        "gms_btb@gu.se, su.vokliniskgen.wgsadmin@vgregion.se, susanne.fransson@vgregion.se, hanna.engqvist@vgregion.se, nadiya.kazachkova@vgregion.se"  # TODO Get from config and have different recipients for errors and success
-    )
-    msg["Cc"] = "cgg-cancer@gu.se"  # TODO Get from config
+    msg["From"] = sender
+    msg["To"] = success_recipients 
+    msg["Cc"] = sender
 
     # Send the message
-    s = smtplib.SMTP("smtp.gu.se")
+    s = smtplib.SMTP(smtp)
     s.send_message(msg)
     s.quit()
-
 
 def send_email_qc(subject, body):
     """Send a simple email."""
@@ -32,12 +38,12 @@ def send_email_qc(subject, body):
     msg.set_content(body)
 
     msg["Subject"] = subject
-    msg["From"] = "cgg-cancer@gu.se"  # TODO Get from config
-    msg["Cc"] = "cgg-cancer@gu.se"
-    msg["To"] = "su.vokliniskgen.wgsadmin@vgregion.se"
+    msg["From"] = sender 
+    msg["To"] = qc_recipients 
+    msg["Cc"] = sender 
 
     # Send the message
-    s = smtplib.SMTP("smtp.gu.se")
+    s = smtplib.SMTP(smtp)
     s.send_message(msg)
     s.quit()
 
@@ -48,7 +54,7 @@ def start_email(run_name, samples):
     subject = f"WGS Somatic start mail {run_name}"
 
     body = f"""Starting wgs_somatic for the following samples in run {run_name}:\n
-{new_line.join(samples)}\n
+{"\n".join(samples)}\n
 You will get an email when the results are ready.\n
 Best regards,
 CGG Cancer
@@ -63,7 +69,7 @@ def end_email(run_name, samples):
     subject = f"WGS Somatic end mail {run_name}"
 
     body = f"""WGS somatic has finished successfully for the following samples in run {run_name}:\n
-{new_line.join(samples)}\n
+{"\n".join(samples)}\n
 Best regards,
 CGG Cancer
 """
