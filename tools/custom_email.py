@@ -4,13 +4,15 @@ import smtplib
 from definitions import WRAPPER_CONFIG_PATH
 from tools.helpers import read_config
 from email.message import EmailMessage
+from textwrap import dedent, indent
 
 config = read_config(WRAPPER_CONFIG_PATH)
 email_config_path = config['email_config_path']
 email_config = read_config(email_config_path)
 smtp = email_config["smtp_server"]
-sender = email_config["sender"]
-mode = "development" if develop else "default" #TODO add develop, right now it defaults to default
+#mode = "development" if develop else "default" #TODO add develop, right now it defaults to default
+mode = "default"
+sender = email_config[mode]["sender"]
 success_recipients = ", ".join(email_config[mode]["recipients"])
 qc_recipients = ", ".join(email_config[mode]["qc"])
 
@@ -53,12 +55,18 @@ def start_email(run_name, samples):
 
     subject = f"WGS Somatic start mail {run_name}"
 
-    body = f"""Starting wgs_somatic for the following samples in run {run_name}:\n
-{"\n".join(samples)}\n
-You will get an email when the results are ready.\n
+    sample_list = "\n".join(samples)
+    body = f"""\
+Starting wgs_somatic for the following samples in run
+{run_name}:
+
+{sample_list}
+
+You will get an email when the results are ready.
+
 Best regards,
 CGG Cancer
- """
+"""
 
     send_email(subject, body)
 
@@ -68,8 +76,12 @@ def end_email(run_name, samples):
 
     subject = f"WGS Somatic end mail {run_name}"
 
-    body = f"""WGS somatic has finished successfully for the following samples in run {run_name}:\n
-{"\n".join(samples)}\n
+    sample_list = "\n".join(samples)
+    body = f"""\
+WGS somatic has finished successfully for the following samples in run {run_name}:
+
+{sample_list}
+
 Best regards,
 CGG Cancer
 """
@@ -82,11 +94,19 @@ def error_email(run_name, ok_samples, bad_samples):
 
     subject = f"Crashed WGS Somatic {run_name}"
 
-    body = f"""WGS somatic failed for the following samples in run {run_name}:\n
-{new_line.join(bad_samples)}\n
-The following samples did finish correctly:\n
-{new_line.join(ok_samples)}\n
-Errors concerning the above samples will be investigated.\n
+    ok_samples_list = "\n".join(ok_samples)
+    bad_samples_list = "\n".join(bad_samples)
+    body = f"""\
+WGS somatic failed for the following samples in run {run_name}:
+
+{bad_samples_list}
+
+The following samples did finish correctly:
+
+{ok_samples_list}
+
+Errors concerning the above samples will be investigated.
+
 Best regards,
 CGG Cancer
 """
@@ -99,11 +119,14 @@ def error_setup_email(instrument):
 
     subject = f"Crashed WGS somatic setup for {instrument}"
 
-    body = f"""The automatic setup of WGS somatic failed for instrument {instrument}.\n
-Errors will be investigated.\n
+    body = f"""\
+The automatic setup of WGS somatic failed for instrument {instrument}.
+
+Errors will be investigated.
+
 Best regards,
 CGG Cancer
-    """
+"""
 
     send_email(subject, body)
 
@@ -113,8 +136,10 @@ def error_admin_qc_email(run_name):
 
     subject = f"WGS somatic - admin QC failed {run_name}"
 
-    body = f"""Generating the WGS Admin QC report failed for run {run_name}.\n
-Please create the report manually.\n
-    """
+    body = f"""\
+Generating the WGS Admin QC report failed for run {run_name}.
+
+Please create the report manually.
+"""
 
     send_email_qc(subject, body)
