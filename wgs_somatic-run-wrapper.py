@@ -341,6 +341,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
     wrapper_log_path = config["wrapper_log_path"]
     logger = setup_logger('wrapper', os.path.join(wrapper_log_path, 'Manual_WS_wrapper.log'))
 
+    
     # If outputpath is not specified, get from config
     if not outpath:
         try:
@@ -348,11 +349,20 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
         except KeyError:
             logger.error('Output path for manual submission not specified in the configuration.')
             raise ValueError('Output path for manual submission not specified in the configuration.')
+   
+   # Get gender from slims when running manual
+    if tumorsample:
+        sample_info = SlimsSample(tumorsample)
+    elif normalsample:
+        sample_info = SlimsSample(normalsample)
+
+    dna_info = translate_slims_info(sample_info.dna)
+    gender = dna_info["gender"] 
 
     threads = []
     outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads)
     threads[0].start()  # For manual runs we only have one thread
-
+    
     threads[0].join()  # Wait for the thread to finish
 
     if copyresults and check_ok(outputdir):

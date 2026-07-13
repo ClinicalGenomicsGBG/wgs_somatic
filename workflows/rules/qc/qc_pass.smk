@@ -13,4 +13,5 @@ rule qc_pass:
                     input.somalier,
                     output.passfile,
                     gender,
-                    email=False)
+                    warning_email,
+                    warning_stop)

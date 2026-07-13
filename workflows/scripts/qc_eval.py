@@ -32,11 +32,9 @@ from tools.custom_email import send_email_qc
 from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
 
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)
-filterconfig = read_config(
-    os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"])
-)
+filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"]))
 
-def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, email=False):
+def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, email=False, pipestop=False):
 
     coverage_pass, coverage_message = evaluate_coverage(coverage_file, stype)
     
@@ -53,6 +51,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
                     {coverage_message}
                     ----------------------------------------------------------------------------------------
                     """
+        print(dedent(message))
     if not somalier_pass:
         if somalier_sex == "missing":
             message += """
@@ -65,21 +64,40 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
                     Patient is: {expected_sex}
                     Somalier estimate: {somalier_sex}
                     """
-
+        print(dedent(message))
     if message:
-        message = dedent(f"""
-                    WGS-somatic pipeline has stopped due to QC warning for sample:
-                    {sname}
-                    ========================================================================================
-                    {message}
-                    """)
-        if email:
-            send_email_qc("QC warning", message)
-            #TODO add mail to geneticists
+        if not coverage_pass:
+            message = dedent(f"""
+                        WGS-somatic pipeline has stopped due to QC error for sample:
+                        {sname}
+                        ========================================================================================
+                        {message}
+                        """)
+            if email:
+                send_email_qc("WGS-somatic has stopped for a sample", message)
+                #TODO add mail to geneticists
+        elif not somalier_pass:
+            message = dedent(f"""
+            WGS-somatic is running with a warning for sample:
+            {sname}
+            ========================================================================================
+            {message}
+            """)
+            if email:
+                send_email_qc("QC warning", message)
         else:
-            print(message)
-    
+            raise ValueError("evaluate_qc crashed due to illogical logic") #Should not happen 
+
+    if coverage_pass:
+        print(f"{sname} passed QC")
+        with open(qc_pass_file, "w"):
+            pass
     else:
+        print(f"{sname} failed QC")
+    if pipestop:
+        print (f"Pipeline will stop")
+    else:
+        print(f"Pipeline is running")        
         with open(qc_pass_file, "w"):
             pass
 
@@ -104,24 +122,24 @@ def evaluate_coverage(coverage_file, stype):
     else:
         raise ValueError(dedent(f"""\
                 Unsupported sample type: {stype}
-                Median coverage: {wgs_stats['MEDIAN_COVERAGE']} 
+                Mean coverage: {wgs_stats['MEAN_COVERAGE']} 
                 Fraction bases >10X coverage: {wgs_stats['PCT_10X']}
                 Fraction bases >30X coverage: {wgs_stats['PCT_30X']}
                 """)
                          )
 
-    median_coverage = wgs_stats['MEDIAN_COVERAGE']
+    mean_coverage = wgs_stats['MEAN_COVERAGE']
     horizontal_coverage = round(wgs_stats[f'PCT_{hor_threshold}X'] * 100, 1)
 
     message = f"""
-                    Median coverage: {median_coverage} 
+                    Mean coverage: {mean_coverage} 
                     Threshold: {cov_threshold}
 
                     Bases >{hor_threshold}X coverage: {horizontal_coverage}% 
                     Threshold: {pct_horizontal}% of bases >{hor_threshold}X coverage
                     """
     
-    if median_coverage <= cov_threshold or horizontal_coverage <= pct_horizontal:
+    if mean_coverage <= cov_threshold or horizontal_coverage <= pct_horizontal:
         return False, message
     return True, message
 

@@ -22,6 +22,6 @@ qc_pass:
   tumor_thresholds:
     coverage: 85
     horizontal: 30
-  normal_threshold:
+  normal_thresholds:
     coverage: 25
     horizontal: 10

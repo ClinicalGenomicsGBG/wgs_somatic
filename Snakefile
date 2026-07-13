@@ -19,6 +19,8 @@ tumorname = config["tumorname"]
 tumorid = config["tumorid"]
 
 gender = config["gender"]
+warning_email = config["warning_email"]
+warning_stop = config["warning_stop"]
 
 reference = config["reference"]
 

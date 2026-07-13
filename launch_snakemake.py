@@ -190,7 +190,9 @@ def analysis_main(
     starttype=False,
     notemp=False,
     dag=False,
-):
+    warning_email=True,
+    warning_stop=True
+    ):
     if not gender:
         gender = "missing"
     
@@ -370,6 +372,8 @@ def analysis_main(
         analysisdict["tumorid"] = tumorid
         analysisdict["tumorfastqs"] = [tumorfastqs]
         analysisdict["gender"] = gender
+        analysisdict["warning_email"] = warning_email 
+        analysisdict["warning_stop"] = warning_stop
          
         # configs
         analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
@@ -591,6 +595,22 @@ if __name__ == "__main__":
         help="Also generate a separate DAG svg in logs",
         required=False,
     )
+    parser.add_argument(
+        "--warning_email",
+        action="store_true",
+        help="Send warning mail if QC fail",
+        required=False,
+        default=False,
+    )
+    parser.add_argument(
+        "--warning_stop",
+        action="store_true",
+        help="Stop pipeline if QC fail",
+        required=False,
+        default=False,
+    )
+
+
     args = parser.parse_args()
 
     if not args.outputdir.startswith("/"):
@@ -618,6 +638,8 @@ if __name__ == "__main__":
             args.starttype,
             args.notemp,
             args.dag,
+            args.warning_email,
+            args.warning_stop
         )
 
         if args.tumorsample:
