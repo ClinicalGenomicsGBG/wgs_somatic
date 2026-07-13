@@ -393,6 +393,7 @@ def analysis_main(
         logger(f"{e} Traceback: {tb}")
         sys.exit(1)
 
+
     try:
         ###################################################################
         # Start SnakeMake pipeline

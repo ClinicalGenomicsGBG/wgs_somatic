@@ -64,6 +64,23 @@ def generate_context_objects(Rctx, logger):
     return Rctx
 
 
+def generate_develop_objects(config, run_type, logger):
+    """Create Rctx and Sctx for test samples"""
+
+    # Create a  fictiv run context
+    Rctx = RunContext(config['develop_mode']['runpath'])
+   
+    # TODO create different samples and runs for differeent tests and store in config
+    # Add samples for the test type you want
+    for sample_data in config["develop_mode"][run_type]["samples"]:
+        #sample_type = sample_data["type"] #This is not used now but fetched from slims?
+        Sctx = SampleContext(sample_data["sample"])
+        Sctx.add_fastq(sample_data["fastq_paths"])
+        Rctx.add_sample_context(Sctx)
+
+    return Rctx
+
+
 def return_first_new_run(config, instrument, logger):
     """Return first new run for given instrument, which has files for wgs_somatic analysis."""
     local_run_paths = look_for_runs(config, instrument)
@@ -182,11 +199,15 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
 
 def wrapper(instrument=None, outpath=None):
     '''Automatic wrapper function'''
-    
+    if os.environ.get("DEVMODE") == "true":
+        develop_mode = True
     # === Setup run ===
     try:
         config = read_config(WRAPPER_CONFIG_PATH)
-        wrapper_log_path = config["wrapper_log_path"]
+        if develop_mode:
+            wrapper_log_path = config["develop_mode"]["log_path"]
+        else:
+            wrapper_log_path = config["wrapper_log_path"]
         logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
 
         # Empty dict, will update later with T/N pair info
@@ -209,8 +230,19 @@ def wrapper(instrument=None, outpath=None):
                 logger.error('Output path for cron job not specified in the configuration.')
                 raise ValueError('Output path for cron job not specified in the configuration.')
 
+        # If develop mode
+        if develop_mode:
+            run_type = 'fail' #Test a failed or successfull run, for example
+            try:
+                outpath = config['develop_mode']['outpath']
+            except KeyError:
+                logger.error('Output path for develop_mode run not specified in the configuration.')
+                raise ValueError('Output path for develop_mode run not specified in the configuration.')
+            Rctx = generate_develop_objects(config, run_type, logger)
+
         # NOTE: we only process one run at a time. The next run will start upon the next cron execution
-        Rctx = return_first_new_run(config, instrument, logger)
+        else:
+            Rctx = return_first_new_run(config, instrument, logger)
 
         if Rctx is None:
             sys.exit(0)
@@ -280,7 +312,6 @@ def wrapper(instrument=None, outpath=None):
         print(f"Error during setup: {e}")
         error_setup_email(instrument)
         raise e
-
     # === Start analysis ===
     start_email(Rctx.run_name, final_pairs)
 
@@ -365,14 +396,19 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736', required=False)
-    parser.add_argument('-t','--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
-    parser.add_argument('-n','--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or export DEVMODE=true', required=False)
+    parser.add_argument('-t', '--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-n', '--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
     parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
+    parser.add_argument('-d', '--develop_mode', help='Run wrapper in "develop mode"', required=False, action='store_true', default=False)
     args = parser.parse_args()
 
+    if args.develop_mode:
+        os.environ["DEVMODE"] = "true"
+        if not args.instrument:
+            args.instrument = "novaseq_A01736" #Temoprary solution to allow for instrument to be empty in devmode 
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")

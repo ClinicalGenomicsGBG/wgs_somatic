@@ -6,20 +6,26 @@ from tools.helpers import read_config
 from email.message import EmailMessage
 from textwrap import dedent, indent
 
-config = read_config(WRAPPER_CONFIG_PATH)
-email_config_path = config['email_config_path']
-email_config = read_config(email_config_path)
-smtp = email_config["smtp_server"]
-#mode = "development" if develop else "default" #TODO add develop, right now it defaults to default
-mode = "default"
-sender = email_config[mode]["sender"]
-success_recipients = ", ".join(email_config[mode]["recipients"])
-qc_recipients = ", ".join(email_config[mode]["qc"])
+
+def set_env():
+    config = read_config(WRAPPER_CONFIG_PATH)
+    if os.environ.get("DEVMODE") == "true":
+        email_config_path = config['develop_mode']['email_config_path']
+    else:
+        email_config_path = config['email_config_path']
+    email_config = read_config(email_config_path)
+    smtp = email_config['smtp_server']
+    sender = email_config['sender']
+    success_recipients = ", ".join(email_config["recipients"])
+    qc_recipients = ", ".join(email_config["qc"])
+    
+    return smtp, sender, success_recipients, qc_recipients
 
 
 def send_email(subject, body):
     """Send a simple email."""
-
+    
+    smtp, sender, success_recipients, qc_recipients = set_env()
     msg = EmailMessage()
     msg.set_content(body)
 
@@ -36,6 +42,7 @@ def send_email(subject, body):
 def send_email_qc(subject, body):
     """Send a simple email."""
 
+    smtp, sender, success_recipients, qc_recipients = set_env()
     msg = EmailMessage()
     msg.set_content(body)
 
@@ -78,7 +85,8 @@ def end_email(run_name, samples):
 
     sample_list = "\n".join(samples)
     body = f"""\
-WGS somatic has finished successfully for the following samples in run {run_name}:
+WGS somatic has finished successfully for the following samples in run 
+{run_name}:
 
 {sample_list}
 
