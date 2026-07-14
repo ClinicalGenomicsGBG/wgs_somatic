@@ -18,13 +18,13 @@ def set_env():
     sender = email_config['sender']
     success_recipients = ", ".join(email_config["recipients"])
     qc_recipients = ", ".join(email_config["qc"])
-    
+
     return smtp, sender, success_recipients, qc_recipients
 
 
 def send_email(subject, body):
     """Send a simple email."""
-    
+ 
     smtp, sender, success_recipients, qc_recipients = set_env()
     msg = EmailMessage()
     msg.set_content(body)
@@ -95,6 +95,69 @@ CGG Cancer
 """
 
     send_email(subject, body)
+
+def manual_start_email(tumor_sample, normal_sample):
+    """Send an email about starting wgs-somatic for samples in a manual run"""
+
+    if tumor_sample:
+        if normal_sample:
+            message: f"""Paired analysis:
+Tumor: {tumor_sample} against
+Normal: {normal_sample}"""
+        else:
+            message = f"Unpaired analysis of tumor sample: {tumor_sample}"
+    elif normal_sample:
+        message = f"Unpaired analysis of tumor sample: {tumor_sample}"
+
+    subject = f"WGS Somatic start mail"
+
+    body = f"""\
+Manual start of wgs_somatic initiated.
+
+{message}
+
+You will get an email when the results are ready.
+
+Best regards,
+CGG Cancer
+"""
+
+    send_email(subject, body)
+
+
+def manual_end_email(success, tumor_sample, normal_sample):
+    """Send an email about wgs-somatic finished a manual run"""
+
+    if tumor_sample:
+        if normal_sample:
+            analysis = f"paired analysis of {tumor_sample} and {normal_sample}"
+        else:
+            analysis = f"unpaired analysis of tumor sample: {tumor_sample}"
+    elif normal_sample:
+        analysis = f"unpaired analysis of tumor sample: {tumor_sample}"
+
+    if success:
+        body = f"""\
+Manual run of WGS somatic has finished successfully for"
+{analysis}
+
+Best regards,
+CGG Cancer
+"""
+    else:
+        body = f"""\
+Manual run of WGS somatic failed for"
+{analysis}
+
+Errors concerning the above samples will be investigated.
+
+
+Best regards,
+CGG Cancer
+"""
+
+    send_email(subject, body)
+
 
 
 def error_email(run_name, ok_samples, bad_samples):

@@ -52,7 +52,7 @@ develop_mode:
   runpath: '/clinical/dev/cgg-cancer/wgs_somatic/810806_A000000_0000_FL00OWCELL+1a2b3c4d'
   log_path: '/clinical/dev/cgg-cancer/wgs_somatic/logs/'
   email_config_path: '/clinical/dev/cgg-cancer/wgs_somatic/dependencies/configs/mail_config.yaml'
-  fail:
+  success:
     samples:
       - sample: 'DNA96714_221028_BH2CGFDSX5'
         type: 'normal'
@@ -60,4 +60,3 @@ develop_mode:
       - sample: 'DNA97155_221104_AH3L7JDSX5'
         type: 'tumor' 
         fastq_paths: ['/clinical/data/wgs_somatic/testfiles/221104_AH3L7JDSX5/DNA97155_221104_AH3L7JDSX5_S4_R1_001.fastq.gz', '/clinical/data/wgs_somatic/testfiles/221104_AH3L7JDSX5/DNA97155_221104_AH3L7JDSX5_S4_R1_001.fastq.gz']
-

@@ -581,8 +581,18 @@ if __name__ == "__main__":
         help="Also generate a separate DAG svg in logs",
         required=False,
     )
+    parser.add_argument(
+            '-d',
+            '--develop_mode',
+            help='launch "launch_snakemake" in "develop mode',
+            required=False,
+            action='store_true',
+            default=False,
+    )
     args = parser.parse_args()
-
+    
+    if args.develop_mode:
+        os.environ["DEVMODE"] = "true"
     if not args.outputdir.startswith("/"):
         args.outputdir = os.path.abspath(args.outputdir)
         logger(f"Adjusted outputdir to {args.outputdir}")
