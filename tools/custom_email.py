@@ -99,6 +99,8 @@ CGG Cancer
 def manual_start_email(tumor_sample, normal_sample):
     """Send an email about starting wgs-somatic for samples in a manual run"""
 
+    subject = f"WGS Somatic start mail"
+
     if tumor_sample:
         if normal_sample:
             message: f"""Paired analysis:
@@ -108,8 +110,6 @@ Normal: {normal_sample}"""
             message = f"Unpaired analysis of tumor sample: {tumor_sample}"
     elif normal_sample:
         message = f"Unpaired analysis of tumor sample: {tumor_sample}"
-
-    subject = f"WGS Somatic start mail"
 
     body = f"""\
 Manual start of wgs_somatic initiated.
@@ -128,6 +128,8 @@ CGG Cancer
 def manual_end_email(success, tumor_sample, normal_sample):
     """Send an email about wgs-somatic finished a manual run"""
 
+    subject = f"WGS Somatic manual end mail"
+    
     if tumor_sample:
         if normal_sample:
             analysis = f"paired analysis of {tumor_sample} and {normal_sample}"
