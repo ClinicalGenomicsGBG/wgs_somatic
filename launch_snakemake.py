@@ -189,6 +189,7 @@ def analysis_main(
     notemp=False,
     dag=False,
 ):
+    devmode = os.environ.get("DEVMODE") == "true"
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -382,6 +383,12 @@ def analysis_main(
             analysisdict["resultdir"] = (
                 f"{config['resultdir_hg38']}/normal_only/{basename_outputdir}"
             )
+        # Override result directory in development mode
+        if devmode:
+            analysisdict["resultdir"] = (
+                f"{config['resultdir_dev']}/{basename_outputdir}"
+                    )
+
         snakemake_config = f"{runconfigs}/snakemake_config.json"
 
         with open(snakemake_config, "w") as analysisconf:

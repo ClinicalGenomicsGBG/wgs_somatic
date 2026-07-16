@@ -10,5 +10,7 @@
     "resultfilesconf": "result_files_config.yaml",
     "resultdir_hg38": "/webstore/clinical/routine/wgs_somatic/current",
     "webstore_api_url": "http://webstore.sa.gu.se/api/paths",
-    "wgsadmin_dir": "/webstore/clinical/routine/laboratory/current/quality_reports/"
+    "wgsadmin_dir": "/webstore/clinical/routine/laboratory/current/quality_reports/",
+    "resultdir_dev": "/clinical/dev/cgg-cancer/wgs_somatic/dev_run/webstore/data",
+    "wgsadmin_dev": "/clinical/dev/cgg-cancer/wgs_somatic/dev_run/webstore/quality_reports/"
 }
