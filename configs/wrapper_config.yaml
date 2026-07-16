@@ -44,3 +44,19 @@ hcp:
   retries: 20
 
 slims_credentials_path: '/clinical/exec/wgs_somatic/dependencies/credentials/slims_credentials.yaml'
+
+email_config_path: '/clinical/exec/wgs_somatic/dependencies/configs/mail_config.yaml'
+
+develop_mode:
+  outpath: '/clinical/dev/cgg-cancer/wgs_somatic/dev_run/data/' 
+  runpath: '/clinical/dev/cgg-cancer/wgs_somatic/dev_run/810806_A000000_0000_FL00OWCELL+1a2b3c4d'
+  log_path: '/clinical/dev/cgg-cancer/wgs_somatic/dev_runlogs/'
+  email_config_path: '/clinical/dev/cgg-cancer/wgs_somatic/dev_run/dependencies/configs/mail_config.yaml'
+  success:
+    samples:
+      - sample: 'DNA96714_221028_BH2CGFDSX5'
+        type: 'normal'
+        fastq_paths: ['/clinical/data/wgs_somatic/testfiles/221028_BH2CGFDSX5/DNA96714_221028_BH2CGFDSX5_S15_R1_001.fastq.gz', '/clinical/data/wgs_somatic/testfiles/221028_BH2CGFDSX5/DNA96714_221028_BH2CGFDSX5_S15_R2_001.fastq.gz']
+      - sample: 'DNA97155_221104_AH3L7JDSX5'
+        type: 'tumor' 
+        fastq_paths: ['/clinical/data/wgs_somatic/testfiles/221104_AH3L7JDSX5/DNA97155_221104_AH3L7JDSX5_S4_R1_001.fastq.gz', '/clinical/data/wgs_somatic/testfiles/221104_AH3L7JDSX5/DNA97155_221104_AH3L7JDSX5_S4_R1_001.fastq.gz']

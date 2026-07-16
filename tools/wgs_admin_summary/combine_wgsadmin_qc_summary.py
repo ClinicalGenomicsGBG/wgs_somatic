@@ -56,6 +56,7 @@ def combine_qc_stats(launcher_config, outputdirs, runname=None, qc_summary_direc
     """
     Combine the first *_qc_stats_wgsadmin.xlsx file found in each output directory into a single summary Excel and TSV file.
     """
+    devmode = os.environ.get("DEVMODE") == "true"
     config_data = {}
     if launcher_config:
         try:
@@ -72,6 +73,8 @@ def combine_qc_stats(launcher_config, outputdirs, runname=None, qc_summary_direc
     logger.info("Starting WGS admin QC summary per run")
 
     # Prepare output directories and files
+    if devmode:
+        qc_summary_directory = config_data.get('wgsadmin_dev', os.getcwd())
     if qc_summary_directory is None:
         qc_summary_directory = config_data.get('wgsadmin_dir', os.getcwd())
     if runname:

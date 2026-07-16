@@ -15,7 +15,7 @@ from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, I
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
-from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
+from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email, manual_start_email, manual_end_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
@@ -59,6 +59,23 @@ def generate_context_objects(Rctx, logger):
 
         # Add sample context to run context list
         logger.info("Sample set for wgs_somatic, adding to RunContext.")
+        Rctx.add_sample_context(Sctx)
+
+    return Rctx
+
+
+def generate_develop_objects(config, run_type, logger):
+    """Create Rctx and Sctx for test samples"""
+
+    # Create a  fictiv run context
+    Rctx = RunContext(config['develop_mode']['runpath'])
+   
+    # TODO create different samples and runs for differeent tests and store in config
+    # Add samples for the test type you want
+    for sample_data in config["develop_mode"][run_type]["samples"]:
+        #sample_type = sample_data["type"] #This is not used now but fetched from slims?
+        Sctx = SampleContext(sample_data["sample"])
+        Sctx.add_fastq(sample_data["fastq_paths"])
         Rctx.add_sample_context(Sctx)
 
     return Rctx
@@ -182,11 +199,16 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
 
 def wrapper(instrument=None, outpath=None):
     '''Automatic wrapper function'''
-    
+    devmode = os.environ.get("DEVMODE") == "true"
+
     # === Setup run ===
     try:
         config = read_config(WRAPPER_CONFIG_PATH)
-        wrapper_log_path = config["wrapper_log_path"]
+        if devmode:
+            wrapper_log_path = config["develop_mode"]["log_path"]
+            outpath = config["develop_mode"]["outpath"]
+        else:
+            wrapper_log_path = config["wrapper_log_path"]
         logger = setup_logger('wrapper', os.path.join(wrapper_log_path, f'{instrument}_WS_wrapper.log'))
 
         # Empty dict, will update later with T/N pair info
@@ -209,8 +231,13 @@ def wrapper(instrument=None, outpath=None):
                 logger.error('Output path for cron job not specified in the configuration.')
                 raise ValueError('Output path for cron job not specified in the configuration.')
 
+        # If develop mode
+        if devmode:
+            run_type = 'success' #For future testing of predefined run types, e.g., successfull, failed due to, quality, slims error, et.c.,
+            Rctx = generate_develop_objects(config, run_type, logger)
         # NOTE: we only process one run at a time. The next run will start upon the next cron execution
-        Rctx = return_first_new_run(config, instrument, logger)
+        else:
+            Rctx = return_first_new_run(config, instrument, logger)
 
         if Rctx is None:
             sys.exit(0)
@@ -330,10 +357,17 @@ def wrapper(instrument=None, outpath=None):
         error_admin_qc_email(Rctx.run_name)
  
 
-def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False):
+def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, email=False):
     '''Manual pipeline submission'''
+    devmode = os.environ.get("DEVMODE") == "true"
     config = read_config(WRAPPER_CONFIG_PATH)
-    wrapper_log_path = config["wrapper_log_path"]
+
+    if devmode:
+        wrapper_log_path = config["develop_mode"]["log_path"]
+        outpath = config["develop_mode"]["outpath"]
+    else:
+        wrapper_log_path = config["wrapper_log_path"]
+
     logger = setup_logger('wrapper', os.path.join(wrapper_log_path, 'Manual_WS_wrapper.log'))
 
     # If outputpath is not specified, get from config
@@ -345,40 +379,55 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
             raise ValueError('Output path for manual submission not specified in the configuration.')
 
     threads = []
-    outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
-    threads[0].start()  # For manual runs we only have one thread
+    
+    if email:
+        manual_start_email(tumorsample, normalsample)
 
+    outputdir = submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
+
+    threads[0].start()  # For manual runs we only have one thread
     threads[0].join()  # Wait for the thread to finish
 
-    if copyresults and check_ok(outputdir):
-        copy_results(outputdir)
+    if check_ok(outputdir):
+        sucess_run = True
 
-    if qcsummary and check_ok(outputdir):
-        try:
-            logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
-            logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
-        except Exception as e:
-            logger.error(f"Error combining qc stats: {e}")
-    return
+        if copyresults:
+            copy_results(outputdir)
+
+        if qcsummary:
+            try:
+                logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
+                combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
+                logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
+            except Exception as e:
+                logger.error(f"Error combining qc stats: {e}")
+
+    if email:
+        manual_end_email(sucess_run, tumorsample, normalsample)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736', required=False)
-    parser.add_argument('-t','--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
-    parser.add_argument('-n','--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-t', '--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-n', '--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
     parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
+    parser.add_argument('-d', '--develop_mode', help='Run wrapper in "develop mode"', required=False, action='store_true', default=False)
+    parser.add_argument('-e', '--email', help='Send start, end and crash emails from a manual run', required=False, action='store_true', default=False)
     args = parser.parse_args()
 
+    if args.develop_mode:
+        os.environ["DEVMODE"] = "true"
+        if not args.instrument:
+            args.instrument = "novaseq_A01736" #Temoprary solution to allow for instrument to be empty in devmode 
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
         wrapper(args.instrument, args.outpath)
     elif args.tumorsample or args.normalsample:
-        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary)
+        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary, args.email)
     else:
         parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
 

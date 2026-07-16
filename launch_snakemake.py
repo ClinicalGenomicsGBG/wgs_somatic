@@ -189,6 +189,7 @@ def analysis_main(
     notemp=False,
     dag=False,
 ):
+    devmode = os.environ.get("DEVMODE") == "true"
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -382,6 +383,12 @@ def analysis_main(
             analysisdict["resultdir"] = (
                 f"{config['resultdir_hg38']}/normal_only/{basename_outputdir}"
             )
+        # Override result directory in development mode
+        if devmode:
+            analysisdict["resultdir"] = (
+                f"{config['resultdir_dev']}/{basename_outputdir}"
+                    )
+
         snakemake_config = f"{runconfigs}/snakemake_config.json"
 
         with open(snakemake_config, "w") as analysisconf:
@@ -392,6 +399,7 @@ def analysis_main(
         logger("Error in setting up the snakemake run:")
         logger(f"{e} Traceback: {tb}")
         sys.exit(1)
+
 
     try:
         ###################################################################
@@ -580,8 +588,18 @@ if __name__ == "__main__":
         help="Also generate a separate DAG svg in logs",
         required=False,
     )
+    parser.add_argument(
+            '-d',
+            '--develop_mode',
+            help='launch "launch_snakemake" in "develop mode',
+            required=False,
+            action='store_true',
+            default=False,
+    )
     args = parser.parse_args()
-
+    
+    if args.develop_mode:
+        os.environ["DEVMODE"] = "true"
     if not args.outputdir.startswith("/"):
         args.outputdir = os.path.abspath(args.outputdir)
         logger(f"Adjusted outputdir to {args.outputdir}")
