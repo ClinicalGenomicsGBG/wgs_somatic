@@ -73,11 +73,10 @@ def combine_qc_stats(launcher_config, outputdirs, runname=None, qc_summary_direc
     logger.info("Starting WGS admin QC summary per run")
 
     # Prepare output directories and files
+    if devmode:
+        qc_summary_directory = config_data.get('wgsadmin_dev', os.getcwd())
     if qc_summary_directory is None:
-        if devmode:
-            qc_summary_directory = config_data.get('wgsadmin_dev', os.getcwd())
-        else:
-            qc_summary_directory = config_data.get('wgsadmin_dir', os.getcwd())
+        qc_summary_directory = config_data.get('wgsadmin_dir', os.getcwd())
     if runname:
         outputfile_prefix = os.path.join(qc_summary_directory, f"{runname}_wgs_somatic_qc_summary_{get_timestamp()}")
     else:
