@@ -7,3 +7,6 @@
 	path = workflows/scripts/b_allele_igv_plot
 	url = https://github.com/ClinicalGenomicsGBG/b_allele_igv_plot.git
 	branch = update_sentieon        
+[submodule "tools/sgtool"]
+	path = tools/sgtool
+	url = https://github.com/ClinicalGenomicsGBG/sgtool.git

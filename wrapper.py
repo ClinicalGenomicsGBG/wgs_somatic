@@ -7,18 +7,21 @@ import argparse
 import os
 import re
 import glob
-from datetime import datetime
 import json
 import threading
+from collections import defaultdict
+from pathlib import Path
 
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
-from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
 from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email, manual_start_email, manual_end_email
+from tools.helpers import setup_logger, read_config, make_long_term_storage_info
+from tools.slims import get_sample_slims_info, find_or_download_fastqs, link_fastqs_to_outputdir, return_pending_patients, add_merge_samples, add_matched_samples, Sample
+from tools.pre_pipeline import pre_pipeline, Run
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
+from pprint import pprint
 
 def look_for_runs(config, instrument):
     """Look for runs in demultiplexdir"""
@@ -197,8 +200,9 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
     return outputdir
 
 
-def wrapper(instrument=None, outpath=None):
+def wrapper(outpath=None):
     '''Automatic wrapper function'''
+<<<<<<< HEAD:wgs_somatic-run-wrapper.py
     devmode = os.environ.get("DEVMODE") == "true"
 
     # === Setup run ===
@@ -231,73 +235,104 @@ def wrapper(instrument=None, outpath=None):
                 logger.error('Output path for cron job not specified in the configuration.')
                 raise ValueError('Output path for cron job not specified in the configuration.')
 
+<<<<<<< HEAD:wgs_somatic-run-wrapper.py
         # If develop mode
         if devmode:
             run_type = 'success' #For future testing of predefined run types, e.g., successfull, failed due to, quality, slims error, et.c.,
-            Rctx = generate_develop_objects(config, run_type, logger)
-        # NOTE: we only process one run at a time. The next run will start upon the next cron execution
+            patients = generate_develop_patients(config, run_type, logger)
         else:
-            Rctx = return_first_new_run(config, instrument, logger)
-
-        if Rctx is None:
+            patients = return_pending_patients(config, logger)
+        
+        if not patients:
+            logger.info("No pending samples found for wgs_somatic. Exiting wrapper.")
             sys.exit(0)
+        
+        add_matched_samples(patients, logger)        
+        add_merge_samples(patients, logger)
 
-        logger.info(f'Found {len(Rctx.sample_contexts)} samples for wgs_somatic in run {Rctx.run_name}.')
+        #barcode_grnuped_samples: defaultdict[str, list[Sample]] = defaultdict(list)
+        #for sample in samples:
+        #    if not sample.subject_barcode:
+        #        logger.warning(f"Sample {sample.id} does not have a subject barcode, skipping.")
+        #        continue
+        #    barcode_grouped_samples[sample.subject_barcode].append(sample)
 
-        # Register start time
-        start_time = datetime.now()
-        logger.info(f'Started {Rctx.run_name} at {start_time}')
+        runs: list[Run] = []
+        #for samples_in_barcode_group in barcode_grouped_samples.values():
+        #    runs.append(Run(logger=logger, samples=samples_in_barcode_group, run_root_dir=Path(outpath)))
+        for patient in patients:
+            runs.append(Run(logger=logger, patient=patient, run_root_dir=Path(outpath)))
+            for sample in patient.samples:
+                if not sample.long_term_storage_info:
+                   print("This is a temporary solution due to missing slims info")
+                   bucket = config["hcp"]["download_locations"]["sg1_illumina"]["bucket"]
+                   endpoint = "https://sg1.vgregion.se"
+                   credentials = config["hcp"]["download_locations"]["sg1_illumina"]["credentials_file"]
+                   sample.long_term_storage_info = make_long_term_storage_info(sample.id, bucket, endpoint, credentials)
 
-        # Get T/N pair info in a dict for samples and link additional fastqs from other runs
-        for sctx in Rctx.sample_contexts:
-            pair_dict = get_pair_dict(sctx, Rctx, logger)
-            pair_dict_all_pairs.update(pair_dict)
-            logger.info(f'Sample {sctx.sample_name} info: {pair_dict[sctx.sample_name]}')
+        prepared_runs = pre_pipeline(runs, config, logger)
 
-        # Uses the dictionary of T/N samples to put the correct pairs together and finds the correct input arguments to the pipeline
         threads = []
         outputdirs = []
         end_threads = []
         final_pairs = []
-        paired_samples = []
+        print("Stopping for now")
+        quit(0)
+        for run in prepared_runs:
+            pipeline_args = run.pipeline_args()
+            threads.append(threading.Thread(target=call_script, kwargs=pipeline_args)) 
 
-        tumor_samples = {}
-        normal_samples = {}
+            if not run.ready_for_pipeline:
+                logger.info(f"Run {run.run_work_dir} is not ready for pipeline, skipping.")
+                continue
 
-        # Separate tumor and normal samples
-        for key, value in pair_dict_all_pairs.items():
-            if value[0] == 'tumor':
-                tumor_samples[key] = value
-            elif value[0] == 'normal':
-                normal_samples[key] = value
+            outputdir = str(run.run_work_dir)
+            pipeline_args = {"outputdir": outputdir}
+            has_tumor = bool(run.tumor_name and run.prepared_tumor_r1 and run.prepared_tumor_r2)
+            has_normal = bool(run.normal_name and run.prepared_normal_r1 and run.prepared_normal_r2)
 
-        logger.info(f"tumor_samples: {tumor_samples}")
-        logger.info(f"normal_samples: {normal_samples}\n")
-        # Pair samples based on tumorNormalID
-        for t_key, t_value in tumor_samples.items():
-            t_ID = t_value[1]  # tumorNormalID
-            paired = False
-            for n_key, n_value in normal_samples.items():
-                n_ID = n_value[1]  # tumorNormalID
-                if t_ID == n_ID:
-                    paired_samples.append((t_key, n_key))
-                    paired = True
-                    outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads)
-                    outputdirs.append(outputdir)
-                    end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, n_key)))
-                    final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
-                    break
+#<<<<<<< HEAD:wgs_somatic-run-wrapper.py
+#        logger.info(f"tumor_samples: {tumor_samples}")
+#        logger.info(f"normal_samples: {normal_samples}\n")
+#        # Pair samples based on tumorNormalID
+#        for t_key, t_value in tumor_samples.items():
+#            t_ID = t_value[1]  # tumorNormalID
+#            paired = False
+#            for n_key, n_value in normal_samples.items():
+#                n_ID = n_value[1]  # tumorNormalID
+#                if t_ID == n_ID:
+#                    paired_samples.append((t_key, n_key))
+#                    paired = True
+#                    outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads)
+#                    outputdirs.append(outputdir)
+#                    end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, n_key)))
+#                    final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
+#                    break
+#=======
+            if has_tumor:
+                pipeline_args["tumorname"] = run.tumor_name
+                pipeline_args["tumorfastqs"] = str(run.prepared_fastq_dir)
+            if has_normal:
+                pipeline_args["normalname"] = run.normal_name
+                pipeline_args["normalfastqs"] = str(run.prepared_fastq_dir)
+#>>>>>>> origin/new_slims:wrapper.py
 
-            if not paired:
-                outputdir = submit_pipeline(t_key, None, outpath, config, logger, threads)
-                outputdirs.append(outputdir)
-                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, None)))
-                final_pairs.append(f'{t_key} (T), {t_value[2]} {["prio" if t_value[3] else ""][0]}')
+            if has_tumor and has_normal:
+                final_pairs.append(f"{run.tumor_name} (T) {run.normal_name} (N)")
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, run.tumor_name, run.normal_name)))
+            elif has_tumor:
+                final_pairs.append(f"{run.tumor_name} (T)")
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, run.tumor_name, None)))
+            elif has_normal:
+                final_pairs.append(f"{run.normal_name} (N)")
+                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, None, run.normal_name)))
+            else:
+                logger.warning(f"Run {run.run_work_dir} marked ready but has no prepared tumor/normal fastqs, skipping.")
+                continue
 
-        # We are currently not running the normal-only samples
-        for n_key, n_value in normal_samples.items():
-            if not any(n_key == pair[1] for pair in paired_samples):
-                logger.info(f'Skipping normal-only sample {n_key} as it is not paired with a tumor sample.')
+            threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
+            logger.info(f"Starting wgs_somatic with prepared arguments {pipeline_args}")
+            outputdirs.append(outputdir)
 
         # If there are no samples to process, skip the rest of the code
         if not threads:
@@ -305,7 +340,7 @@ def wrapper(instrument=None, outpath=None):
             sys.exit(0)
     except Exception as e:
         print(f"Error during setup: {e}")
-        error_setup_email(instrument)
+        #error_setup_email()
         raise e
 
     # === Start analysis ===
@@ -408,9 +443,9 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736', required=False)
-    parser.add_argument('-t', '--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
-    parser.add_argument('-n', '--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-i', '--integrated', help='Integrated run querying for novel samples in slims', required=False, action='store_true', default=False)
+    parser.add_argument('-t','--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-n','--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
     parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
@@ -420,16 +455,14 @@ def main():
 
     if args.develop_mode:
         os.environ["DEVMODE"] = "true"
-        if not args.instrument:
-            args.instrument = "novaseq_A01736" #Temoprary solution to allow for instrument to be empty in devmode 
-    if args.instrument:
+    if args.integrated:
         if args.tumorsample or args.normalsample or args.copyresults:
-            parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
-        wrapper(args.instrument, args.outpath)
+            parser.warning("When specifying --integrated, --tumorsample, --normalsample and --copyresults are ignored.")
+        wrapper(args.outpath)
     elif args.tumorsample or args.normalsample:
         manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary, args.email)
     else:
-        parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
+        parser.error("You must specify either --integrated or --tumorsample/--normalsample.")
 
 
 if __name__ == '__main__':

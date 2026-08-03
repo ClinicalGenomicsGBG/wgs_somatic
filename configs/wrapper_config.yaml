@@ -1,20 +1,23 @@
 ---
-novaseq_687_gc:
-  root_path: "/seqstore/novaseq_687_gc/"
-  demultiplex_path: "/seqstore/novaseq_687_gc/Demultiplexdir/"
-  seq_name_regex: '^[0-9]{6}_A00687_[0-9]{4}_.{10}(?:\+.{8})?$'
-
-novaseq_A01736:
-  root_path: "/seqstore/novaseq_A01736/"
-  demultiplex_path: "/seqstore/novaseq_A01736/Demultiplexdir/"
-  seq_name_regex: '^[0-9]{6}_A01736_[0-9]{4}_.{10}(?:\+.{8})?$'
-
-novaseqx_LH01216:
-  root_path: "/seqstore/novaseqx_LH01216/"
-  demultiplex_path: "/seqstore/novaseqx_LH01216/Demultiplexdir/"
-  seq_name_regex: '^[0-9]{8}_LH01216_[0-9]{4}_.{10}(?:\+.{8})?$'
-
-previous_runs_file_path: '../runlists/novaseq_runlist.txt'
+#<<<<<<< HEAD
+#novaseq_687_gc:
+#  root_path: "/seqstore/novaseq_687_gc/"
+#  demultiplex_path: "/seqstore/novaseq_687_gc/Demultiplexdir/"
+#  seq_name_regex: '^[0-9]{6}_A00687_[0-9]{4}_.{10}(?:\+.{8})?$'
+#
+#novaseq_A01736:
+#  root_path: "/seqstore/novaseq_A01736/"
+#  demultiplex_path: "/seqstore/novaseq_A01736/Demultiplexdir/"
+#  seq_name_regex: '^[0-9]{6}_A01736_[0-9]{4}_.{10}(?:\+.{8})?$'
+#
+#novaseqx_LH01216:
+#  root_path: "/seqstore/novaseqx_LH01216/"
+#  demultiplex_path: "/seqstore/novaseqx_LH01216/Demultiplexdir/"
+#  seq_name_regex: '^[0-9]{8}_LH01216_[0-9]{4}_.{10}(?:\+.{8})?$'
+#
+#previous_runs_file_path: '../runlists/novaseq_runlist.txt'
+#=======
+#>>>>>>> origin/new_slims
 wrapper_log_path: '/clinical/exec/wgs_somatic/logs'
 
 cron_outpath: '/clinical/data/wgs_somatic/cron'
