@@ -11,3 +11,6 @@
 	path = workflows/scripts/canvas_to_interpreter
 	url = https://github.com/ClinicalGenomicsGBG/canvas_to_interpreter.git
     ignore = dirty
+[submodule "tools/sgtool"]
+	path = tools/sgtool
+	url = https://github.com/ClinicalGenomicsGBG/sgtool.git

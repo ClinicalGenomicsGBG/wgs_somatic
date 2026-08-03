@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import glob
+from tools.sgtool.helpers.aws import list_objects
 
 
 def read_config(configpath):
@@ -76,3 +77,20 @@ def collect_versions(version_dir, outpath, extension="*.txt"):
         raise RuntimeError(
             f"Failed to write collected versions to {outpath}: {e}"
         ) from e
+
+def make_long_term_storage_info(sample_name: str, bucket: str, endpoint: str, credentials: str) -> list[str]:
+
+    remote_keys = [
+        key
+        for key in list_objects(bucket, "", credentials)
+        if sample_name in key
+    ]
+    return json.dumps(
+            {
+                "endpoint": endpoint,
+                "bucket": bucket,
+                "remote_keys": remote_keys,
+                },
+            indent=4,
+            )
+

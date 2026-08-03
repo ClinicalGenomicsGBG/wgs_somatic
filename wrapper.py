@@ -14,13 +14,14 @@ from pathlib import Path
 
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
-from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, find_or_download_fastqs, link_fastqs_to_outputdir, return_pending_samples, add_merge_samples, add_matched_samples, Sample, Run
-from tools.pre_pipeline import pre_pipeline
+from tools.helpers import setup_logger, read_config, make_long_term_storage_info
+from tools.slims import get_sample_slims_info, find_or_download_fastqs, link_fastqs_to_outputdir, return_pending_patients, add_merge_samples, add_matched_samples, Sample
+from tools.pre_pipeline import pre_pipeline, Run
 from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
+from pprint import pprint
 
 def look_for_runs(config, instrument):
     """Look for runs in demultiplexdir"""
@@ -184,12 +185,13 @@ def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads)
 
 def wrapper(outpath=None):
     '''Automatic wrapper function'''
-    
+    print("wrapping")
     # === Setup run ===
     try:
         config = read_config(WRAPPER_CONFIG_PATH)
         wrapper_log_path = config["wrapper_log_path"]
         logger = setup_logger('wrapper', os.path.join(wrapper_log_path, "wrapper.log"))
+        logger = setup_logger('wrapper', "/home/xpilhm/pipelines/log/wrapper.log")
 
         # prepare hcp download directory
         hcptmp = config["hcp_download_dir"]
@@ -208,24 +210,34 @@ def wrapper(outpath=None):
                 logger.error('Output path for cron job not specified in the configuration.')
                 raise ValueError('Output path for cron job not specified in the configuration.')
 
-        samples: list[Sample] = return_pending_samples(config, logger)
-        samples = add_matched_samples(samples, config, logger)
-        samples = add_merge_samples(samples, config, logger)
-
-        barcode_grouped_samples: defaultdict[str, list[Sample]] = defaultdict(list)
-        for sample in samples:
-            if not sample.subject_barcode:
-                logger.warning(f"Sample {sample.id} does not have a subject barcode, skipping.")
-                continue
-            barcode_grouped_samples[sample.subject_barcode].append(sample)
-
-        if not barcode_grouped_samples:
+        patients = return_pending_patients(config, logger)
+        
+        if not patients:
             logger.info("No pending samples found for wgs_somatic. Exiting wrapper.")
             sys.exit(0)
+        
+        add_matched_samples(patients, logger)        
+        add_merge_samples(patients, logger)
+
+        #barcode_grnuped_samples: defaultdict[str, list[Sample]] = defaultdict(list)
+        #for sample in samples:
+        #    if not sample.subject_barcode:
+        #        logger.warning(f"Sample {sample.id} does not have a subject barcode, skipping.")
+        #        continue
+        #    barcode_grouped_samples[sample.subject_barcode].append(sample)
 
         runs: list[Run] = []
-        for samples_in_barcode_group in barcode_grouped_samples.values():
-            runs.append(Run(logger=logger, samples=samples_in_barcode_group, run_root_dir=Path(outpath)))
+        #for samples_in_barcode_group in barcode_grouped_samples.values():
+        #    runs.append(Run(logger=logger, samples=samples_in_barcode_group, run_root_dir=Path(outpath)))
+        for patient in patients:
+            runs.append(Run(logger=logger, patient=patient, run_root_dir=Path(outpath)))
+            for sample in patient.samples:
+                if not sample.long_term_storage_info:
+                   print("This is a temporary solution due to missing slims info")
+                   bucket = config["hcp"]["download_locations"]["sg1_illumina"]["bucket"]
+                   endpoint = "https://sg1.vgregion.se"
+                   credentials = config["hcp"]["download_locations"]["sg1_illumina"]["credentials_file"]
+                   sample.long_term_storage_info = make_long_term_storage_info(sample.id, bucket, endpoint, credentials)
 
         prepared_runs = pre_pipeline(runs, config, logger)
 
@@ -233,8 +245,12 @@ def wrapper(outpath=None):
         outputdirs = []
         end_threads = []
         final_pairs = []
-
+        print("Stopping for now")
+        quit(0)
         for run in prepared_runs:
+            pipeline_args = run.pipeline_args()
+            threads.append(threading.Thread(target=call_script, kwargs=pipeline_args)) 
+
             if not run.ready_for_pipeline:
                 logger.info(f"Run {run.run_work_dir} is not ready for pipeline, skipping.")
                 continue
@@ -274,7 +290,7 @@ def wrapper(outpath=None):
             sys.exit(0)
     except Exception as e:
         print(f"Error during setup: {e}")
-        error_setup_email(instrument)
+        #error_setup_email()
         raise e
 
     # === Start analysis ===
@@ -376,7 +392,7 @@ def main():
     elif args.tumorsample or args.normalsample:
         manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary)
     else:
-        parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
+        parser.error("You must specify either --integrated or --tumorsample/--normalsample.")
 
 
 if __name__ == '__main__':

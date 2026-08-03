@@ -5,7 +5,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from pathlib import Path
-from datetime import datetime
+import shutil
 
 from slims.slims import Slims
 from slims.criteria import equals, conjunction, not_equals, is_one_of
@@ -13,12 +13,68 @@ from slims.criteria import equals, conjunction, not_equals, is_one_of
 from tools.helpers import read_config
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
 
-RUN_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-
 def latest_result(results):
     return max(results, key=lambda r: r.column("rslt_createdOn").value, default=None)
 
+class Patient:
+    def __init__(self, subject_barcode: str):
+        self.subject_barcode = subject_barcode
+        self.tumor_samples: list["Sample"] = []
+        self.normal_samples: list["Sample"] = []
+
+    def __repr__(self):
+        return (f"{self.subject_barcode!r}")
+
+    def add_sample(self, sample: "Sample") -> None:
+        if sample.type_somatic == "tumor":
+            self.tumor_samples.append(sample)
+        elif sample.type_somatic == "normal":
+            self.normal_samples.append(sample)
+        else:
+            raise ValueError(
+                f"Unknown sample_type_somatic '{sample.type_somatic}' "
+                f"for sample {sample.id}"
+            )
+    @property
+    def tumor_name(self) -> str | None:
+        return self.tumor_samples[0].id if self.tumor_samples else None
+
+    @property
+    def normal_name(self) -> str | None:
+        return self.normal_samples[0].id if self.normal_samples else None
+
+    #@property
+    #def tumor_sample(self) -> "Sample | None":
+    #    return self.tumor_samples[0] if self.tumor_samples else None
+
+    #@property
+    #def normal_sample(self) -> "Sample | None":
+    #    return self.normal_samples[0] if self.normal_samples else None
+
+    @property
+    def samples(self) -> list["Sample"]:
+        return self.tumor_samples + self.normal_samples
+    
+    @property
+    def has_sample_pk(self, pk: int) -> bool:
+        return any(sample.pk == pk for sample in self.samples)
+
+    @property
+    def has_tumor(self) -> bool:
+        return bool(self.tumor_samples)
+
+    @property
+    def has_normal(self) -> bool:
+        return bool(self.normal_samples)
+
+    @property
+    def missing_sample_types(self) -> list[str]:
+        missing = []
+        if not self.has_tumor:
+            missing.append("tumor")
+        if not self.has_normal:
+            missing.append("normal")
+        return missing
 
 class Sample:
     def __init__(self, slims_record):
@@ -29,7 +85,8 @@ class Sample:
         self.fastq_file_paths = self._parse_fastq_file_paths(
             self._value(slims_record, "rslt_cf_pipelineFilePaths")
         )
-        self.long_term_storage_info = self._value(slims_record, "rslt_cf_longTermStorageInfo")
+        #self.long_term_storage_info = self._value(slims_record, "rslt_cf_longTermStorageInfo")
+        self.long_term_storage_info = self._value(slims_record, "rslt_cf_fastqRemotePaths")
         self.family_id = self._value(slims_record, "rslt_cf_familyId")
         self.type_somatic = self._normalize_type(self._value(slims_record, "rslt_cf_sampleTypeSomatic"))
         self.sex = self._value(slims_record,"rslt_cf_sex")
@@ -39,12 +96,21 @@ class Sample:
 
         self.r1_path = Path(self.fastq_file_paths[0]) if self.fastq_file_paths else None
         self.r2_path = Path(self.fastq_file_paths[1]) if self.fastq_file_paths and len(self.fastq_file_paths) > 1 else None
-        self.r1_linked_path = None
-        self.r2_linked_path = None
-        self.fastq_local = self.r1_path and self.r1_path.exists() and self.r2_path and self.r2_path.exists()
+        self.fastq_local = self.r1_path is not None and self.r1_path.exists() and self.r2_path is not None and self.r2_path.exists()
+        #self.r1_remote = None 
+        #self.r2_remote = None
+        #self.fastq_remote = self.r1_remote is not None and self.r1_remot.exists() and self.r2_remote is not None and self.r2_remote.exists() 
+        #self.r1_linked_path = None
+        #self.r2_linked_path = None
 
-        self.r1_remote = None  # FIXME: Some info from the remote key field in slims should go here to be used for downloading if the files are not local
-        self.r2_remote = None
+    def __repr__(self):
+        return (f'''
+        Sample: {self.id}
+        Fastqs: {self.fastq_file_paths}
+        Has local fastq: {self.fastq_local}
+        Paths:
+        R1:{self.r1_path}
+        R2:{self.r2_path}''')
 
     def missing_required_fields(self) -> list[str]:
         missing: list[str] = []
@@ -149,12 +215,10 @@ class Sample:
         return bool(remote_keys)
 
     def download(self, config, logger, hcp_runtag: str | None = None) -> list[Path]:
-        if self.has_local_fastqs():
-            return self._existing_fastq_paths()
-
+        
         remote_keys, bucket = self._parse_long_term_storage_info()
         downloaded_paths: list[Path] = []
-        runtag = hcp_runtag or self.subject_barcode or self.id
+        runtag = hcp_runtag or self.id or self.subject_barcode
 
         if not remote_keys:
             raise ValueError(
@@ -162,7 +226,9 @@ class Sample:
             )
 
         logger.info(f"Downloading missing FASTQs for sample {self.id} from {len(remote_keys)} remote keys")
+        print("ThreadPoolExecutor() as executor")
         with ThreadPoolExecutor() as executor:
+            print("for downloaded in executor.map()")
             for downloaded in executor.map(
                 lambda remote_key: download_and_decompress(bucket, remote_key, logger, runtag), remote_keys
             ):
@@ -173,8 +239,55 @@ class Sample:
         merged = existing + [path for path in downloaded_paths if path.exists()]
         deduped = [str(path) for path in dict.fromkeys(str(path) for path in merged)]
         self.fastq_file_paths = deduped
-        self._refresh_fastq_state()
+        self._refresh_fastq_state(logger)
         return [Path(path) for path in self.fastq_file_paths]
+
+    def _materialize_fastq(self, source_paths: list[Path], target_path: Path, logger) -> None:
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        if target_path.exists() or target_path.is_symlink():
+            target_path.unlink()
+
+        if len(source_paths) == 1:
+            logger.info(f"Linking {source_paths[0]} -> {target_path}")
+            target_path.symlink_to(source_paths[0])
+            return
+
+        logger.info(f"Merging {len(source_paths)} FASTQs into {target_path}")
+        with open(target_path, "wb") as out_handle:
+            for source_path in source_paths:
+                with open(source_path, "rb") as in_handle:
+                    shutil.copyfileobj(in_handle, out_handle, length=1024 * 1024)
+
+    def resolve_fastq_pair(self, target_dir: Path, logger) -> None:
+        print("Resolving fastq")
+        if not self.fastq_local:
+            logger.info(f"Sample {self.id} has no local fastq files")
+            self.download(config=config, logger=logger)
+   
+        r1_sources = [
+                Path(path) for path in self.fastq_file_paths
+                if "_R1_" in Path(path).name
+                ]
+        
+        r2_sources = [
+                Path(path) for path in self.fastq_file_paths
+                if "_R2_" in Path(path).name
+                ]
+
+        if not r1_sources or len(r1_sources) != len(r2_sources):
+            raise ValueError(
+                f"Sample {self.id} has unbalanced FASTQs: "
+                f"{len(r1_sources)} R1 and {len(r2_sources)} R2"
+            )
+
+        r1_target = target_dir / f"{self.id}_R1_001.fastq.gz"
+        r2_target = target_dir / f"{self.id}_R2_001.fastq.gz"
+
+        self._materialize_fastq(r1_sources, r1_target, logger)
+        self._materialize_fastq(r2_sources, r2_target, logger)
+
+        self.fastq_file_paths = [str(r1_target), str(r2_target)]
+        self._refresh_fastq_state(logger) 
 
 
     def _value(self, record, name, default=None):
@@ -199,80 +312,22 @@ class Sample:
             return "normal"
         return None
 
-
-class Run:
-    def __init__(
-        self,
-        logger,
-        samples: list[Sample],
-        run_root_dir: Optional[Path] = None,
-        run_work_dir: Optional[Path] = None,
-        main_id: Optional[str] = None,
-        est_tumor_cov: Optional[float] = None,
-        est_normal_cov: Optional[float] = None,
-    ):
-        self.samples = samples
-        self.tumor_samples = [s for s in samples if s.type_somatic == "tumor"]
-        self.normal_samples = [s for s in samples if s.type_somatic == "normal"]
-        self.run_root_dir = run_root_dir
-        self.main_id = main_id
-        self.est_tumor_cov = est_tumor_cov
-        self.est_normal_cov = est_normal_cov
-        self.ready_for_pipeline = False
-        self.prepared_fastq_dir: Optional[Path] = None
-        self.prepared_tumor_r1: Optional[Path] = None
-        self.prepared_tumor_r2: Optional[Path] = None
-        self.prepared_normal_r1: Optional[Path] = None
-        self.prepared_normal_r2: Optional[Path] = None
-        self.tumor_name: Optional[str] = None
-        self.normal_name: Optional[str] = None
-
-        if run_work_dir is not None:
-            self.run_work_dir = run_work_dir
-        elif run_root_dir is not None:
-            if not self.main_id:
-                self.main_id = self._determine_main_id(self.tumor_samples, self.normal_samples)
-            self.run_work_dir = run_root_dir / f"{self.main_id}_{RUN_TIMESTAMP}"
-        else:
-            logger.error("No run_root_dir or run_work_dir provided, cannot determine run_work_dir")
-            raise ValueError("No run_root_dir or run_work_dir provided, cannot determine run_work_dir")
-
-    def _determine_main_id(
-        self,
-        tumor_samples: list[Sample],
-        normal_samples: list[Sample],
-    ) -> str:
-        """Return sample_id of most recent tumor, otherwise most recent normal sample."""
-        if tumor_samples:
-            return max(tumor_samples, key=lambda s: s.date_created).id
-        if normal_samples:
-            return max(normal_samples, key=lambda s: s.date_created).id
-
-        raise ValueError("No tumor or normal samples found")
-
-    def latest_sample_id(self, sample_type: str) -> str | None:
-        if sample_type == "tumor":
-            samples = self.tumor_samples
-        elif sample_type == "normal":
-            samples = self.normal_samples
-        else:
-            raise ValueError(f"Unknown sample_type: {sample_type}")
-
-        if not samples:
-            return None
-        return max(samples, key=lambda sample: sample.date_created).id
         
 
-def return_pending_samples(config, logger) -> list[Sample]:
+def return_pending_patients(config, logger) -> list[Patient]:
     # Query slims for pending samples based on filters in config
+    # This is not a current functionality, remove config?
     query = conjunction()
     query.add(equals("test_name", "test_pipeline_somatic"))
     query.add(equals("rslt_value", "Pending"))
+
     slims_records = slims_connection.fetch('Result', query)
 
-    pending_samples = []
+    patients: dict[str, Patient] = {}
+    
     for slims_record in slims_records:
         sample = Sample(slims_record)
+
         try:
             sample.validate_required_fields()
         except ValueError as exc:
@@ -283,85 +338,72 @@ def return_pending_samples(config, logger) -> list[Sample]:
         #     logger.info(f"Setting {sample.id} status to Successfull")
         #     r.update({"rslt_value": "Successfull"})
         #     continue
-        logger.info(f"Setting {sample.id} status to In progress")
+        #ogger.info(f"Setting {sample.id} status to In progress")
         #slims_record.update({"rslt_value": "In progress"})
-        pending_samples.append(sample)
+        #inding_samples.append(sample)
+        
+        patient_barcode = sample.subject_barcode
 
-    return pending_samples
+        patient = patients.setdefault(
+            patient_barcode,
+            Patient(patient_barcode)
+        )
 
+        patient.add_sample(sample)
 
-def add_matched_samples(samples: list[Sample], config, logger) -> list[Sample]:
-    # For all samples, check if there is another sample with oppposite tumorNormalType but same subject barcode
-    # If not, we query for samples with the same subject barcode but opposite tumorNormalType and add those to the list of samples to process.
-    barcodes = {"tumor": set(), "normal": set()}
-    
-    for sample in samples:
-        if sample.type_somatic is None:
-            logger.warning(f"Sample {sample.id} has unrecognized sample_type_somatic {sample.type_somatic}, skipping")
-            continue
-        barcodes[sample.type_somatic].add(sample.subject_barcode)
-
-    new_samples = []
-
-    for sample in samples:
-        if sample.type_somatic is None:
-            continue
-
-        opposite_type = "normal" if sample.type_somatic == "tumor" else "tumor"
-
-        if sample.subject_barcode in barcodes[opposite_type]:
-            logger.info(f"Sample {sample.id} already has matching {opposite_type} for barcode {sample.subject_barcode}")
-            continue
-
-        logger.info(f"Missing {opposite_type} for barcode {sample.subject_barcode}, querying SLIMS")
-
-        query = conjunction()
-        query.add(equals("rslt_cf_subjectBarcode", sample.subject_barcode))
-        if opposite_type == "tumor":
-            query.add(is_one_of("rslt_cf_sampleTypeSomatic", ["tumor", "tumour", "Tumor", "Tumour"]))
-        else:
-            query.add(equals("rslt_cf_sampleTypeSomatic", opposite_type))
-        query.add(not_equals("pk", sample.pk))
-
-        slims_record = latest_result(slims_connection.fetch("Result", query))
-
-        if not slims_record:
-            logger.info(f"No matching {opposite_type} sample found for barcode {sample.subject_barcode}")
-            continue
-
-        matched_sample = Sample(slims_record)
-        new_samples.append(matched_sample)
-
-        logger.info(f"Added matched {opposite_type} sample {matched_sample.id} for barcode {matched_sample.subject_barcode}")
-
-    samples.extend(new_samples)
-    return samples
+    return list(patients.values())
 
 
-def add_merge_samples(samples: list[Sample], config, logger) -> list[Sample]:
-    merge_samples: list[Sample] = []
-    existing_pks = {sample.pk for sample in samples}
+def add_matched_samples(patients: list[Patient], logger) -> None:
+    # For all patients, check if there are both tumor and normal samples
+    # If not, we query for samples for that patient 
+    for patient in patients:
+        for sample_type in patient.missing_sample_types:
 
-    for sample in samples:
-        if not sample.fastq_merge:
-            logger.debug(f"Sample {sample.id} is not marked for fastq merging, skipping")
-            continue
+            logger.info(f"Missing {sample_type} sample for patient {patient.barcode}, querying SLIMS")
 
-        query = conjunction()
-        query.add(equals("rslt_cf_subjectBarcode", sample.subject_barcode))
-        query.add(equals("rslt_cf_sampleTypeSomatic", sample.type_somatic))
+            query = conjunction()
+            query.add(equals("rslt_cf_subjectBarcode", patient.barcode))
 
-        merge_results = slims_connection.fetch("Result", query)
+            if sample_type == "tumor":
+                query.add(is_one_of("rslt_cf_sampleTypeSomatic", ["tumor", "tumour", "Tumor", "Tumour"]))
+            else:
+                query.add(is_one_of("rslt_cf_sampleTypeSomatic", ["normal", "Normal"]))
 
-        for slims_record in merge_results:
-            merge_sample = Sample(slims_record)
-            if merge_sample.pk in existing_pks:
+            slims_record = latest_result(slims_connection.fetch("Result", query))
+
+            if slims_record is None:
+                logger.info(f"No matching {sample_type} sample found for patient {patient.barcode}")
                 continue
-            logger.info(f"Adding merge sample {merge_sample.pk} for sample {sample.id}")
-            merge_samples.append(merge_sample)
 
-    samples.extend(merge_samples)
-    return samples
+            patient.add_sample(Sample(slims_record))
+
+def add_merge_samples(patients: list[Patient], logger) -> list[Patient]:
+    for patient in patients:
+        for sample in patient.samples:
+            if not sample.fastq_merge:
+                logger.debug(f"Sample {sample.id} is not marked for fastq merging, skipping")
+                continue
+
+            query = conjunction()
+            query.add(equals("rslt_cf_subjectBarcode", patiente.barcode))
+            query.add(equals("rslt_cf_sampleTypeSomatic", sample.type_somatic))
+
+            merge_results = slims_connection.fetch("Result", query)
+
+            for slims_record in merge_results:
+                merge_sample = Sample(slims_record)
+                
+                if patient.has_sample_pk(merge_sample.pk):
+                    continue
+
+                #if merge_sample.pk in existing_pks:
+                #    continue
+                logger.info(f"Adding merge sample {merge_sample.pk} for patient {patient.barcode}")
+                patient.add_sample(merge_sample)
+                #merge_samples.append(merge_sample)
+
+    return patients
 
 
 class SlimsCredentials:
