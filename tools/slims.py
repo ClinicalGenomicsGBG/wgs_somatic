@@ -43,21 +43,13 @@ class Patient:
     def normal_name(self) -> str | None:
         return self.normal_samples[0].id if self.normal_samples else None
 
-    #@property
-    #def tumor_sample(self) -> "Sample | None":
-    #    return self.tumor_samples[0] if self.tumor_samples else None
-
-    #@property
-    #def normal_sample(self) -> "Sample | None":
-    #    return self.normal_samples[0] if self.normal_samples else None
+    @property
+    def has_sample_pk(self, pk: int) -> bool:
+        return any(sample.pk == pk for sample in self.samples)
 
     @property
     def samples(self) -> list["Sample"]:
         return self.tumor_samples + self.normal_samples
-    
-    @property
-    def has_sample_pk(self, pk: int) -> bool:
-        return any(sample.pk == pk for sample in self.samples)
 
     @property
     def has_tumor(self) -> bool:
@@ -66,6 +58,7 @@ class Patient:
     @property
     def has_normal(self) -> bool:
         return bool(self.normal_samples)
+
 
     @property
     def missing_sample_types(self) -> list[str]:
@@ -76,17 +69,31 @@ class Patient:
             missing.append("normal")
         return missing
 
+    def validate_sample_setup(self) -> None:
+        if len(self.tumor_samples) != 1:
+            raise ValueError(
+                f"Patient {self.subject_barcode} has {len(self.tumor_samples)} tumor samples; "
+                "exactly one is required."
+            )
+        if len(self.normal_samples) > 1:
+            raise ValueError(
+                f"Patient {self.subject_barcode} has {len(self.normal_samples)} normal samples; "
+                "at most one is supported."
+            )
+
 class Sample:
     def __init__(self, slims_record):
         self.pk = slims_record.pk()
         self.date_created = self._value(slims_record, "rslt_createdOn")
         self.subject_barcode = self._value(slims_record, "rslt_cf_subjectBarcode")
         self.id = self._value(slims_record, "rslt_cf_sampleId")
-        self.fastq_file_paths = self._parse_fastq_file_paths(
+        self.local_fastq_file_paths = self._parse_fastq_file_paths(
             self._value(slims_record, "rslt_cf_pipelineFilePaths")
         )
+
         #self.long_term_storage_info = self._value(slims_record, "rslt_cf_longTermStorageInfo")
         self.long_term_storage_info = self._value(slims_record, "rslt_cf_fastqRemotePaths")
+        self.remote_keys, self.bucket = self._parse_long_term_storage_info()
         self.family_id = self._value(slims_record, "rslt_cf_familyId")
         self.type_somatic = self._normalize_type(self._value(slims_record, "rslt_cf_sampleTypeSomatic"))
         self.sex = self._value(slims_record,"rslt_cf_sex")
@@ -94,23 +101,29 @@ class Sample:
         self.status = self._display(slims_record,"rslt_fk_status")
         self.fastq_merge = self._value(slims_record,"rslt_cf_fqMerge")
 
-        self.r1_path = Path(self.fastq_file_paths[0]) if self.fastq_file_paths else None
-        self.r2_path = Path(self.fastq_file_paths[1]) if self.fastq_file_paths and len(self.fastq_file_paths) > 1 else None
-        self.fastq_local = self.r1_path is not None and self.r1_path.exists() and self.r2_path is not None and self.r2_path.exists()
-        #self.r1_remote = None 
-        #self.r2_remote = None
-        #self.fastq_remote = self.r1_remote is not None and self.r1_remot.exists() and self.r2_remote is not None and self.r2_remote.exists() 
+        self.r1_local = Path(self.local_fastq_file_paths[0]) if self.local_fastq_file_paths else None
+        self.r2_local = Path(self.local_fastq_file_paths[1]) if self.local_fastq_file_paths and len(self.local_fastq_file_paths) > 1 else None
+        self.r1_paths: list[Path] = [self.r1_local] if self.has_local_fastq else []
+        self.r2_paths: list[Path] = [self.r2_local] if self.has_local_fastq else []
+        self.r1_remote: Path | None = None
+        self.r2_remote: Path | None = None
+        #self.fastq_local = self.r1_path is not None and self.r1_path.exists() and self.r2_path is not None and self.r2_path.exists()
+        #self.fastq_remote = self.r1_remote is not None and self.r1_remote.exists() and self.r2_remote is not None and self.r2_remote.exists() 
         #self.r1_linked_path = None
         #self.r2_linked_path = None
 
     def __repr__(self):
         return (f'''
         Sample: {self.id}
-        Fastqs: {self.fastq_file_paths}
-        Has local fastq: {self.fastq_local}
+        pk: {self.pk}
+        Local fastqs: {self.local_fastq_file_paths}
+        Has local fastq: {self.has_local_fastq}
+        Has remote fastq: {self.has_remote_fastq}
+        Has final fastq: {self.has_final_fastq}
         Paths:
         R1:{self.r1_path}
-        R2:{self.r2_path}''')
+        R2:{self.r2_path}
+        ''')
 
     def missing_required_fields(self) -> list[str]:
         missing: list[str] = []
@@ -157,27 +170,50 @@ class Sample:
 
         return []
 
-    def _existing_fastq_paths(self) -> list[Path]:
-        if not self.fastq_file_paths:
-            return []
-        return [Path(path) for path in self.fastq_file_paths if path and Path(path).exists()]
+    #def _existing_fastq_paths(self) -> list[Path]:
+    #    if not self.local_fastq_file_paths:
+    #        return []
+    #    return [Path(path) for path in self.fastq_file_paths if path and Path(path).exists()]
 
-    def _refresh_fastq_state(self, logger) -> None:
-        if self.fastq_file_paths and len(self.fastq_file_paths) > 1:
-            r1_candidate = Path(self.fastq_file_paths[0])
-            r2_candidate = Path(self.fastq_file_paths[1])
-            logger.info(f"following paths set locally: {r1_candidate}, {r2_candidate}")
-            self.r1_path = r1_candidate if r1_candidate.exists() else None
-            self.r2_path = r2_candidate if r2_candidate.exists() else None
-        else:
-            self.r1_path = None
-            self.r2_path = None
-        self.fastq_local = bool(self.r1_path and self.r2_path and self.r1_path.exists() and self.r2_path.exists())
+    #def _refresh_fastq_state(self, logger) -> None:
+    #    if self.fastq_file_paths and len(self.fastq_file_paths) > 1:
+    #        r1_candidate = Path(self.fastq_file_paths[0])
+    #        r2_candidate = Path(self.fastq_file_paths[1])
+    #        logger.info(f"following paths set locally: {r1_candidate}, {r2_candidate}")
+    #        self.r1_path = r1_candidate if r1_candidate.exists() else None
+    #        self.r2_path = r2_candidate if r2_candidate.exists() else None
+    #    else:
+    #        self.r1_path = None
+    #        self.r2_path = None
+    #    self.fastq_local = bool(self.r1_path and self.r2_path and self.r1_path.exists() and self.r2_path.exists())
 
-    def has_local_fastqs(self, logger) -> bool:
-        self._refresh_fastq_state(logger)
-        return self.fastq_local
+    @property
+    def has_local_fastq(self) -> bool:
+        return (
+            self.r1_local is not None
+            and self.r2_local is not None
+            and self.r1_local.exists()
+            and self.r2_local.exists()
+            )
 
+    @property
+    def has_remote_fastq(self) -> bool:
+        return (
+            self.r1_remote is not None
+            and self.r2_remote is not None
+            and self.r1_remote.exists()
+            and self.r2_remote.exists()
+            )
+
+    @property
+    def has_final_fastq(self) -> bool:
+        return (
+            bool(self.r1_paths)
+            and bool(self.r2_paths)
+            and all(path.exists() for path in self.r1_paths)
+            and all(path.exists() for path in self.r2_paths)
+            )
+    
     def _parse_long_term_storage_info(self) -> tuple[list[str], str | None]:
         info: Any = self.long_term_storage_info
         if not info:
@@ -210,84 +246,95 @@ class Sample:
         deduped_remote_keys = list(dict.fromkeys(remote_keys))
         return deduped_remote_keys, bucket
 
-    def has_remote_keys(self) -> bool:
-        remote_keys, _ = self._parse_long_term_storage_info()
-        return bool(remote_keys)
+    def check_previous_merge(self, config):
+        runs = sorted(
+            "_".join(Path(key).stem.split("_")[1:3])
+            for key in self.remote_keys
+        )
+        run_string = "+".join(runs)
 
-    def download(self, config, logger, hcp_runtag: str | None = None) -> list[Path]:
+        hcp_download_runpath = f'{config["hcp_download_dir"]}/{self.id}'
+
+        r1_merged = (Path(hcp_download_runpath)/ f"{self.id}_{run_string}_R1_001.fastq.gz")
+        r2_merged = (Path(hcp_download_runpath) / f"{self.id}_{run_string}_R2_001.fastq.gz")
+
+        if r1_merged.exists():
+            self.r1_remote = r1_merged
+        if r2_merged.exists():
+            self.r2_remote = r2_merged
+
+    def download(self, config, logger) -> list[Path]:
         
-        remote_keys, bucket = self._parse_long_term_storage_info()
         downloaded_paths: list[Path] = []
-        runtag = hcp_runtag or self.id or self.subject_barcode
 
-        if not remote_keys:
+        if not self.remote_keys:
             raise ValueError(
-                f"Sample {self.id} has no local FASTQs and no remote_keys in long_term_storage_info"
+                f"Sample {self.id} has no remote_keys in long_term_storage_info"
             )
-
-        logger.info(f"Downloading missing FASTQs for sample {self.id} from {len(remote_keys)} remote keys")
-        print("ThreadPoolExecutor() as executor")
+        
+        logger.info(f"Preapring missing FASTQs for sample {self.id} from {len(self.remote_keys)} remote keys")
+        
         with ThreadPoolExecutor() as executor:
-            print("for downloaded in executor.map()")
             for downloaded in executor.map(
-                lambda remote_key: download_and_decompress(bucket, remote_key, logger, runtag), remote_keys
+                lambda remote_key: download_and_decompress(self.bucket, remote_key, logger, self.id), self.remote_keys
             ):
                 if downloaded:
                     downloaded_paths.append(Path(downloaded))
 
-        existing = self._existing_fastq_paths()
-        merged = existing + [path for path in downloaded_paths if path.exists()]
-        deduped = [str(path) for path in dict.fromkeys(str(path) for path in merged)]
-        self.fastq_file_paths = deduped
-        self._refresh_fastq_state(logger)
-        return [Path(path) for path in self.fastq_file_paths]
+        downloaded = [path for path in downloaded_paths if path.exists()]
 
-    def _materialize_fastq(self, source_paths: list[Path], target_path: Path, logger) -> None:
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        if target_path.exists() or target_path.is_symlink():
-            target_path.unlink()
+        for read in ("R1", "R2"):
+            paths = [
+                path for path in downloaded
+                if f"_{read}_" in path.name
+            ]
 
-        if len(source_paths) == 1:
-            logger.info(f"Linking {source_paths[0]} -> {target_path}")
-            target_path.symlink_to(source_paths[0])
-            return
+            setattr(self, f"{read.lower()}_remote", paths)
+            setattr(self, f"{read.lower()}_paths", paths)
 
-        logger.info(f"Merging {len(source_paths)} FASTQs into {target_path}")
-        with open(target_path, "wb") as out_handle:
-            for source_path in source_paths:
-                with open(source_path, "rb") as in_handle:
-                    shutil.copyfileobj(in_handle, out_handle, length=1024 * 1024)
+            # This is kept outcommented for now. Use if a merge of samples are wanted 
+            #setattr(
+            #    self,
+            #    f"{read.lower()}_remote",
+            #    self.merge_fastqs(paths, read, logger),
+            #)
 
-    def resolve_fastq_pair(self, target_dir: Path, logger) -> None:
-        print("Resolving fastq")
-        if not self.fastq_local:
-            logger.info(f"Sample {self.id} has no local fastq files")
-            self.download(config=config, logger=logger)
-   
-        r1_sources = [
-                Path(path) for path in self.fastq_file_paths
-                if "_R1_" in Path(path).name
-                ]
-        
-        r2_sources = [
-                Path(path) for path in self.fastq_file_paths
-                if "_R2_" in Path(path).name
-                ]
 
-        if not r1_sources or len(r1_sources) != len(r2_sources):
-            raise ValueError(
-                f"Sample {self.id} has unbalanced FASTQs: "
-                f"{len(r1_sources)} R1 and {len(r2_sources)} R2"
-            )
+    def merge_fastqs(self, source_paths: list[Path], read, logger,) -> list[Path]:
 
-        r1_target = target_dir / f"{self.id}_R1_001.fastq.gz"
-        r2_target = target_dir / f"{self.id}_R2_001.fastq.gz"
+        runs = sorted("_".join(path.name.split("_")[1:3])for path in source_paths)
+        run_string = "+".join(runs)
+        merged_name = (f"{self.id}_{run_string}_{read}_001.fastq.gz")
+        merged_path = source_paths[0].with_name(f"{self.id}_{run_string}_{read}_001.fastq.gz")
+        if not merged_path.exists():
+            logger.info(f"Merging {len(source_paths)} FASTQs into {merged_path}")
 
-        self._materialize_fastq(r1_sources, r1_target, logger)
-        self._materialize_fastq(r2_sources, r2_target, logger)
+            with open(merged_path, "wb") as out_handle:
+                for source_path in source_paths:
+                    with open(source_path, "rb") as in_handle:
+                        shutil.copyfileobj(
+                            in_handle,
+                            out_handle,
+                            length=1024 * 1024,
+                        )
 
-        self.fastq_file_paths = [str(r1_target), str(r2_target)]
-        self._refresh_fastq_state(logger) 
+        return merged_path
+
+
+    def resolve_fastq_pair(self, run, config, logger) -> None:
+        """Determine where to find fastq files to use"""
+
+        if self.has_local_fastq:
+            pass
+        else:
+            logger.info(f"sample {self.id} has no local FASTQ-files")
+
+            if not self.has_remote_fastq:
+                self.download(config=config, logger=logger)
+
+
+        if not self.has_final_fastq:
+            raise FileNotFoundError(f"could not resolve paired FASTQ files for sample {self.id}")
 
 
     def _value(self, record, name, default=None):
@@ -350,7 +397,6 @@ def return_pending_patients(config, logger) -> list[Patient]:
         )
 
         patient.add_sample(sample)
-
     return list(patients.values())
 
 
@@ -403,8 +449,6 @@ def add_merge_samples(patients: list[Patient], logger) -> list[Patient]:
                 patient.add_sample(merge_sample)
                 #merge_samples.append(merge_sample)
 
-    return patients
-
 
 class SlimsCredentials:
     def __init__(self, slims_credentials_path):
@@ -423,7 +467,7 @@ slims_connection = Slims('wgs-somatic_query',
                          credentials.user,
                          credentials.password)
 
-
+'''
 class SlimsSample:
     def __init__(self, sample_name, run_tag=''):
         self.sample_name = sample_name
@@ -444,7 +488,6 @@ class SlimsSample:
                 raise Exception('More than 1 DNA somehow.')
 
             if records:
-                #print(records)
                 self._dna = records[0]
 
         return self._dna
@@ -465,8 +508,9 @@ class SlimsSample:
                 self._fastq = records[0]
 
         return self._fastq
+'''
 
-
+'''
 def translate_slims_info(record):
     sample_name = record.cntn_id.value
 
@@ -515,8 +559,9 @@ def translate_slims_info(record):
         'tertiary_analysis': tertiary_analysis
     }
     return master
+'''
 
-
+'''
 def get_sample_slims_info(Sctx, run_tag):
     """Query the slims API for relevant metadata given sample_name in samplesheet."""
     SSample = SlimsSample(Sctx.sample_name, run_tag)
@@ -525,7 +570,7 @@ def get_sample_slims_info(Sctx, run_tag):
         Sctx.slims_info = {}
         return
     return translate_slims_info(SSample.dna)
-
+'''
 
 def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     """Find and download fqs from HCP to fastqdir on seqstore for run"""
@@ -620,13 +665,15 @@ def decompress_downloaded_fastq(complete_file_path, logger):
     wrapper_log_path = config["wrapper_log_path"]
 
     filename = os.path.basename(complete_file_path) # This is the filename of the downloaded file
+
+
     standardout_decompress = os.path.join(wrapper_log_path, f"decompress_{filename}.stdout")
     standarderr_decompress = os.path.join(wrapper_log_path, f"decompress_{filename}.stderr")
 
     queue = config["hcp"]["queue"]
     threads = config["hcp"]["threads"]
     compression_type = filename.split('.')[-1] # This is the compression type of the downloaded file, could be either 'spring' or 'fasterq'
-
+    
     if compression_type == 'spring':
         # Decompress the file using spring
         complete_decompressed_file_path = complete_file_path.replace('.spring', '.fastq.gz')
@@ -685,6 +732,7 @@ def link_fastqs_to_outputdir(fastq_dict, outputdir, logger):
 
 def download_and_decompress(bucket, remote_key, logger, hcp_runtag):
     downloaded_fq = download_hcp_fq(bucket, remote_key, logger, hcp_runtag)
+
     decompressed_fq = decompress_downloaded_fastq(downloaded_fq, logger)
     return decompressed_fq
 
@@ -754,7 +802,7 @@ def find_or_download_fastqs(sample_name, logger):
             logger.info(f'Found fastqs for {sample_name}_{tag}')
     return fastq_dict
 
-
+'''
 def get_pair_dict(Sctx, Rctx, logger):
     """
     If tumor and normal are sequenced in different runs - find the pairs. 
@@ -790,3 +838,4 @@ def get_pair_dict(Sctx, Rctx, logger):
             pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
 
     return pair_dict
+    '''

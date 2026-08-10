@@ -5,8 +5,9 @@ import json
 import logging
 from collections import defaultdict
 import glob
-from launch_snakemake import get_timestamp
 
+def get_timestamp():
+    return time.strftime("%y%m%d-%H%M%S")
 
 def setup_logging(log_dir):
     os.makedirs(log_dir, exist_ok=True)

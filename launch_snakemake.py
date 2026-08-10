@@ -16,28 +16,26 @@ import string
 import zipfile
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
 
+# This is just to make the wrapper_logger available for logger
+wrapper_logger = None
 
 def get_time():
     nowtime = time.strftime("%Y-%m-%d-%H-%M-%S")
     return nowtime
 
 
-def get_timestamp():
-    return time.strftime("%y%m%d-%H%M%S")
-
-
-def logger(message, logfile=False):
-    config = read_config(LAUNCHER_CONFIG_PATH)
-    logdir = config["logdir"]
-    current_date = time.strftime("%Y-%m-%d")
-    if not logfile:
-        logname = f"{logdir}/{current_date}.log"
-        logfile = open(logname, "a+")
-        logfile.write(f"{get_time()}: {message}" + "\n")
-    else:
-        logfile = open(logfile, "a+")
-        logfile.write(f"{get_time()}: {message}" + "\n")
-    print(message)
+def logger(message, logfile=None):
+    #config = read_config(LAUNCHER_CONFIG_PATH)
+    #logdir = config["logdir"]
+    #current_date = time.strftime("%Y-%m-%d")
+    #if not logfile:
+        #logname = f"{logdir}/{current_date}.log"
+        #logfile = open(logname, "a+")
+        #logfile.write(f"{get_time()}: {message}" + "\n")
+    if logfile:
+        with open(logfile, "a+") as f:
+            f.write(f"{get_time()}: {message}\n")
+    wrapper_logger.info(message)
 
 
 def get_normalid_tumorid(
@@ -180,6 +178,7 @@ def copy_results(outputdir):
 
 def analysis_main(
     args,
+    wrapper_logger,
     outputdir,
     normalname=False,
     normalfastqs=False,
@@ -190,6 +189,15 @@ def analysis_main(
     dag=False,
 ):
     devmode = os.environ.get("DEVMODE") == "true"
+    wrapper_logger.debug("""args = {args},
+outputdir = {outputdir},
+normalname = {normalname}=False,
+normalfastqs = {normalfastqs}=False,
+tumorname = {tumorname}=False,
+tumorfastqs = {tumorfastqs}=False,
+starttype = {starttype}=False,
+notemp = {notemp}=False,
+dag = {dag}=False,""")
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -297,9 +305,7 @@ def analysis_main(
         copyfile(
             os.path.join(configdir, clusterconf), os.path.join(runconfigs, clusterconf)
         )
-        copyfile(
-            os.path.join(configdir, filterconf), os.path.join(runconfigs, filterconf)
-        )
+        
         copyfile(
             os.path.join(configdir, datavzrdconf),
             os.path.join(runconfigs, datavzrdconf),

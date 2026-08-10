@@ -46,14 +46,14 @@ hcp:
   read_timeout: 30
   retries: 20
 
-slims_credentials_path: '/clinical/exec/wgs_somatic/dependencies/credentials/slims_credentials.yaml'
+slims_credentials_path: '/clinical/exec/wgs_somatic/dependencies/credentials/slims1_credentials.yaml'
 
 email_config_path: '/clinical/exec/wgs_somatic/dependencies/configs/mail_config.yaml'
 
 develop_mode:
   outpath: '/clinical/dev/cgg-cancer/wgs_somatic/dev_run/data/' 
   runpath: '/clinical/dev/cgg-cancer/wgs_somatic/dev_run/810806_A000000_0000_FL00OWCELL+1a2b3c4d'
-  log_path: '/clinical/dev/cgg-cancer/wgs_somatic/dev_runlogs/'
+  log_path: '/clinical/dev/cgg-cancer/wgs_somatic/dev_run/logs/'
   email_config_path: '/clinical/dev/cgg-cancer/wgs_somatic/dev_run/dependencies/configs/mail_config.yaml'
   success:
     samples:
