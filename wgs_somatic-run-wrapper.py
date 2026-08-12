@@ -13,112 +13,13 @@ from collections import defaultdict
 from pathlib import Path
 
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
-from tools.context import RunContext, SampleContext
-from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email, manual_start_email, manual_end_email
+from tools.custom_email import( start_email, end_email, error_email, error_admin_qc_email, error_setup_email, manual_start_email, manual_end_email
 from tools.helpers import setup_logger, read_config, make_long_term_storage_info
-#from tools.slims import get_sample_slims_info, find_or_download_fastqs, link_fastqs_to_outputdir, return_pending_patients, add_merge_samples, add_matched_samples, Sample
 from tools.slims import return_pending_patients, add_merge_samples, add_matched_samples, Sample
-from tools.pre_pipeline import pre_pipeline, Run
+from tools.pre_pipeline import pre_pipeline, Batch, Run
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
-from pprint import pprint
-
-#def look_for_runs(config, instrument):
-#    """Look for runs in demultiplexdir"""
-#    instrument_root_path = config[instrument]["demultiplex_path"]
-#    found_paths = glob.glob(os.path.join(instrument_root_path, "*"))
-#    regex = config[instrument]["seq_name_regex"]
-#    return [path for path in found_paths if re.search(regex, os.path.basename(path))]
-#
-
-#def generate_context_objects(Rctx, logger):
-#    """Create Rctx and Sctx for a demultiplexed run"""
-#
-#    # Read demultiplex stats file for sample names, fastq paths, and nr reads
-#    with open(Rctx.demultiplex_summary_path, "r") as inp:
-#        demuxer_info = json.load(inp)
-#
-#    for sample_id, sample_info in demuxer_info["samples"].items():
-#        logger.info(f"Setting up context for {sample_id}.")
-#
-#        # Setup Sample context class and add listed fastq paths
-#        Sctx = SampleContext(sample_id)
-#        Sctx.add_fastq(sample_info["fastq_paths"])
-#
-#        # Query Slims for clinical information and add to sample context
-#        logger.info("Fetching SLIMS info.")
-#        Sctx.slims_info = get_sample_slims_info(Sctx, run_tag=Rctx.run_tag)
-#
-#        if not Sctx.slims_info:
-#            # If no slims info is found/available we need to be notified
-#            # The sample has been added to the runlist without running potential wgs-somatic samples
-#            logger.error(f"No SLIMS info available for {sample_id}!")
-#            raise ValueError(f"No SLIMS info available for {sample_id}!")
-#
-#        # NOTE: 54 is Slims internal primary key for wgs_somatic
-#        if 54 not in Sctx.slims_info["secondary_analysis"]:
-#            logger.info("Sample not set for wgs_somatic.")
-#            continue
-#
-#        # Add sample context to run context list
-#        logger.info("Sample set for wgs_somatic, adding to RunContext.")
-#        Rctx.add_sample_context(Sctx)
-#
-#    return Rctx
-#
-#
-#def generate_develop_objects(config, run_type, logger):
-#    """Create Rctx and Sctx for test samples"""
-#
-#    # Create a  fictiv run context
-#    Rctx = RunContext(config['develop_mode']['runpath'])
-#   
-#    # TODO create different samples and runs for differeent tests and store in config
-#    # Add samples for the test type you want
-#    for sample_data in config["develop_mode"][run_type]["samples"]:
-#        #sample_type = sample_data["type"] #This is not used now but fetched from slims?
-#        Sctx = SampleContext(sample_data["sample"])
-#        Sctx.add_fastq(sample_data["fastq_paths"])
-#        Rctx.add_sample_context(Sctx)
-#
-#    return Rctx
-#
-#
-#def return_first_new_run(config, instrument, logger):
-#    """Return first new run for given instrument, which has files for wgs_somatic analysis."""
-#    local_run_paths = look_for_runs(config, instrument)
-#
-#    previous_runs_file = config["previous_runs_file_path"]
-#    previous_runs_file_path = os.path.join(ROOT_DIR, previous_runs_file)
-#    if not os.path.exists(previous_runs_file_path):
-#        raise FileNotFoundError(f"Runlist file not found: {previous_runs_file_path}")
-#
-#    with open(previous_runs_file_path, "r") as prev:
-#        previous_runs = [line.rstrip() for line in prev]
-#
-#    for run_path in local_run_paths:
-#        Rctx = RunContext(run_path)
-#        # Check if demultiplexing is completed
-#        if not Rctx.demultiplex_complete:
-#            continue
-#
-#        # Check if run has been previously analysed
-#        if Rctx.run_name in previous_runs:
-#            continue
-#
-#        # Write run name to previously analysed list to ensure no double-running
-#        with open(previous_runs_file_path, "a") as prev:
-#            logger.info(f"Writing {Rctx.run_name} to previous runs list.")
-#            print(Rctx.run_name, file=prev)
-#
-#        Rctx_run = generate_context_objects(Rctx, logger)
-#
-#        if not Rctx_run.sample_contexts:
-#            logger.info(f"No samples for wgs_somatic found in run {Rctx.run_name}.")
-#            continue
-#
-#        return Rctx_run
 
 def call_script(**kwargs):
     '''Function to call main function from launch_snakemake.py'''
@@ -128,58 +29,46 @@ def call_script(**kwargs):
 
 def check_ok(outputdir):
     '''Function to check if analysis has finished correctly'''
-
     if os.path.isfile(f"{outputdir}/workflow_finished.txt"):
         return True
     else:
         return False
 
 
-def analysis_end(outputdir, tumorsample=None, normalsample=None):
+def start_analysis(batch, run, logger):
+    '''Function to start the pipeline'''
+    run.pipeline_args["wrapper_logger"] = logger # Pass the wrapper logger to analysis_main(), so the process can be tracked in the termeinal, mainly during development
+
+    if run.patient.has_normal:
+        run_summary.append(f"{run.tumor_sample.id} (T) {run.normal_sample.id} (N)")
+    else:
+        run_summary.append(f"{run.tumor_sample.id} (T)")
+
+    logger.info(f"Preparing wgs_somatic with arguments {run.pipeline_args}")
+    batch.threads.append(threading.Thread(target=call_script,kwargs=run.pipeline_args,))
+    batch.end_threads.append(threading.Thread(target=analysis_end, args=(batch, run, logger)))
+
+
+def analysis_end(batch, run, logger):
     '''Function to check if analysis has finished correctly and add to yearly stats and copy results'''
 
-    if check_ok(outputdir):
-        if tumorsample:
-            if normalsample:
+    if run.check_ok:
+        if run.has_tumor:
+            if run.has_normal:
                 # these functions are only executed if snakemake workflow has finished successfully
-                yearly_stats(tumorsample, normalsample)
+                yearly_stats(run.tumor_sample, normal_sample)
             else:
-                yearly_stats(tumorsample, 'None')
+                yearly_stats(tumor_sample, 'None')
+        elif run.has_normal:
+            yearly_stats('None', normal_sample)
         else:
-            yearly_stats('None', normalsample)
-        copy_results(outputdir)
+            logger.warning("No samples in run {run.main_id}")
+        logger.info(f"Copying results from {run.run_work_dir}")
+#TODO CONTINUE HERE
+        copy_results(run_work_dir)
     else:
         pass
 
-
-#def submit_pipeline(tumorsample, normalsample, outpath, config, logger, threads):
-#
-#    if tumorsample and normalsample:
-#        logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
-#        fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
-#        fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
-#        tumorid = list(fastq_dict_tumor.keys())[0]  # E.g. DNA123456_250101_AHJLJHBGXF
-#        outputdir = os.path.join(outpath, f"{tumorid}_{timestamp}")
-#        os.makedirs(outputdir, exist_ok=False)  # Make sure a new outputdir is created, not overwriting old results
-#        tumor_fastq_dir = link_fastqs_to_outputdir(fastq_dict_tumor, outputdir, logger)
-#        normal_fastq_dir = e}',
-#                         'tumorfastqs': f'{tumor_fastq_dir}'}
-#
-#    elif normalsample:
-#        logger.info(f'Preparing run: Normal-only {normalsample}')
-#        fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
-#        outpath = os.path.join(outpath, "normal_only")
-#        os.makedirs(outpath, exist_ok=True)
-#        normalid = list(fastq_dict_normal.keys())[0]
-#        outputdir = os.path.join(outpath, f"{normalid}_{timestamp}")
-#        os.makedirs(outputdir, exist_ok=False)
-#        normal_fastq_dir = link_fastqs_to_outputdir(fastq_dict_normal, outputdir, logger)
-#        pipeline_args = {'outputdir': f'{outputdir}',
-#                         'normalname': f'{normalsample}',
-#                         'normalfastqs': f'{normal_fastq_dir}'}
-#    threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
-#    logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
-#    return outputdir
 
 def wrapper(outpath=None):
     '''Automatic wrapper function'''
@@ -187,7 +76,7 @@ def wrapper(outpath=None):
     devmode = os.environ.get("DEVMODE")
     silence = os.environ.get("SILENCE")
 
-    # === Setup run ===
+    # === Setup runs ===
     try:
         config = read_config(WRAPPER_CONFIG_PATH)
 
@@ -230,12 +119,12 @@ def wrapper(outpath=None):
         add_matched_samples(patients, logger)        
         add_merge_samples(patients, logger)
 
-        # Make a dictionary with all runs
-        runs: list[Run] = []
+        # Make a batch with all runs
+        batch = Batch()
 
-        # Iterate over all patients found with samples to be analysed and prepare them for analysis 
+        # Iterate over all patients found with samples to be analysed and add them to this batch of runs
         for patient in patients:
-            runs.append(Run(logger=logger, patient=patient, run_root_dir=Path(outpath)))
+            batch.runs.append(Run(logger=logger, patient=patient, run_root_dir=Path(outpath)))
 
             for sample in patient.samples:
                 if not sample.long_term_storage_info:
@@ -246,49 +135,38 @@ def wrapper(outpath=None):
                     sample.long_term_storage_info = make_long_term_storage_info(sample.id, bucket, endpoint, credentials)
                     sample.remote_keys, sample.bucket = sample._parse_long_term_storage_info()
 
+        # Prepare all the samples for analysis
         pre_pipeline(runs, config, logger)
 
+    batch.determine_batch_id
+
     except Exception as e:
-        print(f"Error during setup: {e}")
-        error_setup_email("Oups")
+        error_message = f"Error during setup: {e}"
+        logger.warning(error_message)
+        error_setup_email(error_message)
         raise e
+ 
 
-    threads = []
-    end_threads = []
-    run_summary = []
-
-    for run in runs:
+    # === Start runs ===
+    for run in batch.runs:
         if not run.ready_for_pipeline:
-            logger.info(f"Run {run.run_work_dir} is not ready for pipeline, skipping.")
+            logger.warning(f"Run {run.patient} is not ready for pipeline, skipping.")
             continue
-
-        # Pass the wrapper logger to analysis_main(), so the process can be tracked in the termeinal, mainly during development
-        run.pipeline_args["wrapper_logger"] = logger
-        logger.info(f"Starting wgs_somatic with arguments {run.pipeline_args}")
-        threads.append(threading.Thread(target=call_script,kwargs=run.pipeline_args,))
-
-        end_threads.append(
-            threading.Thread(
-                target=analysis_end,
-                args=(
-                    run.run_work_dir,
-                    run.tumor_sample.id,
-                    run.normal_sample.id if run.patient.has_normal else None,
-                ),
-            )
-        )
-
-        if run.patient.has_normal:
-            run_summary.append(f"{run.tumor_sample.id} (T) {run.normal_sample.id} (N)")
-        else:
-            run_summary.append(f"{run.tumor_sample.id} (T)")
+        
+        start_analysis(batch, run, logger)
 
     if not threads:
-        logger.info("No samples to process for this run. Skipping emails and further processing.")
+        error_message = f"Failed to start analysis for all samples in {batch.batch_name}."
+        logger.warning(error_message)
+        error_setup_email(error_message)
         sys.exit(0)
 
-    if not silence: start_email(run.main_id, run_summary)
-
+    if not silence: start_email(batch.batch_name, run_summary)
+    #
+    # === Start analysis ===
+    start_email(Rctx.run_name, final_pairs)
+    
+    # Start several samples at the same time
     for thread in threads:
         thread.start()
         logger.info(f"Thread {thread} has started")
@@ -297,83 +175,18 @@ def wrapper(outpath=None):
         thread.join()
         logger.info(f"Thread {thread} has finished")
 
-    quit("Stopping here")
-
-#<<<<<<< HEAD:wgs_somatic-run-wrapper.py
-#        logger.info(f"tumor_samples: {tumor_samples}")
-#        logger.info(f"normal_samples: {normal_samples}\n")
-#        # Pair samples based on tumorNormalID
-#        for t_key, t_value in tumor_samples.items():
-#            t_ID = t_value[1]  # tumorNormalID
-#            paired = False
-#            for n_key, n_value in normal_samples.items():
-#                n_ID = n_value[1]  # tumorNormalID
-#                if t_ID == n_ID:
-#                    paired_samples.append((t_key, n_key))
-#                    paired = True
-#                    outputdir = submit_pipeline(t_key, n_key, outpath, config, logger, threads)
-#                    outputdirs.append(outputdir)
-#                    end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, n_key)))
-#                    final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
-#                    break
-#=======
-#
-#            if has_tumor:
-#                pipeline_args["tumorname"] = run.tumor_name
-#                pipeline_args["tumorfastqs"] = str(run.prepared_fastq_dir)
-#            if has_normal:
-#                pipeline_args["normalname"] = run.normal_name
-#                pipeline_args["normalfastqs"] = str(run.prepared_fastq_dir)
-##>>>>>>> origin/new_slims:wrapper.py
-#
-#            if has_tumor and has_normal:
-#                final_pairs.append(f"{run.tumor_name} (T) {run.normal_name} (N)")
-#                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, run.tumor_name, run.normal_name)))
-#            elif has_tumor:
-#                final_pairs.append(f"{run.tumor_name} (T)")
-#                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, run.tumor_name, None)))
-#            elif has_normal:
-#                final_pairs.append(f"{run.normal_name} (N)")
-#                end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, None, run.normal_name)))
-#            else:
-#                logger.warning(f"Run {run.run_work_dir} marked ready but has no prepared tumor/normal fastqs, skipping.")
-#                continue
-#
-#            threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
-#            logger.info(f"Starting wgs_somatic with prepared arguments {pipeline_args}")
-#            outputdirs.append(outputdir)
-#
-#        # If there are no samples to process, skip the rest of the code
-#        if not threads:
-#            logger.info("No samples to process for this run. Skipping emails and further processing.")
-#            sys.exit(0)
-
-    # === Start analysis ===
-    start_email(Rctx.run_name, final_pairs)
-
-    # Start several samples at the same time
-    for t in threads:
-        t.start()
-        logger.info(f'Thread {t} has started')
-
-    for u in threads:
-        u.join()
-        logger.info(f'Thread {u} is finished')
-
-    ok_samples = []
-    bad_samples = []
     # Check if all samples in run have finished successfully. If not, exit script and send error email.
     for outputdir, sample_info in zip(outputdirs, final_pairs):
         if check_ok(outputdir):
-            ok_samples.append(sample_info)
+            batch.ok_samples.append(sample_info)
             logger.info(f'Finished correctly: {sample_info}')
         else:
             logger.info(f'Not finished correctly: {sample_info}')
-            bad_samples.append(sample_info)
+            batch.bad_samples.append(sample_info)
 
     if bad_samples:
         # send emails about which samples ok and which not ok
-        error_email(Rctx.run_name, ok_samples, bad_samples)
+        error_email(batch.batch_name, ok_samples, bad_samples)
     else:
         logger.info('All jobs have finished successfully')
         end_email(Rctx.run_name, final_pairs)
@@ -449,14 +262,15 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--integrated', help='Integrated run querying for novel samples in slims', required=False, action='store_true', default=False)
-    parser.add_argument('-t','--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
-    parser.add_argument('-n','--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-t', '--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-n', '--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
     parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
     parser.add_argument('-d', '--develop-mode', help='Run wrapper in "develop mode"', required=False, action='store_true', default=False)
     parser.add_argument('-e', '--email', help='Send start, end and crash emails from a manual run', required=False, action='store_true', default=False)
     parser.add_argument('-s', '--silence-email', help='Do not send any emails', required=False, action='store_true', default=False)
+    parser.add_argument(-'r', '--snakemake-launcher', help='Restart snakemake in specified directory', required=False)
 
     args = parser.parse_args()
 

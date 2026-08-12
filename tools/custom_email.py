@@ -187,14 +187,14 @@ CGG Cancer
     send_email(subject, body)
 
 
-def error_setup_email(instrument):
+def error_setup_email(message):
     """Send an email when the setup of wgs-somatic fails"""
 
-    subject = f"Crashed WGS somatic setup for {instrument}"
+    subject = f"Crashed WGS somatic setup"
 
     body = f"""\
-The automatic setup of WGS somatic failed for instrument {instrument}.
-
+The automatic setup of WGS somatic failed.
+{message}
 Errors will be investigated.
 
 Best regards,

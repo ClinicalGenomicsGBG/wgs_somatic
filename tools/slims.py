@@ -35,6 +35,15 @@ class Patient:
                 f"Unknown sample_type_somatic '{sample.type_somatic}' "
                 f"for sample {sample.id}"
             )
+        if self.sequencing_id is None:
+            self.sequencing_id = sample.sequencing_id
+        elif self.sequencing_id != sample.sequencing_id:
+            raise ValueError(
+                f"Patient {self.subject_barcode} has samples from different sequencing runs: "
+                f"{self.sequencing_id} and {sample.sequencing_id}"
+            )
+
+
     @property
     def tumor_name(self) -> str | None:
         return self.tumor_samples[0].id if self.tumor_samples else None
@@ -58,7 +67,6 @@ class Patient:
     @property
     def has_normal(self) -> bool:
         return bool(self.normal_samples)
-
 
     @property
     def missing_sample_types(self) -> list[str]:
@@ -87,6 +95,7 @@ class Sample:
         self.date_created = self._value(slims_record, "rslt_createdOn")
         self.subject_barcode = self._value(slims_record, "rslt_cf_subjectBarcode")
         self.id = self._value(slims_record, "rslt_cf_sampleId")
+        self.sequencing_id = self._value(slims_records, "rslt_cf_sequencingRunId")
         self.local_fastq_file_paths = self._parse_fastq_file_paths(
             self._value(slims_record, "rslt_cf_pipelineFilePaths")
         )
@@ -107,10 +116,7 @@ class Sample:
         self.r2_paths: list[Path] = [self.r2_local] if self.has_local_fastq else []
         self.r1_remote: Path | None = None
         self.r2_remote: Path | None = None
-        #self.fastq_local = self.r1_path is not None and self.r1_path.exists() and self.r2_path is not None and self.r2_path.exists()
-        #self.fastq_remote = self.r1_remote is not None and self.r1_remote.exists() and self.r2_remote is not None and self.r2_remote.exists() 
-        #self.r1_linked_path = None
-        #self.r2_linked_path = None
+
 
     def __repr__(self):
         return (f'''
@@ -169,23 +175,6 @@ class Sample:
                 return [parsed]
 
         return []
-
-    #def _existing_fastq_paths(self) -> list[Path]:
-    #    if not self.local_fastq_file_paths:
-    #        return []
-    #    return [Path(path) for path in self.fastq_file_paths if path and Path(path).exists()]
-
-    #def _refresh_fastq_state(self, logger) -> None:
-    #    if self.fastq_file_paths and len(self.fastq_file_paths) > 1:
-    #        r1_candidate = Path(self.fastq_file_paths[0])
-    #        r2_candidate = Path(self.fastq_file_paths[1])
-    #        logger.info(f"following paths set locally: {r1_candidate}, {r2_candidate}")
-    #        self.r1_path = r1_candidate if r1_candidate.exists() else None
-    #        self.r2_path = r2_candidate if r2_candidate.exists() else None
-    #    else:
-    #        self.r1_path = None
-    #        self.r2_path = None
-    #    self.fastq_local = bool(self.r1_path and self.r2_path and self.r1_path.exists() and self.r2_path.exists())
 
     @property
     def has_local_fastq(self) -> bool:
@@ -467,110 +456,6 @@ slims_connection = Slims('wgs-somatic_query',
                          credentials.user,
                          credentials.password)
 
-'''
-class SlimsSample:
-    def __init__(self, sample_name, run_tag=''):
-        self.sample_name = sample_name
-        self.run_tag = run_tag
-
-        self._dna = None
-        self._fastq = None
-        self._bioinformatics = None
-
-    @property
-    def dna(self):
-        if not self._dna:
-            records = slims_connection.fetch('Content', conjunction()
-                                  .add(equals('cntn_id', self.sample_name))
-                                  .add(equals('cntn_fk_contentType', 6)))
-
-            if len(records) > 1:
-                raise Exception('More than 1 DNA somehow.')
-
-            if records:
-                self._dna = records[0]
-
-        return self._dna
-
-    @property
-    def fastq(self):
-        if not self.run_tag:
-            raise Exception('Can not fetch fastq without a set run tag.')
-        if not self._fastq:
-            records = slims_connection.fetch('Content', conjunction()
-                                  .add(equals('cntn_id', self.sample_name))
-                                  .add(equals('cntn_fk_contentType', 22))
-                                  .add(equals('cntn_cstm_runTag', self.run_tag)))
-            if len(records) > 1:
-                raise Exception('More than 1 fastq somehow.')
-
-            if records:
-                self._fastq = records[0]
-
-        return self._fastq
-'''
-
-'''
-def translate_slims_info(record):
-    sample_name = record.cntn_id.value
-
-    # 29 = WOPR
-    # 54 = wgs_somatic
-
-    pipeline_pks = record.cntn_cstm_secondaryAnalysis.value
-    pcr = record.cntn_cstm_pcr.value
-
-    investigator = 'CGG'  # NOTE: Needed?
-
-    department = None
-    responder_emails = []
-    if record.cntn_cstm_department.value is not None:
-        department_record = slims_connection.fetch_by_pk('ReferenceDataRecord', record.cntn_cstm_department.value)
-        department = department_record.rdrc_name.value  
-        responder_records = [slims_connection.fetch_by_pk('ReferenceDataRecord', pk) for
-                            pk in department_record.rdrc_cstm_responder.value]
-        responder_emails = [rec.rdrc_cstm_email.value for rec in responder_records]
-
-    is_research = record.cntn_cstm_research.value
-    research_project = record.cntn_cstm_researchProject.value
-
-    is_priority = True if record.cntn_cstm_priority.value else False
-
-    gender = record.gender.value
-
-    tumorNormalType = record.cntn_cstm_tumorNormalType.value
-    tumorNormalID = record.cntn_cstm_tumorNormalID.value
-
-    tertiary_analysis = record.cntn_cstm_tertiaryAnalysis.value
-
-    master = {
-        'content_id': sample_name,
-        'investigator': investigator,
-        'department': department,
-        'responder_mails': responder_emails,
-        'is_research': is_research,
-        'research_project': research_project,
-        'gender': gender,
-        'is_priority': is_priority,
-        'pcr': pcr,
-        'tumorNormalType': tumorNormalType,
-        'tumorNormalID': tumorNormalID,
-        'secondary_analysis': pipeline_pks,
-        'tertiary_analysis': tertiary_analysis
-    }
-    return master
-'''
-
-'''
-def get_sample_slims_info(Sctx, run_tag):
-    """Query the slims API for relevant metadata given sample_name in samplesheet."""
-    SSample = SlimsSample(Sctx.sample_name, run_tag)
-
-    if not SSample.dna:
-        Sctx.slims_info = {}
-        return
-    return translate_slims_info(SSample.dna)
-'''
 
 def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     """Find and download fqs from HCP to fastqdir on seqstore for run"""
@@ -802,40 +687,3 @@ def find_or_download_fastqs(sample_name, logger):
             logger.info(f'Found fastqs for {sample_name}_{tag}')
     return fastq_dict
 
-'''
-def get_pair_dict(Sctx, Rctx, logger):
-    """
-    If tumor and normal are sequenced in different runs - find the pairs. 
-    Then use the find_more_fastqs function to find paths of fastqs that are sequenced in different runs and link fastqs.
-    Returns a dict of T/N info 
-    """
-
-    run_tag = Rctx.run_tag
-    pair_dict = {}
-
-    # FIXME: using equals tumorNormalID here won't work when we change it to pairID...
-    Sctx.slims_info = get_sample_slims_info(Sctx, run_tag)
-    if Sctx.slims_info['tumorNormalID'] is None:
-        logger.error(f"Sample {Sctx.slims_info['content_id']} does not have a tumorNormalID assigned in SLIMS, stopping execution.")
-        logger.info(f"Slims info: {Sctx.slims_info}")
-        raise ValueError(f"Sample {Sctx.slims_info['content_id']} does not have a tumorNormalID assigned in SLIMS.")
-    pairs = slims_connection.fetch('Content', conjunction()
-                              .add(equals('cntn_fk_contentType', 6))
-                              .add(equals('cntn_cstm_tumorNormalID', 
-                              Sctx.slims_info['tumorNormalID'])))
-
-    # We want to make sure that we complement the tumorNormalType correctly, i.e. a tumor goes with normal and vice versa
-    pair_type_d = {'tumor':'normal', 'normal':'tumor'}
-    pair_type = pair_type_d.get(Sctx.slims_info['tumorNormalType'],None)
-    if not pair_type:
-        logger.warning(f'The sample {Sctx.slims_info["content_id"]} does not have any assigned tumorNormalType')
-
-    for pair in pairs:
-        pair_slims_sample = translate_slims_info(pair)
-        # Check if the sample we have found is either our newly sequenced sample (including the same sample previously sequenced) OR a complementing tumorNormalType to our newly sequenced sample
-        if pair_slims_sample['content_id'] == Sctx.slims_info['content_id'] or\
-                pair_slims_sample['tumorNormalType'] == pair_type:
-            pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
-
-    return pair_dict
-    '''

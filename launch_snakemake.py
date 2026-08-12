@@ -188,20 +188,13 @@ def analysis_main(
     notemp=False,
     dag=False,
 ):
-    devmode = os.environ.get("DEVMODE") == "true"
-    wrapper_logger.debug("""args = {args},
-outputdir = {outputdir},
-normalname = {normalname}=False,
-normalfastqs = {normalfastqs}=False,
-tumorname = {tumorname}=False,
-tumorfastqs = {tumorfastqs}=False,
-starttype = {starttype}=False,
-notemp = {notemp}=False,
-dag = {dag}=False,""")
+    devmode = os.environ.get("DEVMODE")
+    silence = os.environ.get("SILENCE")
+   
     try:
-        ################################################################
+        #################################################################
         # Write InputArgs to logfile
-        ################################################################
+        #################################################################
         config = read_config(LAUNCHER_CONFIG_PATH)
         commandlogs = config["commandlogs"]
         os.makedirs(commandlogs, exist_ok=True)
@@ -214,9 +207,8 @@ dag = {dag}=False,""")
         commandlogfile.write(f"{get_time()}" + "\n")
         commandlogfile.write(command + "\n")
 
-        #################################################################
         # Validate Inputs
-        ################################################################
+        # TODO All validation should allready be done
         if outputdir.endswith("/"):
             outputdir = outputdir[:-1]
         if normalfastqs:
@@ -267,6 +259,8 @@ dag = {dag}=False,""")
                         if not f_tumorfastqs:
                             error_list.append("No fastqs or fasterqs found in tumordir")
 
+        # TODO Down to hear should already be controlled.
+        
         # prepare outputdirectory
         if not os.path.isdir(outputdir):
             try:
@@ -360,6 +354,8 @@ dag = {dag}=False,""")
         # Create AnalysisConfigfile
         ##################################################################
         analysisdict = {}
+        analysisdict["devmode"] = devmode
+        analysisdict["silence"] = silence 
         analysisdict["normalname"] = normalname
         analysisdict["normalid"] = normalid
         analysisdict["normalfastqs"] = [normalfastqs]
@@ -603,7 +599,7 @@ if __name__ == "__main__":
             default=False,
     )
     args = parser.parse_args()
-    
+
     if args.develop_mode:
         os.environ["DEVMODE"] = "true"
     if not args.outputdir.startswith("/"):
