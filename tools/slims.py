@@ -1,11 +1,11 @@
-import os
 import json
+import os
+import shutil
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional, Any
 from pathlib import Path
-import shutil
+from typing import Optional, Any
 
 from slims.slims import Slims
 from slims.criteria import equals, conjunction, not_equals, is_one_of
@@ -15,6 +15,7 @@ from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
 
 def latest_result(results):
     return max(results, key=lambda r: r.column("rslt_createdOn").value, default=None)
+
 
 class Patient:
     def __init__(self, subject_barcode: str):
@@ -35,6 +36,10 @@ class Patient:
                 f"Unknown sample_type_somatic '{sample.type_somatic}' "
                 f"for sample {sample.id}"
             )
+
+    def has_sample_pk(self, pk: int) -> bool:
+        return any(sample.pk == pk for sample in self.samples)
+
     @property
     def tumor_name(self) -> str | None:
         return self.tumor_samples[0].id if self.tumor_samples else None
@@ -42,10 +47,6 @@ class Patient:
     @property
     def normal_name(self) -> str | None:
         return self.normal_samples[0].id if self.normal_samples else None
-
-    @property
-    def has_sample_pk(self, puuuuuuk: int) -> bool:
-        return any(sample.pk == pk for sample in self.samples)
 
     @property
     def samples(self) -> list["Sample"]:
@@ -97,17 +98,17 @@ class Sample:
         self.remote_keys, self.bucket = self._parse_long_term_storage_info()
         self.family_id = self._value(slims_record, "rslt_cf_familyId")
         self.type_somatic = self._normalize_type(self._value(slims_record, "rslt_cf_sampleTypeSomatic"))
-        self.sex = self._value(slims_record,"rslt_cf_sex")
-        self.priority = self._value(slims_record,"rslt_cf_priority")
-        self.status = self._display(slims_record,"rslt_fk_status")
-        self.fastq_merge = self._value(slims_record,"rslt_cf_fqMerge")
+        self.sex = self._value(slims_record, "rslt_cf_sex")
+        self.priority = self._value(slims_record, "rslt_cf_priority")
+        self.status = self._display(slims_record, "rslt_fk_status")
+        self.fastq_merge = self._value(slims_record, "rslt_cf_fqMerge")
 
         self.r1_local = Path(self.local_fastq_file_paths[0]) if self.local_fastq_file_paths else None
         self.r2_local = Path(self.local_fastq_file_paths[1]) if self.local_fastq_file_paths and len(self.local_fastq_file_paths) > 1 else None
         self.r1_paths: list[Path] = [self.r1_local] if self.has_local_fastq else []
         self.r2_paths: list[Path] = [self.r2_local] if self.has_local_fastq else []
-        self.r1_remote: Path | None = None
-        self.r2_remote: Path | None = None
+        self.r1_remote: list[Path] = []
+        self.r2_remote: list[Path] = []
 
         if not self.sequencing_id:
             self.sequencing_id = self._sequencing_id_from_fastqs()
@@ -219,7 +220,7 @@ class Sample:
         deduped_remote_keys = list(dict.fromkeys(remote_keys))
         return deduped_remote_keys, bucket
 
-    def _sequencing_id_from_fastqs(self):
+    def _sequencing_id_from_fastqs(self) -> str | None:
         for fastq_path in (
             self.r1_local,
             self.r2_local,
@@ -244,8 +245,8 @@ class Sample:
 
         hcp_download_runpath = f'{config["hcp_download_dir"]}/{self.id}'
 
-        r1_merged = (Path(hcp_download_runpath)/ f"{self.id}_{run_string}_R1_001.fastq.gz")
-        r2_merged = (Path(hcp_download_runpath) / f"{self.id}_{run_string}_R2_001.fastq.gz")
+        r1_merged = Path(hcp_download_runpath)/ f'{self.id}_{run_string}_R1_001.fastq.gz'
+        r2_merged = Path(hcp_download_runpath) / f'{self.id}_{run_string}_R2_001.fastq.gz'
 
         if r1_merged.exists():
             self.r1_remote = r1_merged
@@ -253,15 +254,17 @@ class Sample:
             self.r2_remote = r2_merged
 
     def download(self, config, logger) -> list[Path]:
-        
         downloaded_paths: list[Path] = []
 
         if not self.remote_keys:
             raise ValueError(
-                f"Sample {self.id} has no remote_keys in long_term_storage_info"
+                f'Sample {self.id} has no remote_keys in long_term_storage_info'
             )
         
-        logger.info(f"Preapring missing FASTQs for sample {self.id} from {len(self.remote_keys)} remote keys")
+        logger.info(
+                f'Preparing missing FASTQs for sample {self.id} '
+                f'from {len(self.remote_keys)} remote keys'
+                )
         
         with ThreadPoolExecutor() as executor:
             for downloaded in executor.map(
@@ -290,7 +293,6 @@ class Sample:
 
 
     def merge_fastqs(self, source_paths: list[Path], read, logger,) -> list[Path]:
-
         runs = sorted("_".join(path.name.split("_")[1:3])for path in source_paths)
         run_string = "+".join(runs)
         merged_name = (f"{self.id}_{run_string}_{read}_001.fastq.gz")
@@ -310,17 +312,14 @@ class Sample:
         return merged_path
 
 
-    def resolve_fastq_pair(self, run, config, logger) -> None:
+    def resolve_fastq_pair(self, config, logger) -> None:
         """Determine where to find fastq files to use"""
 
-        if self.has_local_fastq:
-            pass
-        else:
+        if not self.has_local_fastq:
             logger.info(f"sample {self.id} has no local FASTQ-files")
 
             if not self.has_remote_fastq:
                 self.download(config=config, logger=logger)
-
 
         if not self.has_final_fastq:
             raise FileNotFoundError(f"could not resolve paired FASTQ files for sample {self.id}")
@@ -350,13 +349,13 @@ class Sample:
 
         
 
-def return_pending_patients(config, logger) -> list[Patient]:
-    # Query slims for pending samples based on filters in config
-    # This is not a current functionality, remove config?
+def return_pending_patients(logger) -> list[Patient]:
+    """Query slims for pending samples based on filters in config"""
     query = conjunction()
     query.add(equals("test_name", "test_pipeline_somatic"))
     query.add(equals("rslt_value", "Pending"))
 
+    slims_connection = get_slims_connection()
     slims_records = slims_connection.fetch('Result', query)
 
     patients: dict[str, Patient] = {}
@@ -367,16 +366,16 @@ def return_pending_patients(config, logger) -> list[Patient]:
         try:
             sample.validate_required_fields()
         except ValueError as exc:
-            logger.warning(f"Skipping sample due to missing required fields: {exc}")
+            logger.warning(f'Skipping sample due to missing required fields: {exc}')
             continue
-        # if not sample.fastq_merge:  # FIXME: Change to "StartPipeline" or similar
+        # if not sample.fastq_merge:       # FIXME: Change to "StartPipeline" or similar
         #     logger.info(f"Skipping sample {sample.id} because it is not marked with StartPipeline")
         #     logger.info(f"Setting {sample.id} status to Successfull")
         #     r.update({"rslt_value": "Successfull"})
         #     continue
-        #ogger.info(f"Setting {sample.id} status to In progress")
+        logger.info(f'Setting {sample.id} status to In progress')
+        logger.debug(f'(Status is not changed for real)')
         #slims_record.update({"rslt_value": "In progress"})
-        #inding_samples.append(sample)
         
         patient_barcode = sample.subject_barcode
         patient = patients.setdefault(
@@ -390,15 +389,16 @@ def return_pending_patients(config, logger) -> list[Patient]:
 
 
 def add_matched_samples(patients: list[Patient], logger) -> None:
-    # For all patients, check if there are both tumor and normal samples
-    # If not, we query for samples for that patient 
+    """Query SLIMS for missing sample types."""
+    slims_connection = get_slims_connection()
+
     for patient in patients:
         for sample_type in patient.missing_sample_types:
 
-            logger.info(f"Missing {sample_type} sample for patient {patient.barcode}, querying SLIMS")
+            logger.info(f"Missing {sample_type} sample for patient {patient.subject_barcode}, querying SLIMS")
 
             query = conjunction()
-            query.add(equals("rslt_cf_subjectBarcode", patient.barcode))
+            query.add(equals("rslt_cf_subjectBarcode", patient.subject_barcode))
 
             if sample_type == "tumor":
                 query.add(is_one_of("rslt_cf_sampleTypeSomatic", ["tumor", "tumour", "Tumor", "Tumour"]))
@@ -413,7 +413,8 @@ def add_matched_samples(patients: list[Patient], logger) -> None:
 
             patient.add_sample(Sample(slims_record))
 
-def add_merge_samples(patients: list[Patient], logger) -> list[Patient]:
+
+def add_merge_samples(patients: list[Patient], logger):
     for patient in patients:
         for sample in patient.samples:
             if not sample.fastq_merge:
@@ -423,7 +424,8 @@ def add_merge_samples(patients: list[Patient], logger) -> list[Patient]:
             query = conjunction()
             query.add(equals("rslt_cf_subjectBarcode", patiente.barcode))
             query.add(equals("rslt_cf_sampleTypeSomatic", sample.type_somatic))
-
+            
+            slims_connection = get_slims_connection()
             merge_results = slims_connection.fetch("Result", query)
 
             for slims_record in merge_results:
@@ -447,119 +449,18 @@ class SlimsCredentials:
         self.password = config['slims']['password']
 
 
-config = read_config(WRAPPER_CONFIG_PATH)
-slims_credentials_path = config['slims_credentials_path']
-credentials = SlimsCredentials(slims_credentials_path)
+def get_slims_connection():
+    config = read_config(WRAPPER_CONFIG_PATH)
+    slims_credentials_path = config['slims_credentials_path']
+    credentials = SlimsCredentials(slims_credentials_path)
 
-slims_connection = Slims('wgs-somatic_query',
-                         credentials.url,
-                         credentials.user,
-                         credentials.password)
+    return Slims(
+            'wgs-somatic_query',
+            credentials.url,
+            credentials.user,
+            credentials.password
+    )
 
-'''
-class SlimsSample:
-    def __init__(self, sample_name, run_tag=''):
-        self.sample_name = sample_name
-        self.run_tag = run_tag
-
-        self._dna = None
-        self._fastq = None
-        self._bioinformatics = None
-
-    @property
-    def dna(self):
-        if not self._dna:
-            records = slims_connection.fetch('Content', conjunction()
-                                  .add(equals('cntn_id', self.sample_name))
-                                  .add(equals('cntn_fk_contentType', 6)))
-
-            if len(records) > 1:
-                raise Exception('More than 1 DNA somehow.')
-
-            if records:
-                self._dna = records[0]
-
-        return self._dna
-
-    @property
-    def fastq(self):
-        if not self.run_tag:
-            raise Exception('Can not fetch fastq without a set run tag.')
-        if not self._fastq:
-            records = slims_connection.fetch('Content', conjunction()
-                                  .add(equals('cntn_id', self.sample_name))
-                                  .add(equals('cntn_fk_contentType', 22))
-                                  .add(equals('cntn_cstm_runTag', self.run_tag)))
-            if len(records) > 1:
-                raise Exception('More than 1 fastq somehow.')
-
-            if records:
-                self._fastq = records[0]
-
-        return self._fastq
-'''
-
-'''
-def translate_slims_info(record):
-    sample_name = record.cntn_id.value
-
-    # 29 = WOPR
-    # 54 = wgs_somatic
-
-    pipeline_pks = record.cntn_cstm_secondaryAnalysis.value
-    pcr = record.cntn_cstm_pcr.value
-
-    investigator = 'CGG'  # NOTE: Needed?
-
-    department = None
-    responder_emails = []
-    if record.cntn_cstm_department.value is not None:
-        department_record = slims_connection.fetch_by_pk('ReferenceDataRecord', record.cntn_cstm_department.value)
-        department = department_record.rdrc_name.value  
-        responder_records = [slims_connection.fetch_by_pk('ReferenceDataRecord', pk) for
-                            pk in department_record.rdrc_cstm_responder.value]
-        responder_emails = [rec.rdrc_cstm_email.value for rec in responder_records]
-
-    is_research = record.cntn_cstm_research.value
-    research_project = record.cntn_cstm_researchProject.value
-
-    is_priority = True if record.cntn_cstm_priority.value else False
-
-    gender = record.gender.value
-
-    tumorNormalType = record.cntn_cstm_tumorNormalType.value
-    tumorNormalID = record.cntn_cstm_tumorNormalID.value
-
-    tertiary_analysis = record.cntn_cstm_tertiaryAnalysis.value
-
-    master = {
-        'content_id': sample_name,
-        'investigator': investigator,
-        'department': department,
-        'responder_mails': responder_emails,
-        'is_research': is_research,
-        'research_project': research_project,
-        'gender': gender,
-        'is_priority': is_priority,
-        'pcr': pcr,
-        'tumorNormalType': tumorNormalType,
-        'tumorNormalID': tumorNormalID,
-        'secondary_analysis': pipeline_pks,
-        'tertiary_analysis': tertiary_analysis
-    }
-    return master
-'''
-
-'''
-def get_sample_slims_info(Sctx, run_tag):
-    """Query the slims API for relevant metadata given sample_name in samplesheet."""
-    SSample = SlimsSample(Sctx.sample_name, run_tag)
-
-    if not SSample.dna:
-        Sctx.slims_info = {}
-        return
-    return translate_slims_info(SSample.dna)
-'''
 
 def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
     """Find and download fqs from HCP to fastqdir on seqstore for run"""
@@ -651,13 +552,15 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
 def decompress_downloaded_fastq(complete_file_path, logger):
     config = read_config(WRAPPER_CONFIG_PATH)
 
-    wrapper_log_path = config["wrapper_log_path"]
-
+    if os.environ.get("DEVMODE") == "true":
+        wrapper_log_path = config["develop_mode"]["log_path"]
+    else:
+        wrapper_log_path = config["wrapper_log_path"]
+    
+    decompress_path = os.path.join(wrapper_log_path, "decompress_logs")
     filename = os.path.basename(complete_file_path) # This is the filename of the downloaded file
-
-
-    standardout_decompress = os.path.join(wrapper_log_path, f"decompress_{filename}.stdout")
-    standarderr_decompress = os.path.join(wrapper_log_path, f"decompress_{filename}.stderr")
+    standardout_decompress = os.path.join(decompress_path, f"decompress_{filename}.stdout")
+    standarderr_decompress = os.path.join(decompress_path, f"decompress_{filename}.stderr")
 
     queue = config["hcp"]["queue"]
     threads = config["hcp"]["threads"]
@@ -730,6 +633,7 @@ def find_or_download_fastqs(sample_name, logger):
     """
     If a sample name has fastqs from additional sequencing runs - fetch those fastq objects and link them to Demultiplexdir of current run. 
     """
+    slims_connection = get_slims_connection()
     fq_objs = slims_connection.fetch('Content', conjunction()
                               .add(equals('cntn_id', sample_name))
                               .add(equals('cntn_fk_contentType', 22)))
@@ -790,41 +694,3 @@ def find_or_download_fastqs(sample_name, logger):
                     logger.error(f'{tag} generated an exception: {exc}')
             logger.info(f'Found fastqs for {sample_name}_{tag}')
     return fastq_dict
-
-'''
-def get_pair_dict(Sctx, Rctx, logger):
-    """
-    If tumor and normal are sequenced in different runs - find the pairs. 
-    Then use the find_more_fastqs function to find paths of fastqs that are sequenced in different runs and link fastqs.
-    Returns a dict of T/N info 
-    """
-
-    run_tag = Rctx.run_tag
-    pair_dict = {}
-
-    # FIXME: using equals tumorNormalID here won't work when we change it to pairID...
-    Sctx.slims_info = get_sample_slims_info(Sctx, run_tag)
-    if Sctx.slims_info['tumorNormalID'] is None:
-        logger.error(f"Sample {Sctx.slims_info['content_id']} does not have a tumorNormalID assigned in SLIMS, stopping execution.")
-        logger.info(f"Slims info: {Sctx.slims_info}")
-        raise ValueError(f"Sample {Sctx.slims_info['content_id']} does not have a tumorNormalID assigned in SLIMS.")
-    pairs = slims_connection.fetch('Content', conjunction()
-                              .add(equals('cntn_fk_contentType', 6))
-                              .add(equals('cntn_cstm_tumorNormalID', 
-                              Sctx.slims_info['tumorNormalID'])))
-
-    # We want to make sure that we complement the tumorNormalType correctly, i.e. a tumor goes with normal and vice versa
-    pair_type_d = {'tumor':'normal', 'normal':'tumor'}
-    pair_type = pair_type_d.get(Sctx.slims_info['tumorNormalType'],None)
-    if not pair_type:
-        logger.warning(f'The sample {Sctx.slims_info["content_id"]} does not have any assigned tumorNormalType')
-
-    for pair in pairs:
-        pair_slims_sample = translate_slims_info(pair)
-        # Check if the sample we have found is either our newly sequenced sample (including the same sample previously sequenced) OR a complementing tumorNormalType to our newly sequenced sample
-        if pair_slims_sample['content_id'] == Sctx.slims_info['content_id'] or\
-                pair_slims_sample['tumorNormalType'] == pair_type:
-            pair_dict[pair_slims_sample['content_id']] = [pair_slims_sample['tumorNormalType'], pair_slims_sample['tumorNormalID'], pair_slims_sample['department'], pair_slims_sample['is_priority']]
-
-    return pair_dict
-    '''

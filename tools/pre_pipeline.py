@@ -1,9 +1,11 @@
 import os
-from pathlib import Path
-from typing import Optional
-from tools.slims import Patient, Sample
 from collections import Counter
 from datetime import datetime
+from pathlib import Path
+from typing import Optional
+
+from tools.slims import Patient, Sample
+
 
 class Batch:
     def __init__(self):
@@ -17,9 +19,9 @@ class Batch:
         self.bad_samples = []
 
     def __repr__(self):
-        return(f'''
+        return f'''
         Batch name: {self.batch_name}
-        ''')
+        '''
 
     def determine_batch_name(self) -> None:
         sequencing_ids = [
@@ -51,6 +53,7 @@ class Batch:
 
         return not self.bad_samples
 
+
 class Run:
     def __init__(
         self,
@@ -63,8 +66,16 @@ class Run:
         est_normal_cov: Optional[float] = None,
     ):
         self.patient = patient
-        self.tumor_sample = self.patient.tumor_samples[0] if self.patient.tumor_samples else None
-        self.normal_sample = self.patient.normal_samples[0] if self.patient.normal_samples else None
+        self.tumor_sample = (
+            self.patient.tumor_samples[0]
+            if self.patient.tumor_samples
+            else None
+        )
+        self.normal_sample = (
+            self.patient.normal_samples[0]
+            if self.patient.normal_samples
+            else None
+        )
         self.run_timestamp = datetime.now().strftime("%y%m%d-%H%M%S")
         self.run_root_dir = run_root_dir
         self.main_id = main_id
@@ -73,21 +84,18 @@ class Run:
         self.est_normal_cov = est_normal_cov
         self.ready_for_pipeline = False
         self.prepared_fastq_dir: Optional[Path] = None
-        self.prepared_tumor_r1: Optional[Path] = None
-        self.prepared_tumor_r2: Optional[Path] = None
-        self.prepared_normal_r1: Optional[Path] = None
-        self.prepared_normal_r2: Optional[Path] = None
+        self.logger = logger
         self.setup_folders()
 
     def __repr__(self):
-        return (f'''
+        return f'''
         ID: {self.main_id}
         Root dir: {self.run_root_dir}
         Run dir: {self.run_work_dir}
         Patient: {self.patient}
         Tumor: {self.tumor_sample}
         Normal: {self.normal_sample}
-        ''')
+        '''
 
     def setup_folders(self):
         if self.run_work_dir:
@@ -96,14 +104,13 @@ class Run:
             self.main_id = self.main_id or self._determine_main_id()
             self.run_work_dir = self.run_root_dir / f"{self.main_id}_{self.run_timestamp}"
         else:
-            logger.error("No run_root_dir or run_work_dir provided, cannot determine run_work_dir")
             raise ValueError("No run_root_dir or run_work_dir provided, cannot determine run_work_dir")
 
     def _determine_main_id(self) -> str:
         """Return sequencing_id of most recent tumor, otherwise most recent normal sample."""
         if self.patient.tumor_samples:
             return max(self.patient.tumor_samples, key=lambda s: s.date_created).sequencing_id
-        if seld.patient.normal_samples:
+        if self.patient.normal_samples:
             return max(self.patient.normal_samples, key=lambda s: s.date_created).sequencing_id
 
     def materialize_fastq(self, sample, logger) -> None:
@@ -149,26 +156,26 @@ def pre_pipeline(batch, config, logger) -> None:
         run.prepared_fastq_dir.mkdir(parents=True, exist_ok=True)
 
         for sample in run.patient.samples:
-            sample.resolve_fastq_pair(run.prepared_fastq_dir, config, logger)
+            sample.resolve_fastq_pair(config, logger)
             run.materialize_fastq(sample, logger)
 
         #run.patient.validate_sample_setup()
 
         if not run.tumor_sample.has_final_fastq:
             raise FileNotFoundError(
-                f"Tumor sample {tumor.id} is missing paired FASTQs."
+                f"Tumor sample {run.tumor_sample.id} is missing paired FASTQs."
             )
 
         if run.normal_sample and not run.normal_sample.has_final_fastq:
             raise FileNotFoundError(
-                f"Normal sample {normal.id} is missing paired FASTQs."
+                f"Normal sample {run.normal_sample.id} is missing paired FASTQs."
             )
 
         run.pipeline_args = {
-                "outputdir": str(run.run_work_dir),
-                "tumorname": run.tumor_sample.id,
-                "tumorfastqs": str(run.prepared_fastq_dir),
-                }
+            "outputdir": str(run.run_work_dir),
+            "tumorname": run.tumor_sample.id,
+            "tumorfastqs": str(run.prepared_fastq_dir),
+        }
 
         if not run.tumor_sample:
             continue

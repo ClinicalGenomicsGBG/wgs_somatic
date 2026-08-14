@@ -22,18 +22,21 @@ def read_config(configpath):
 def setup_logger(name, log_path=None):
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
-    logger.propagate = False #This is to stop the stream from root logger, initiated by slims
+    logger.propagate = False
 
     if log_path:
         file_handle = logging.FileHandler(log_path, "a")
-        file_handle.setLevel(logging.DEBUG)
+        file_handle.setLevel(logging.INFO)
         file_handle.setFormatter(
             logging.Formatter("%(asctime)s - %(levelname)s - %(module)s - %(message)s")
         )
         logger.addHandler(file_handle)
 
     console_handle = logging.StreamHandler()
-    console_handle.setLevel(logging.DEBUG)
+    if os.environ.get("DEVMODE") == "true":
+        console_handle.setLevel(logging.DEBUG)
+    else:
+        console_handle.setLevel(logging.INFO)
     console_handle.setFormatter(
         logging.Formatter(
             "%(name)s: %(levelname)s %(module)s: %(message)s"

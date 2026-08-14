@@ -613,7 +613,7 @@ if __name__ == "__main__":
     else:
         wrapper_log_path = config["wrapper_log_path"]
 
-    wrapper_logger = setup_logger('launcher', os.path.join(wrapper_log_path, f'wgs-somatic-run-wrapper.log'))
+    launcher_logger = setup_logger('launcher', os.path.join(wrapper_log_path, f'wgs-somatic-run-launcher.log'))
 
     if not args.outputdir.startswith("/"):
         args.outputdir = os.path.abspath(args.outputdir)
@@ -632,7 +632,7 @@ if __name__ == "__main__":
         analysis_main(
             args,
             args.outputdir,
-            wrapper_logger,
+            launcher_logger,
             args.normalsample,
             args.normalfastqs,
             args.tumorsample,
