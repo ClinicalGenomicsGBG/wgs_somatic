@@ -10,7 +10,7 @@ import shutil
 from slims.slims import Slims
 from slims.criteria import equals, conjunction, not_equals, is_one_of
 
-from tools.helpers import read_config
+from tools.helpers import read_config, make_long_term_storage_info
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
 
 def latest_result(results):
@@ -23,7 +23,7 @@ class Patient:
         self.normal_samples: list["Sample"] = []
 
     def __repr__(self):
-        return (f"{self.subject_barcode!r}")
+        return (f"{self.subject_barcode}")
 
     def add_sample(self, sample: "Sample") -> None:
         if sample.type_somatic == "tumor":
@@ -44,7 +44,7 @@ class Patient:
         return self.normal_samples[0].id if self.normal_samples else None
 
     @property
-    def has_sample_pk(self, pk: int) -> bool:
+    def has_sample_pk(self, puuuuuuk: int) -> bool:
         return any(sample.pk == pk for sample in self.samples)
 
     @property
@@ -87,6 +87,7 @@ class Sample:
         self.date_created = self._value(slims_record, "rslt_createdOn")
         self.subject_barcode = self._value(slims_record, "rslt_cf_subjectBarcode")
         self.id = self._value(slims_record, "rslt_cf_sampleId")
+        self.sequencing_id = self._value(slims_record, "rslt_cf_sequencingRunId")
         self.local_fastq_file_paths = self._parse_fastq_file_paths(
             self._value(slims_record, "rslt_cf_pipelineFilePaths")
         )
@@ -107,23 +108,12 @@ class Sample:
         self.r2_paths: list[Path] = [self.r2_local] if self.has_local_fastq else []
         self.r1_remote: Path | None = None
         self.r2_remote: Path | None = None
-        #self.fastq_local = self.r1_path is not None and self.r1_path.exists() and self.r2_path is not None and self.r2_path.exists()
-        #self.fastq_remote = self.r1_remote is not None and self.r1_remote.exists() and self.r2_remote is not None and self.r2_remote.exists() 
-        #self.r1_linked_path = None
-        #self.r2_linked_path = None
+
+        if not self.sequencing_id:
+            self.sequencing_id = self._sequencing_id_from_fastqs()
 
     def __repr__(self):
-        return (f'''
-        Sample: {self.id}
-        pk: {self.pk}
-        Local fastqs: {self.local_fastq_file_paths}
-        Has local fastq: {self.has_local_fastq}
-        Has remote fastq: {self.has_remote_fastq}
-        Has final fastq: {self.has_final_fastq}
-        Paths:
-        R1:{self.r1_path}
-        R2:{self.r2_path}
-        ''')
+        return (f'''Sample: {self.id}''')
 
     def missing_required_fields(self) -> list[str]:
         missing: list[str] = []
@@ -170,23 +160,6 @@ class Sample:
 
         return []
 
-    #def _existing_fastq_paths(self) -> list[Path]:
-    #    if not self.local_fastq_file_paths:
-    #        return []
-    #    return [Path(path) for path in self.fastq_file_paths if path and Path(path).exists()]
-
-    #def _refresh_fastq_state(self, logger) -> None:
-    #    if self.fastq_file_paths and len(self.fastq_file_paths) > 1:
-    #        r1_candidate = Path(self.fastq_file_paths[0])
-    #        r2_candidate = Path(self.fastq_file_paths[1])
-    #        logger.info(f"following paths set locally: {r1_candidate}, {r2_candidate}")
-    #        self.r1_path = r1_candidate if r1_candidate.exists() else None
-    #        self.r2_path = r2_candidate if r2_candidate.exists() else None
-    #    else:
-    #        self.r1_path = None
-    #        self.r2_path = None
-    #    self.fastq_local = bool(self.r1_path and self.r2_path and self.r1_path.exists() and self.r2_path.exists())
-
     @property
     def has_local_fastq(self) -> bool:
         return (
@@ -199,11 +172,11 @@ class Sample:
     @property
     def has_remote_fastq(self) -> bool:
         return (
-            self.r1_remote is not None
-            and self.r2_remote is not None
-            and self.r1_remote.exists()
-            and self.r2_remote.exists()
-            )
+            self.r1_remote
+            and self.r2_remote
+            and all(path.exists() for path in self.r1_remote)
+            and all(path.exists() for path in self.r2_remote)
+        )
 
     @property
     def has_final_fastq(self) -> bool:
@@ -245,6 +218,22 @@ class Sample:
         _collect(info)
         deduped_remote_keys = list(dict.fromkeys(remote_keys))
         return deduped_remote_keys, bucket
+
+    def _sequencing_id_from_fastqs(self):
+        for fastq_path in (
+            self.r1_local,
+            self.r2_local,
+            self.r1_remote,
+            self.r2_remote,
+        ):
+            if not fastq_path:
+                continue
+
+            name = fastq_path.name
+
+            if "_S" in name:
+                return name.split("_S", 1)[0]
+        return None
 
     def check_previous_merge(self, config):
         runs = sorted(
@@ -390,13 +379,13 @@ def return_pending_patients(config, logger) -> list[Patient]:
         #inding_samples.append(sample)
         
         patient_barcode = sample.subject_barcode
-
         patient = patients.setdefault(
             patient_barcode,
             Patient(patient_barcode)
         )
-
+        
         patient.add_sample(sample)
+
     return list(patients.values())
 
 

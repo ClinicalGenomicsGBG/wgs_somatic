@@ -7,7 +7,8 @@ from collections import defaultdict
 import glob
 
 def get_timestamp():
-    return time.strftime("%y%m%d-%H%M%S")
+    return time.strftime("%y%m%d-%h%m%s")
+
 
 def setup_logging(log_dir):
     os.makedirs(log_dir, exist_ok=True)

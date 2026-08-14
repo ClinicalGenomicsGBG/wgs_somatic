@@ -3,7 +3,7 @@ import json
 import argparse
 import os
 import glob
-from tools.helpers import read_config
+from tools.helpers import read_config, setup_logger
 import sys
 import time
 import traceback
@@ -14,28 +14,26 @@ import yaml
 import random
 import string
 import zipfile
-from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
+from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR, WRAPPER_CONFIG_PATH
 
-# This is just to make the wrapper_logger available for logger
-wrapper_logger = None
 
 def get_time():
     nowtime = time.strftime("%Y-%m-%d-%H-%M-%S")
     return nowtime
 
 
-def logger(message, logfile=None):
-    #config = read_config(LAUNCHER_CONFIG_PATH)
-    #logdir = config["logdir"]
-    #current_date = time.strftime("%Y-%m-%d")
-    #if not logfile:
-        #logname = f"{logdir}/{current_date}.log"
-        #logfile = open(logname, "a+")
-        #logfile.write(f"{get_time()}: {message}" + "\n")
-    if logfile:
-        with open(logfile, "a+") as f:
-            f.write(f"{get_time()}: {message}\n")
-    wrapper_logger.info(message)
+def logger(message, logfile=False):
+    config = read_config(LAUNCHER_CONFIG_PATH)
+    logdir = config["logdir"]
+    current_date = time.strftime("%Y-%m-%d")
+    if not logfile:
+        logname = f"{logdir}/{current_date}.log"
+        logfile = open(logname, "a+")
+        logfile.write(f"{get_time()}: {message}" + "\n")
+    else:
+        logfile = open(logfile, "a+")
+        logfile.write(f"{get_time()}: {message}" + "\n")
+    print(message)
 
 
 def get_normalid_tumorid(
@@ -51,10 +49,10 @@ def get_normalid_tumorid(
                     return "_".join(parts[:3])  # Returns an id based on the first hit
                 else:
                     # Add filler if the filename cannot be split into at least 4 parts
-                    logger(
+                    wrapper_logger.info(
                         f"Filename {filename} could not be split into at least 4 parts"
                     )
-                    logger(f"Returning filler id for {name}")
+                    wrapper_logger.info(f"Returning filler id for {name}")
                     return "_".join(parts + ["filler"] * (3 - len(parts)))
         raise ValueError(f"No fastq found for {name} in {fastq_dir}")
 
@@ -97,7 +95,7 @@ def copy_results(outputdir):
         snakemake_config = os.path.join(outputdir, "configs", "snakemake_config.json")
 
         if not os.path.isfile(snakemake_config):
-            logger(f"Config file not found at expected location: {snakemake_config}")
+            wrapper_logger.info(f"Config file not found at expected location: {snakemake_config}")
             raise FileNotFoundError(
                 f"Config file not found at expected location: {snakemake_config}"
             )
@@ -108,32 +106,32 @@ def copy_results(outputdir):
                 config_data = json.load(sc)
                 try:
                     resultdir = config_data.get("resultdir")
-                    logger(f"Resultdir found in config file: {resultdir}")
+                    wrapper_logger.info(f"Resultdir found in config file: {resultdir}")
                 except KeyError:
-                    logger(f"Key 'resultdir' not found in config file {runconfig}")
+                    wrapper_logger.info(f"Key 'resultdir' not found in config file {runconfig}")
                     raise KeyError("Key 'resultdir' not found in config file")
                 try:
                     resultsconf = config_data.get("resultfilesconf")
-                    logger(f"Results configuration file found: {resultsconf}")
+                    wrapper_logger.info(f"Results configuration file found: {resultsconf}")
                 except KeyError:
-                    logger(
+                    wrapper_logger.info(
                         f"Key 'resultfilesconf' not found in config file {runconfig}"
                     )
                     raise KeyError("Key 'resultfilesconf' not found in config file")
         except Exception as e:
-            logger(f"Error reading config file {runconfig}: {e}")
+            wrapper_logger.info(f"Error reading config file {runconfig}: {e}")
             raise
 
         try:
             results = read_config(resultsconf)
         except Exception as e:
-            logger(f"Failed to read results config from {resultsconf}: {e}")
+            wrapper_logger.info(f"Failed to read results config from {resultsconf}: {e}")
             raise
 
         # Read the results into the subdirectories unless they are marked toplevel
         for category, relpaths in results.items():
             if category == "not_copied":
-                logger("Skipping 'not_copied' category as per configuration.")
+                wrapper_logger.info("Skipping 'not_copied' category as per configuration.")
                 continue
             dest_dir = (
                 resultdir
@@ -144,7 +142,7 @@ def copy_results(outputdir):
             try:
                 os.makedirs(dest_dir, exist_ok=True)
             except Exception as e:
-                logger(f"Error creating result directory {dest_dir}: {e}")
+                wrapper_logger.info(f"Error creating result directory {dest_dir}: {e}")
                 raise
 
             for relpath in relpaths:
@@ -154,32 +152,32 @@ def copy_results(outputdir):
                 if os.path.exists(src_path):
                     try:
                         copyfile(src_path, dest_path)
-                        logger(f"Copied {src_path} to {dest_path}")
+                        wrapper_logger.info(f"Copied {src_path} to {dest_path}")
 
                         # Unzip zipped results on destination
                         if src_path.endswith(".zip"):
                             try:
-                                logger(f"Unzipping {dest_path} to {dest_dir}")
+                                wrapper_logger.info(f"Unzipping {dest_path} to {dest_dir}")
                                 zip_ref = zipfile.ZipFile(dest_path, "r")
                                 zip_ref.extractall(dest_dir)
                             except Exception as e:
-                                logger(f"Error unzipping {dest_path}: {e}")
+                                wrapper_logger.info(f"Error unzipping {dest_path}: {e}")
                     except Exception as e:
-                        logger(f"Error copying {src_path} to {dest_path}: {e}")
+                        wrapper_logger.info(f"Error copying {src_path} to {dest_path}: {e}")
                 else:
-                    logger(
+                    wrapper_logger.info(
                         f"Warning: Source file {src_path} does not exist, skipping copy."
                     )
 
     except Exception as e:
-        logger(f"Unhandled error in copy_results: {e}")
+        wrapper_logger.info(f"Unhandled error in copy_results: {e}")
         raise
 
 
 def analysis_main(
     args,
-    wrapper_logger,
     outputdir,
+    wrapper_logger,
     normalname=False,
     normalfastqs=False,
     tumorname=False,
@@ -188,16 +186,8 @@ def analysis_main(
     notemp=False,
     dag=False,
 ):
-    devmode = os.environ.get("DEVMODE") == "true"
-    wrapper_logger.debug("""args = {args},
-outputdir = {outputdir},
-normalname = {normalname}=False,
-normalfastqs = {normalfastqs}=False,
-tumorname = {tumorname}=False,
-tumorfastqs = {tumorfastqs}=False,
-starttype = {starttype}=False,
-notemp = {notemp}=False,
-dag = {dag}=False,""")
+    devmode = os.environ.get("DEVMODE")
+
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -213,7 +203,7 @@ dag = {dag}=False,""")
         commandlogfile = open(commandlog, "a+")
         commandlogfile.write(f"{get_time()}" + "\n")
         commandlogfile.write(command + "\n")
-
+        
         #################################################################
         # Validate Inputs
         ################################################################
@@ -235,8 +225,14 @@ dag = {dag}=False,""")
         if starttype == "force":
             f_tumorfastqs = ""
             f_normalfastqs = ""
-
+        
         else:
+            wrapper_logger.debug(f'''
+            tumor name: {tumorname}
+            f_tumorfastqs = {tumorfastqs}
+            normal name: {normalname}
+            f_normalfastqs = {normalfastqs}
+                                 ''')
             if normalfastqs:
                 if not os.path.isdir(normalfastqs):
                     error_list.append(
@@ -245,7 +241,7 @@ dag = {dag}=False,""")
                 else:
                     f_normalfastqs = glob.glob(f"{normalfastqs}/*{normalname}*fastq.gz")
                     if not f_normalfastqs:
-                        logger("Warning: No fastqs found in normaldir")
+                        wrapper_logger.info("Warning: No fastqs found in normaldir")
                         f_normalfastqs = glob.glob(
                             f"{normalfastqs}/*{normalname}*fasterq"
                         )
@@ -262,7 +258,7 @@ dag = {dag}=False,""")
                 else:
                     f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fastq.gz")
                     if not f_tumorfastqs:
-                        logger("Warning: No fastqs found in tumordir")
+                        wrapper_logger.info("Warning: No fastqs found in tumordir")
                         f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fasterq")
                         if not f_tumorfastqs:
                             error_list.append("No fastqs or fasterqs found in tumordir")
@@ -277,12 +273,12 @@ dag = {dag}=False,""")
                 )
 
         if error_list:
-            logger("Errors found in arguments to script:")
+            wrapper_logger.info("Errors found in arguments to script:")
             for arg in vars(args):
-                logger(f"{arg} = {getattr(args, arg)}")
+                wrapper_logger.info(f"{arg} = {getattr(args, arg)}")
             for error in error_list:
-                logger(error)
-            logger("Exiting")
+                wrapper_logger.info(error)
+            wrapper_logger.info("Exiting")
             sys.exit()
 
         #################################################################
@@ -305,7 +301,9 @@ dag = {dag}=False,""")
         copyfile(
             os.path.join(configdir, clusterconf), os.path.join(runconfigs, clusterconf)
         )
-        
+        copyfile(
+            os.path.join(configdir, filterconf), os.path.join(runconfigs, filterconf)
+        )
         copyfile(
             os.path.join(configdir, datavzrdconf),
             os.path.join(runconfigs, datavzrdconf),
@@ -360,6 +358,7 @@ dag = {dag}=False,""")
         # Create AnalysisConfigfile
         ##################################################################
         analysisdict = {}
+        analysisdict["devmode"] = devmode
         analysisdict["normalname"] = normalname
         analysisdict["normalid"] = normalid
         analysisdict["normalfastqs"] = [normalfastqs]
@@ -402,8 +401,8 @@ dag = {dag}=False,""")
 
     except Exception as e:
         tb = traceback.format_exc()
-        logger("Error in setting up the snakemake run:")
-        logger(f"{e} Traceback: {tb}")
+        wrapper_logger.info("Error in setting up the snakemake run:")
+        wrapper_logger.info(f"{e} Traceback: {tb}")
         sys.exit(1)
 
 
@@ -523,12 +522,12 @@ dag = {dag}=False,""")
 
     except subprocess.CalledProcessError as e:
         tb = traceback.format_exc()
-        logger(f"Error running Snakemake: {e}")
-        logger(f"Traceback: {tb}")
+        wrapper_logger.info(f"Error running Snakemake: {e}")
+        wrapper_logger.info(f"Traceback: {tb}")
         sys.exit(1)
     except Exception as e:
         tb = traceback.format_exc()
-        logger(f"An error occurred: {e}\n{tb}")
+        wrapper_logger.info(f"An error occurred: {e}\n{tb}")
         sys.exit(1)
 
 
@@ -602,27 +601,38 @@ if __name__ == "__main__":
             action='store_true',
             default=False,
     )
+
     args = parser.parse_args()
     
+    os.environ["DEVMODE"] = str(args.develop_mode).lower()
+
+    config = read_config(WRAPPER_CONFIG_PATH)
     if args.develop_mode:
-        os.environ["DEVMODE"] = "true"
+        wrapper_log_path = config["develop_mode"]["log_path"]
+        outpath = config["develop_mode"]["outpath"]
+    else:
+        wrapper_log_path = config["wrapper_log_path"]
+
+    wrapper_logger = setup_logger('launcher', os.path.join(wrapper_log_path, f'wgs-somatic-run-wrapper.log'))
+
     if not args.outputdir.startswith("/"):
         args.outputdir = os.path.abspath(args.outputdir)
-        logger(f"Adjusted outputdir to {args.outputdir}")
+        wrapper_logger.info(f"Adjusted outputdir to {args.outputdir}")
     if args.onlycopyresults:
         copy_results(args.outputdir)
     else:
         if args.tumorfastqs:
             if not args.tumorfastqs.startswith("/"):
                 args.tumorfastqs = os.path.abspath(args.tumorfastqs)
-                logger(f"Adjusted tumorfastqs to {args.tumorfastqs}")
+                wrapper_logger.info(f"Adjusted tumorfastqs to {args.tumorfastqs}")
         if args.normalfastqs:
             if not args.normalfastqs.startswith("/"):
                 args.normalfastqs = os.path.abspath(args.normalfastqs)
-                logger(f"Adjusted normalfastqs to {args.normalfastqs}")
+                wrapper_logger.info(f"Adjusted normalfastqs to {args.normalfastqs}")
         analysis_main(
             args,
             args.outputdir,
+            wrapper_logger,
             args.normalsample,
             args.normalfastqs,
             args.tumorsample,

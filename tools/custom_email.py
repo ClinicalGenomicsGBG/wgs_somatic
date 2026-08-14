@@ -2,30 +2,36 @@ import os
 import smtplib
 
 from definitions import WRAPPER_CONFIG_PATH
-from tools.helpers import read_config
+from tools.helpers import read_config, setup_logger
 from email.message import EmailMessage
 from textwrap import dedent, indent
 
 
 def set_env():
+    logger = None
     config = read_config(WRAPPER_CONFIG_PATH)
-    if os.environ.get("DEVMODE") == "true":
+    if os.environ.get('DEVMODE') == 'true':
         email_config_path = config['develop_mode']['email_config_path']
+        wrapper_log_path = config["develop_mode"]["log_path"]
+        if not os.environ.get('EMAIL') == 'true':
+            logger = setup_logger('email')
     else:
         email_config_path = config['email_config_path']
+        wrapper_log_path = config["wrapper_log_path"]
+
     email_config = read_config(email_config_path)
     smtp = email_config['smtp_server']
     sender = email_config['sender']
     success_recipients = ", ".join(email_config["recipients"])
     qc_recipients = ", ".join(email_config["qc"])
 
-    return smtp, sender, success_recipients, qc_recipients
+    return smtp, sender, success_recipients, qc_recipients, logger
 
 
 def send_email(subject, body):
     """Send a simple email."""
- 
-    smtp, sender, success_recipients, qc_recipients = set_env()
+    smtp, sender, success_recipients, qc_recipients, logger = set_env()
+
     msg = EmailMessage()
     msg.set_content(body)
 
@@ -35,14 +41,18 @@ def send_email(subject, body):
     msg["Cc"] = sender
 
     # Send the message
-    s = smtplib.SMTP(smtp)
-    s.send_message(msg)
-    s.quit()
+    if not logger:
+        s = smtplib.SMTP(smtp)
+        s.send_message(msg)
+        s.quit()
+    else:
+        logger.debug('No emails are sent')
+        #logger.debug(f'\nSubject:{indent(subject, "        ")}\nMessage:{indent(body, "        ")}')
 
 def send_email_qc(subject, body):
     """Send a simple email."""
-
-    smtp, sender, success_recipients, qc_recipients = set_env()
+    smtp, sender, success_recipients, qc_recipients, logger = set_env()
+  
     msg = EmailMessage()
     msg.set_content(body)
 
@@ -52,10 +62,13 @@ def send_email_qc(subject, body):
     msg["Cc"] = sender 
 
     # Send the message
-    s = smtplib.SMTP(smtp)
-    s.send_message(msg)
-    s.quit()
-
+    if not logger:
+        s = smtplib.SMTP(smtp)
+        s.send_message(msg)
+        s.quit()
+    else:
+        logger.debug("No emails are sent")
+        #logger.debug(f'\nSubject:{indent(subject, "        ")}\nMessage:{indent(body, "        ")}')
 
 def start_email(run_name, samples):
     """Send an email about starting wgs-somatic for samples in a run"""
@@ -187,14 +200,14 @@ CGG Cancer
     send_email(subject, body)
 
 
-def error_setup_email(instrument):
+def error_setup_email(message):
     """Send an email when the setup of wgs-somatic fails"""
 
-    subject = f"Crashed WGS somatic setup for {instrument}"
+    subject = f"Crashed WGS somatic setup"
 
     body = f"""\
-The automatic setup of WGS somatic failed for instrument {instrument}.
-
+The automatic setup of WGS somatic failed.
+{message}
 Errors will be investigated.
 
 Best regards,
