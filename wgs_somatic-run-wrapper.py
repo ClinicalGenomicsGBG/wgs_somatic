@@ -132,7 +132,7 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None):
         pass
 
 
-def submit_pipeline(tumorsample, normalsample, gender, warning_email=True, pipestop=True, outpath, config, logger, threads):
+def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, warning_email=True, pipestop=True):
     timestamp = get_timestamp()
     if tumorsample and normalsample:
         logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
@@ -365,7 +365,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
     gender = dna_info["gender"] 
 
     threads = []
-    outputdir = submit_pipeline(tumorsample, normalsample, gender, warning_email, warning_stop, outpath, config, logger, threads)
+    outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, warning_email, warning_stop)
     threads[0].start()  # For manual runs we only have one thread
     
     threads[0].join()  # Wait for the thread to finish
