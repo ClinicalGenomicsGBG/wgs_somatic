@@ -42,7 +42,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
         somalier_pass, somalier_sex = evaluate_sex(somalier_file, expected_sex)
     else:
         somalier_pass = False
-        somalier_sex = "missing"
+        somalier_sex = "unknown"
     
     message = ''
     if not coverage_pass:
@@ -53,7 +53,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
                     """
         print(dedent(message))
     if not somalier_pass:
-        if somalier_sex == "missing":
+        if somalier_sex == "unknown":
             message += """
                     Somalier warning:
                     No information regarding sex for patient. 
@@ -84,7 +84,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
             {message}
             """)
             if email:
-                send_email_qc("QC warning", message)
+                send_email("QC warning", message)
         else:
             raise ValueError("evaluate_qc crashed due to illogical logic") #Should not happen 
 
@@ -126,10 +126,17 @@ def evaluate_coverage(coverage_file, stype):
                 Fraction bases >10X coverage: {wgs_stats['PCT_10X']}
                 Fraction bases >30X coverage: {wgs_stats['PCT_30X']}
                 """)
-                         )
+                        )
 
     mean_coverage = wgs_stats['MEAN_COVERAGE']
-    horizontal_coverage = round(wgs_stats[f'PCT_{hor_threshold}X'] * 100, 1)
+
+    try:
+        horizontal_coverage = round(wgs_stats[f'PCT_{hor_threshold}X'] * 100, 1)
+    except ValueError as e:
+        logger.error(dedent(f"""\
+        Invalid horizontal coverage value: {e}
+        See 'wgs_stats' for possible values
+        """))
 
     message = f"""
                     Mean coverage: {mean_coverage} 
@@ -160,21 +167,21 @@ def main():
             )
     parser.add_argument("-c", "--coverage", help=dedent('''\
                                                         Coverage file. Output from Sentieon WgsMetricsAlgo.
-
                                                         Expected format:
                                                           - Line 1: Comment beginning with '#'
                                                           - Line 2: Tab-separated column names
                                                           - Line 3: Tab-separated values
+
+                                                        Column names needed: MEAN_COVERAGE, PCT_10X, PCT_30X
+                                                        Minimum content of the file, with example values:
+                                                        #
+                                                        MEAN_COVERAGE    PCT_10X    PCT_30X
+                                                        86               98.9       97.7
                                                         ''')
                         )
-    parser.add_argument("-s", "--somalier", help = dedent('''\
-                                                        Output from somalier: "calculated_sex.txt".
-
-                                                        Expected format:
-                                                          - One line with "male" or "female"''')
-                        )
+    parser.add_argument("-s", "--somalier", help="Path to one-line output file from somalier_parse_sex (male/female/unknown)"
     parser.add_argument("-t", "--stype", choices=["tumor", "normal"], default="tumor", help = "Sample type")
-    parser.add_argument("-g", "--sex", choices=["male", "female", "missing"], default = "missing", help = "Sample sex")
+    parser.add_argument("-g", "--sex", choices=["male", "female", "unknown"], default = "unknown", help = "Sample sex")
     parser.add_argument("-n", "--name", help = "Sample name")
     parser.add_argument("-e", "--evaluate_qc", action="store_true", help = "Run pipeline behavior: evaluate_qc()")
     parser.add_argument("--email", action="store_true", help = "Send warning email if thresholds are not met")

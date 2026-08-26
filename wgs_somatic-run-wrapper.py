@@ -132,7 +132,7 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None):
         pass
 
 
-def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads):
+def submit_pipeline(tumorsample, normalsample, gender, warning_email=True, pipestop=True, outpath, config, logger, threads):
     timestamp = get_timestamp()
     if tumorsample and normalsample:
         logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
@@ -148,7 +148,9 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'gender': f'{gender}'}
+                         'gender': f'{gender}',
+                         'warning_email': f'{warning_email}',
+                         'pipestop': f'{pipestop}'}
 
     elif tumorsample:
         logger.info(f'Preparing run: Tumor-only {tumorsample}')
@@ -162,8 +164,9 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'gender': f'{gender}'}
-
+                         'gender': f'{gender}',
+                         'warning_email': f'{warning_email}',
+                         'pipestop': f'{pipestop}'}
 
     elif normalsample:
         logger.info(f'Preparing run: Normal-only {normalsample}')
@@ -177,7 +180,9 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
-                         'gender': f'{gender}'}
+                         'gender': f'{gender}',
+                         'warning_email': f'{warning_email}',
+                         'pipestop': f'{pipestop}'}
 
     threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
     logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
@@ -335,7 +340,7 @@ def wrapper(instrument=None, outpath=None):
         error_admin_qc_email(Rctx.run_name)
  
 
-def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False):
+def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, warning_email=False, warning_stop=False):
     '''Manual pipeline submission'''
     config = read_config(WRAPPER_CONFIG_PATH)
     wrapper_log_path = config["wrapper_log_path"]
@@ -360,7 +365,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
     gender = dna_info["gender"] 
 
     threads = []
-    outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads)
+    outputdir = submit_pipeline(tumorsample, normalsample, gender, warning_email, warning_stop, outpath, config, logger, threads)
     threads[0].start()  # For manual runs we only have one thread
     
     threads[0].join()  # Wait for the thread to finish
@@ -386,14 +391,17 @@ def main():
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
     parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
+    parser.add_argument('-w', '--warning_email', action="store_true", help="Send warning mail if QC fail",required=False,default=False)
+    parser.add_argument('-s', '--warning_stop', action="store_true", help="Stop pipeline if QC fail", required=False, default=False)
+
     args = parser.parse_args()
 
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
-            parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
+            parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults, --warning_email and --warning_stop are ignored.")
         wrapper(args.instrument, args.outpath)
     elif args.tumorsample or args.normalsample:
-        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary)
+        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary, args.warning_email, args.warning_stop)
     else:
         parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
 
