@@ -19,8 +19,8 @@ tumorname = config["tumorname"]
 tumorid = config["tumorid"]
 
 gender = config["gender"]
-warning_email = config["warning_email"]
-warning_stop = config["warning_stop"]
+send_email = config["send_email"]
+qc_stop = config["qc_stop"]
 
 reference = config["reference"]
 
@@ -118,7 +118,8 @@ include:    "workflows/rules/mapping/generate_tdf.smk"
 
 #########################################
 # Control coverage
-include: "workflows/rules/qc/qc_pass.smk"
+if qc_stop:
+    include: "workflows/rules/qc/qc_pass.smk"
 
 #########################################
 # VariantCalling
@@ -146,6 +147,14 @@ include:       "workflows/rules/qc/aggregate_qc.smk"
 include:       "workflows/rules/qc/coverage.smk"
 
 ignore = {"tool_versions.yaml", "logs/report.zip"}
+
+if not qc_stop:
+    ignore.update(
+        f
+        for result in resultsconf.values()
+        for f in result
+        if f.endswith(".QC_PASS")
+    )
 
 all_result_files = []
 for result in resultsconf.values():

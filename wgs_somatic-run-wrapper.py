@@ -132,7 +132,7 @@ def analysis_end(outputdir, tumorsample=None, normalsample=None):
         pass
 
 
-def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, warning_email=True, pipestop=True):
+def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, send_email, qc_stop):
     timestamp = get_timestamp()
     if tumorsample and normalsample:
         logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
@@ -149,8 +149,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
                          'gender': f'{gender}',
-                         'warning_email': f'{warning_email}',
-                         'pipestop': f'{pipestop}'}
+                         'send_email': f'{send_email}',
+                         'qc_stop': f'{qc_stop}'}
 
     elif tumorsample:
         logger.info(f'Preparing run: Tumor-only {tumorsample}')
@@ -165,8 +165,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
                          'gender': f'{gender}',
-                         'warning_email': f'{warning_email}',
-                         'pipestop': f'{pipestop}'}
+                         'send_email': f'{send_email}',
+                         'qc_stop': f'{qc_stop}'}
 
     elif normalsample:
         logger.info(f'Preparing run: Normal-only {normalsample}')
@@ -181,15 +181,15 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
                          'gender': f'{gender}',
-                         'warning_email': f'{warning_email}',
-                         'pipestop': f'{pipestop}'}
+                         'send_email': f'{send_email}',
+                         'qc_stop': f'{qc_stop}'}
 
     threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
     logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
     return outputdir
 
 
-def wrapper(instrument=None, outpath=None):
+def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
     '''Automatic wrapper function'''
     
     # === Setup run ===
@@ -265,14 +265,14 @@ def wrapper(instrument=None, outpath=None):
                 if t_ID == n_ID:
                     paired_samples.append((t_key, n_key))
                     paired = True
-                    outputdir = submit_pipeline(t_key, n_key, t_gender, outpath, config, logger, threads)
+                    outputdir = submit_pipeline(t_key, n_key, t_gender, outpath, config, logger, threads, send_email, qc_stop)
                     outputdirs.append(outputdir)
                     end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, n_key)))
                     final_pairs.append(f'{t_key} (T) {n_key} (N), {n_value[2]} {["prio" if (n_value[3] or t_value[3]) else ""][0]}')
                     break
 
             if not paired:
-                outputdir = submit_pipeline(t_key, None, t_gender, outpath, config, logger, threads)
+                outputdir = submit_pipeline(t_key, None, t_gender, outpath, config, logger, threads, send_email, qc_stop)
                 outputdirs.append(outputdir)
                 end_threads.append(threading.Thread(target=analysis_end, args=(outputdir, t_key, None)))
                 final_pairs.append(f'{t_key} (T), {t_value[2]} {["prio" if t_value[3] else ""][0]}')
@@ -288,11 +288,13 @@ def wrapper(instrument=None, outpath=None):
             sys.exit(0)
     except Exception as e:
         print(f"Error during setup: {e}")
-        error_setup_email(instrument)
+        if send_email:
+            error_setup_email(instrument)
         raise e
 
     # === Start analysis ===
-    start_email(Rctx.run_name, final_pairs)
+    if send_email:
+        start_email(Rctx.run_name, final_pairs)
 
     # Start several samples at the same time
     for t in threads:
@@ -302,6 +304,8 @@ def wrapper(instrument=None, outpath=None):
     for u in threads:
         u.join()
         logger.info(f'Thread {u} is finished')
+
+    logger.info('All jobs have finished')
 
     ok_samples = []
     bad_samples = []
@@ -314,12 +318,12 @@ def wrapper(instrument=None, outpath=None):
             logger.info(f'Not finished correctly: {sample_info}')
             bad_samples.append(sample_info)
 
-    if bad_samples:
-        # send emails about which samples ok and which not ok
-        error_email(Rctx.run_name, ok_samples, bad_samples)
-    else:
-        logger.info('All jobs have finished successfully')
-        end_email(Rctx.run_name, final_pairs)
+    if send_email:
+        if bad_samples:
+            # send emails about which samples ok and which not ok
+            error_email(Rctx.run_name, ok_samples, bad_samples)
+        else:
+            end_email(Rctx.run_name, final_pairs)
 
     # Run analysis_end for all samples in run, will check again which (if any) are ok
     # Will add ok samples to yearly stats and copy results
@@ -337,10 +341,11 @@ def wrapper(instrument=None, outpath=None):
         logger.info(f'Done with combining qc stats for run {Rctx.run_name}')
     except Exception as e:
         logger.error(f"Error combining qc stats: {e}")
-        error_admin_qc_email(Rctx.run_name)
+        if send_email:
+            error_admin_qc_email(Rctx.run_name)
  
 
-def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, warning_email=False, warning_stop=False):
+def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, send_email=False, qc_stop=False):
     '''Manual pipeline submission'''
     config = read_config(WRAPPER_CONFIG_PATH)
     wrapper_log_path = config["wrapper_log_path"]
@@ -365,7 +370,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
     gender = dna_info["gender"] 
 
     threads = []
-    outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, warning_email, warning_stop)
+    outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, send_email, qc_stop)
     threads[0].start()  # For manual runs we only have one thread
     
     threads[0].join()  # Wait for the thread to finish
@@ -391,17 +396,17 @@ def main():
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
     parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
-    parser.add_argument('-w', '--warning_email', action="store_true", help="Send warning mail if QC fail",required=False,default=False)
-    parser.add_argument('-s', '--warning_stop', action="store_true", help="Stop pipeline if QC fail", required=False, default=False)
+    parser.add_argument('-e', '--send_email', action="store_true", help="Send warning mail if QC fail",required=False,default=False)
+    parser.add_argument('-q', '--qc_stop', action="store_true", help="Stop pipeline if QC fail", required=False, default=False)
 
     args = parser.parse_args()
 
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
-            parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults, --warning_email and --warning_stop are ignored.")
-        wrapper(args.instrument, args.outpath)
+            parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
+        wrapper(args.instrument, args.outpath, args.send_email, args.qc_stop)
     elif args.tumorsample or args.normalsample:
-        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary, args.warning_email, args.warning_stop)
+        manual(args.tumorsample, args.normalsample, args.outpath, args.copyresults, args.qcsummary, args.send_email, args.qc_stop)
     else:
         parser.error("You must specify either --instrument or --tumorsample/--normalsample.")
 

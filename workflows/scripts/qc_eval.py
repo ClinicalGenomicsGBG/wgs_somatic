@@ -34,7 +34,7 @@ from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)
 filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"]))
 
-def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, email=False, pipestop=False):
+def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, send_email=False):
 
     coverage_pass, coverage_message = evaluate_coverage(coverage_file, stype)
     
@@ -73,7 +73,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
                         ========================================================================================
                         {message}
                         """)
-            if email:
+            if send_email:
                 send_email_qc("WGS-somatic has stopped for a sample", message)
                 #TODO add mail to geneticists
         elif not somalier_pass:
@@ -83,7 +83,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
             ========================================================================================
             {message}
             """)
-            if email:
+            if send_email:
                 send_email("QC warning", message)
         else:
             raise ValueError("evaluate_qc crashed due to illogical logic") #Should not happen 
@@ -94,12 +94,6 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
             pass
     else:
         print(f"{sname} failed QC")
-    if pipestop:
-        print (f"Pipeline will stop")
-    else:
-        print(f"Pipeline is running")        
-        with open(qc_pass_file, "w"):
-            pass
 
 
 def evaluate_coverage(coverage_file, stype):

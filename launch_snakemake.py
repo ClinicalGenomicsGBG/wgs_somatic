@@ -190,8 +190,8 @@ def analysis_main(
     starttype=False,
     notemp=False,
     dag=False,
-    warning_email=True,
-    warning_stop=True
+    send_email=False,
+    qc_stop=False
     ):
     if not gender:
         gender = "missing"
@@ -372,8 +372,8 @@ def analysis_main(
         analysisdict["tumorid"] = tumorid
         analysisdict["tumorfastqs"] = [tumorfastqs]
         analysisdict["gender"] = gender
-        analysisdict["warning_email"] = warning_email 
-        analysisdict["warning_stop"] = warning_stop
+        analysisdict["send_email"] = send_email 
+        analysisdict["qc_stop"] = qc_stop
          
         # configs
         analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
@@ -596,14 +596,14 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
-        "--warning_email",
+        "--send_email",
         action="store_true",
-        help="Send warning mail if QC fail",
+        help="Send emails regarding the run to lab and clinicians",
         required=False,
         default=False,
     )
     parser.add_argument(
-        "--warning_stop",
+        "--qc_stop",
         action="store_true",
         help="Stop pipeline if QC fail",
         required=False,
@@ -638,8 +638,8 @@ if __name__ == "__main__":
             args.starttype,
             args.notemp,
             args.dag,
-            args.warning_email,
-            args.warning_stop
+            args.send_email,
+            args.qc_stop
         )
 
         if args.tumorsample:
