@@ -47,7 +47,7 @@ def get_normalid_tumorid(
 
     def get_id_from_fastq(fastq_dir, name):
         for filename in os.listdir(fastq_dir):
-            if filename.startswith(name):
+            if filename.startswith(f"{name}_"):
                 parts = filename.split("_")
                 if len(parts) >= 3:
                     return "_".join(parts[:3])  # Returns an id based on the first hit
