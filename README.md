@@ -54,8 +54,8 @@ python wgs_somatic-run-wrapper.py \
   [-o outpath] \
   [--copyresults] \
   [--qcsummary] \
-  [--warning_email] \
-  [--warning_stop]
+  [--send_email] \
+  [--qc_stop]
 ```
 
 - The wrapper will automatically download and decompress fastqs where necessary
@@ -63,9 +63,8 @@ python wgs_somatic-run-wrapper.py \
 - If you only specify -t or -n a tumor-only or normal-only run will be performed, respectively
 - If `--copyresults` is included, the results will be copied to webstore `configs/launcher_config.json: "resultdir_hg38"`
 - if `--qcsummary` is included, a QCsummary of the run is provided on webstore for the laboratory `configs/launcher_config.json: "wgsadmin_dir"`
-- If coverage is below threshold the pipeline will stop and send mail to lab and clinicians.
-- Low coverage samples can be run by starting a manual run or standalone snakemake run.
-- Manual run has `--warning_email` and `--warning_stop` `False` as default and will run lov coverage samples trough the pipeline, unless specified.
+- Submit pipeline with --send_email to turn mailing behavior on.
+- Run pipeline with --qc_stop to stop pipeline if read thresholds are not met. Normally wanted for routine cron runs
 
 ### Standalone snakemake run
 
@@ -87,8 +86,8 @@ python launch_snakemake.py \
     --tumorfastqs <path to directory containing tumor fastqs> \
     --copyresults <copy results to resultdir_hg38 in launcher_config.json> \
     --notemp <Run the pipeline in notemp mode; all intermediate files kept>
-    --warning_email <Send warning mail if QC fail>
-    --warning_stop <Stop pipeline if QC fail>
+    --send_email <Send email abut pipeline progress>
+    --qc_stop <Stop pipeline if QC fail>
 ```
 
 - Make sure the FASTQ file names follow the [FASTQ requirements](#fastq-requirements).
@@ -103,8 +102,8 @@ python launch_snakemake.py \
       --outputdir <Same directory as specified when running the pipeline> \
       --onlycopyresults
     ```
-- If QC fails in Standalone snakemake run, warning_email and warning_stop is off by default in Standalone Snakemake run.
-  - Adjust with `--warning_email` and `--warning_stop`
+- Submit pipeline with --send_email to turn mailing behavior on.
+- Run pipeline with --qc_stop to stop pipeline if read thresholds are not met.
 
 ### Dependencies
 
