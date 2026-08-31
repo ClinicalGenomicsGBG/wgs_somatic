@@ -2,25 +2,38 @@ import os
 import smtplib
 
 from email.message import EmailMessage
+from tools helpers import read_config
 
 new_line = "\n"
+
+def get_env():
+    config = read_config(WRAPPER_CONFIG_PATH)
+    email_config_path = config['email_config_path']
+    email_config = read_config(email_config_path)
+
+    smtp = email_config['smtp_server']
+    sender = email_config['sender']
+    success_recipients = ", ".join(email_config["recipients"])
+    qc_recipients = ", ".join(email_config["qc"])
+    cc = sender
+    
+    return smtp, sender, success_recipients, qc_recipients, cc
 
 
 def send_email(subject, body):
     """Send a simple email."""
+    smtp, sender, success_recipients, qc_recipients, cc = get_env()
 
     msg = EmailMessage()
     msg.set_content(body)
 
     msg["Subject"] = subject
-    msg["From"] = "cgg-cancer@gu.se"  # TODO Get from config
-    msg["To"] = (
-        "gms_btb@gu.se, su.vokliniskgen.wgsadmin@vgregion.se, susanne.fransson@vgregion.se, hanna.engqvist@vgregion.se, nadiya.kazachkova@vgregion.se"  # TODO Get from config and have different recipients for errors and success
-    )
-    msg["Cc"] = "cgg-cancer@gu.se"  # TODO Get from config
+    msg["From"] = sender
+    msg["To"] = success_recipient
+    msg["Cc"] = cc 
 
     # Send the message
-    s = smtplib.SMTP("smtp.gu.se")
+    s = smtplib.SMTP(smtp)
     s.send_message(msg)
     s.quit()
 
@@ -32,12 +45,12 @@ def send_email_qc(subject, body):
     msg.set_content(body)
 
     msg["Subject"] = subject
-    msg["From"] = "cgg-cancer@gu.se"  # TODO Get from config
-    msg["Cc"] = "cgg-cancer@gu.se"
-    msg["To"] = "su.vokliniskgen.wgsadmin@vgregion.se"
+    msg["From"] = sender
+    msg["To"] = qc_recipients
+    msg["Cc"] = cc
 
     # Send the message
-    s = smtplib.SMTP("smtp.gu.se")
+    s = smtplib.SMTP(smtp)
     s.send_message(msg)
     s.quit()
 
