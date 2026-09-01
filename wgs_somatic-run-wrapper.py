@@ -14,7 +14,7 @@ import threading
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir
+from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir, translate_slims_info, SlimsSample
 from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
@@ -148,9 +148,9 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'gender': f'{gender}',
                          'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}'}
+                         'qc_stop': f'{qc_stop}',
+                         'gender': f'{gender}'}
 
     elif tumorsample:
         logger.info(f'Preparing run: Tumor-only {tumorsample}')
@@ -164,9 +164,9 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'gender': f'{gender}',
                          'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}'}
+                         'qc_stop': f'{qc_stop}',
+                         'gender': f'{gender}'}
 
     elif normalsample:
         logger.info(f'Preparing run: Normal-only {normalsample}')
@@ -180,9 +180,10 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
-                         'gender': f'{gender}',
                          'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}'}
+                         'qc_stop': f'{qc_stop}',
+                         'gender': f'{gender}'}
+
 
     threads.append(threading.Thread(target=call_script, kwargs=pipeline_args))
     logger.info(f'Starting wgs_somatic with arguments {pipeline_args}')
@@ -391,13 +392,13 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--instrument', help='For example novaseq_687_gc or novaseq_A01736', required=False)
-    parser.add_argument('-t','--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
-    parser.add_argument('-n','--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-t', '--tumorsample', help='Specify the name of the tumor sample (e.g. DNA123456)', required=False)
+    parser.add_argument('-n', '--normalsample', help='Specify the name of the normal sample (e.g. DNA123456)', required=False)
     parser.add_argument('-o', '--outpath', help='Manually specify the path where the outputdir will go', required=False)
     parser.add_argument('-c', '--copyresults', help='Copy the results from a manual run to webstore', required=False, action='store_true', default=False)
     parser.add_argument('-q', '--qcsummary', help='Create combined qc summary for the run', required=False, action='store_true', default=False)
     parser.add_argument('-e', '--send_email', action="store_true", help="Send warning mail if QC fail",required=False,default=False)
-    parser.add_argument('-q', '--qc_stop', action="store_true", help="Stop pipeline if QC fail", required=False, default=False)
+    parser.add_argument('-s', '--qc_stop', action="store_true", help="Stop pipeline if QC fail", required=False, default=False)
 
     args = parser.parse_args()
 

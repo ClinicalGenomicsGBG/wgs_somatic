@@ -51,7 +51,6 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
                     {coverage_message}
                     ----------------------------------------------------------------------------------------
                     """
-        print(dedent(message))
     if not somalier_pass:
         if somalier_sex == "unknown":
             message += """
@@ -61,39 +60,40 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
         else:
             message += f"""
                     Somalier warning:
-                    Patient is: {expected_sex}
+                    Patient sex is: {expected_sex}
                     Somalier estimate: {somalier_sex}
                     """
         print(dedent(message))
     if message:
         if not coverage_pass:
             message = dedent(f"""
-                        WGS-somatic pipeline has stopped due to QC error for sample:
-                        {sname}
-                        ========================================================================================
-                        {message}
-                        """)
+                    WGS-somatic pipeline has stopped due to QC error for sample:
+                    {sname}
+                    ========================================================================================
+                    {message}
+                    """)
             if send_email:
                 send_email_qc("WGS-somatic has stopped for a sample", message)
                 #TODO add mail to geneticists
         elif not somalier_pass:
             message = dedent(f"""
-            WGS-somatic is running with a warning for sample:
-            {sname}
-            ========================================================================================
-            {message}
-            """)
+                    WGS-somatic is running with a warning for sample:
+                    {sname}
+                    ========================================================================================
+                    {message}
+                    """)
             if send_email:
                 send_email("QC warning", message)
         else:
-            raise ValueError("evaluate_qc crashed due to illogical logic") #Should not happen 
+            raise print("evaluate_qc crashed due to illogical logic", file?sys.stderr) #Should not happen 
 
     if coverage_pass:
         print(f"{sname} passed QC")
         with open(qc_pass_file, "w"):
             pass
     else:
-        print(f"{sname} failed QC")
+        print(f"{sname} failed QC", file=sys.stderr)
+        print(message, file=sys.stderr)
 
 
 def evaluate_coverage(coverage_file, stype):
@@ -173,7 +173,7 @@ def main():
                                                         86               98.9       97.7
                                                         ''')
                         )
-    parser.add_argument("-s", "--somalier", help="Path to one-line output file from somalier_parse_sex (male/female/unknown)"
+    parser.add_argument("-s", "--somalier", help="Path to one-line output file from somalier_parse_sex (male/female/unknown)")
     parser.add_argument("-t", "--stype", choices=["tumor", "normal"], default="tumor", help = "Sample type")
     parser.add_argument("-g", "--sex", choices=["male", "female", "unknown"], default = "unknown", help = "Sample sex")
     parser.add_argument("-n", "--name", help = "Sample name")

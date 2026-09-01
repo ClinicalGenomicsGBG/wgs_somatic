@@ -2,7 +2,8 @@ import os
 import smtplib
 
 from email.message import EmailMessage
-from tools helpers import read_config
+from tools.helpers import read_config
+from definitions import WRAPPER_CONFIG_PATH
 
 new_line = "\n"
 
@@ -29,7 +30,7 @@ def send_email(subject, body):
 
     msg["Subject"] = subject
     msg["From"] = sender
-    msg["To"] = success_recipient
+    msg["To"] = success_recipients
     msg["Cc"] = cc 
 
     # Send the message
@@ -40,6 +41,7 @@ def send_email(subject, body):
 
 def send_email_qc(subject, body):
     """Send a simple email."""
+    smtp, sender, success_recipients, qc_recipients, cc = get_env()
 
     msg = EmailMessage()
     msg.set_content(body)

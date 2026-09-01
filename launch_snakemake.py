@@ -186,16 +186,17 @@ def analysis_main(
     normalfastqs=False,
     tumorname=False,
     tumorfastqs=False,
-    gender=False,
     starttype=False,
     notemp=False,
     dag=False,
     send_email=False,
-    qc_stop=False
+    qc_stop=False,
+    gender=False
     ):
+
     if not gender:
         gender = "missing"
-    
+
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -374,7 +375,7 @@ def analysis_main(
         analysisdict["gender"] = gender
         analysisdict["send_email"] = send_email 
         analysisdict["qc_stop"] = qc_stop
-         
+
         # configs
         analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
         analysisdict["clusterconfig"] = os.path.join(configdir, clusterconf)
@@ -634,7 +635,6 @@ if __name__ == "__main__":
             args.normalfastqs,
             args.tumorsample,
             args.tumorfastqs,
-            args.gender,
             args.starttype,
             args.notemp,
             args.dag,
