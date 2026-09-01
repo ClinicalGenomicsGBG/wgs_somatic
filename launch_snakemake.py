@@ -47,7 +47,7 @@ def get_normalid_tumorid(
 
     def get_id_from_fastq(fastq_dir, name):
         for filename in os.listdir(fastq_dir):
-            if filename.startswith(name):
+            if filename.startswith(f"{name}_"):
                 parts = filename.split("_")
                 if len(parts) >= 3:
                     return "_".join(parts[:3])  # Returns an id based on the first hit
@@ -72,6 +72,17 @@ def get_normalid_tumorid(
         tumorid = get_id_from_fastq(tumorfastqs, tumorname)
 
     return normalid, tumorid
+
+
+def find_fastqs(directory, sample):
+    """Find gzipped FASTQ files for a sample.
+
+    Supports both .fastq.gz and .fq.gz extensions.
+    """
+    return (
+        glob.glob(f"{directory}/{sample}_*.fastq.gz") +
+        glob.glob(f"{directory}/{sample}_*.fq.gz")
+    )
 
 
 def yearly_stats(tumorname, normalname):
@@ -234,16 +245,10 @@ def analysis_main(
                         f"{normalfastqs} does not appear to be a directory"
                     )
                 else:
-                    f_normalfastqs = glob.glob(f"{normalfastqs}/*{normalname}*fastq.gz")
+                    f_normalfastqs = find_fastqs(normalfastqs, normalname)
                     if not f_normalfastqs:
                         logger("Warning: No fastqs found in normaldir")
-                        f_normalfastqs = glob.glob(
-                            f"{normalfastqs}/*{normalname}*fasterq"
-                        )
-                        if not f_normalfastqs:
-                            error_list.append(
-                                "No fastqs or fasterqs found in normaldir"
-                            )
+                        error_list.append("No fastqs found in normaldir")
 
             if tumorfastqs:
                 if not os.path.isdir(tumorfastqs):
@@ -251,12 +256,10 @@ def analysis_main(
                         f"{tumorfastqs} does not appear to be a directory"
                     )
                 else:
-                    f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fastq.gz")
+                    f_tumorfastqs = find_fastqs(tumorfastqs, tumorname)
                     if not f_tumorfastqs:
                         logger("Warning: No fastqs found in tumordir")
-                        f_tumorfastqs = glob.glob(f"{tumorfastqs}/*{tumorname}*fasterq")
-                        if not f_tumorfastqs:
-                            error_list.append("No fastqs or fasterqs found in tumordir")
+                        error_list.append("No fastqs found in tumordir")
 
         # prepare outputdirectory
         if not os.path.isdir(outputdir):
