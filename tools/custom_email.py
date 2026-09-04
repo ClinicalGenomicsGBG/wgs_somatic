@@ -7,7 +7,8 @@ from definitions import WRAPPER_CONFIG_PATH
 
 new_line = "\n"
 
-def get_env():
+def get_email_settings():
+    """Load and return the email settings used for pipeline notifications."""
     config = read_config(WRAPPER_CONFIG_PATH)
     email_config_path = config['email_config_path']
     email_config = read_config(email_config_path)
@@ -23,7 +24,7 @@ def get_env():
 
 def send_email(subject, body):
     """Send a simple email."""
-    smtp, sender, success_recipients, qc_recipients, cc = get_env()
+    smtp, sender, success_recipients, qc_recipients, cc = get_email_settings()
 
     msg = EmailMessage()
     msg.set_content(body)
@@ -41,7 +42,7 @@ def send_email(subject, body):
 
 def send_email_qc(subject, body):
     """Send a simple email."""
-    smtp, sender, success_recipients, qc_recipients, cc = get_env()
+    smtp, sender, success_recipients, qc_recipients, cc = get_email_settings()
 
     msg = EmailMessage()
     msg.set_content(body)
