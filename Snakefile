@@ -118,8 +118,7 @@ include:    "workflows/rules/mapping/generate_tdf.smk"
 
 #########################################
 # Control coverage
-if qc_stop:
-    include: "workflows/rules/qc/qc_pass.smk"
+include: "workflows/rules/qc/qc_pass.smk"
 
 #########################################
 # VariantCalling
