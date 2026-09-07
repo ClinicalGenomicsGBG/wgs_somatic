@@ -18,6 +18,10 @@ tumorfastqdirs = config["tumorfastqs"]
 tumorname = config["tumorname"]
 tumorid = config["tumorid"]
 
+gender = config["gender"]
+send_email = config["send_email"]
+qc_stop = config["qc_stop"]
+
 reference = config["reference"]
 
 # It uses the following configs from the working directory
@@ -113,6 +117,10 @@ include:    "workflows/rules/mapping/cram.smk"
 include:    "workflows/rules/mapping/generate_tdf.smk"
 
 #########################################
+# Control coverage
+include: "workflows/rules/qc/qc_pass.smk"
+
+#########################################
 # VariantCalling
 if tumorid:
     include:        "workflows/rules/variantcalling/tnscope.smk"
@@ -138,6 +146,14 @@ include:       "workflows/rules/qc/aggregate_qc.smk"
 include:       "workflows/rules/qc/coverage.smk"
 
 ignore = {"tool_versions.yaml", "logs/report.zip"}
+
+if not qc_stop:
+    ignore.update(
+        f
+        for result in resultsconf.values()
+        for f in result
+        if f.endswith(".QC_PASS")
+    )
 
 all_result_files = []
 for result in resultsconf.values():
