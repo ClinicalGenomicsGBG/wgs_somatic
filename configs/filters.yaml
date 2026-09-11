@@ -16,3 +16,12 @@ somalier_filter:
 
 gnomad_filter:
   max_allele_frequency: 0.01
+
+qc_pass:
+  pct_horizontal: 95
+  tumor_thresholds:
+    coverage: 85
+    horizontal: 30
+  normal_thresholds:
+    coverage: 25
+    horizontal: 10
