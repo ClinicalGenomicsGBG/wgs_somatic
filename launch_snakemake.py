@@ -131,6 +131,7 @@ def copy_results(outputdir):
         except Exception as e:
             logger(f"Failed to read results config from {resultsconf}: {e}")
             raise
+        #TODO:In development, stop or redirect this
 
         # Read the results into the subdirectories unless they are marked toplevel
         for category, relpaths in results.items():
@@ -188,7 +189,14 @@ def analysis_main(
     starttype=False,
     notemp=False,
     dag=False,
-):
+    send_email=False,
+    qc_stop=False,
+    gender=False
+    ):
+
+    if not gender:
+        gender = "missing"
+
     try:
         ################################################################
         # Write InputArgs to logfile
@@ -199,6 +207,11 @@ def analysis_main(
         command = f"{sys.argv[0]}"
         current_date = time.strftime("%Y-%m-%d")
         commandlog = f"{commandlogs}/commands_{current_date}.log"
+        #TODO:Verify behaviour. 
+        #Takes 'args' instead of actual arguments. 
+        #Ok as long as arguments are set to False.
+        #What is the purpose of commandlog in exec folder?
+        #Command is written in runlogs.
         for arg in vars(args):
             command = f"{command} --{arg} {getattr(args, arg)}"
         commandlogfile = open(commandlog, "a+")
@@ -359,6 +372,9 @@ def analysis_main(
         analysisdict["tumorname"] = tumorname
         analysisdict["tumorid"] = tumorid
         analysisdict["tumorfastqs"] = [tumorfastqs]
+        analysisdict["gender"] = gender
+        analysisdict["send_email"] = send_email 
+        analysisdict["qc_stop"] = qc_stop
 
         # configs
         analysisdict["filterconfig"] = os.path.join(configdir, filterconf)
@@ -580,6 +596,22 @@ if __name__ == "__main__":
         help="Also generate a separate DAG svg in logs",
         required=False,
     )
+    parser.add_argument(
+        "--send_email",
+        action="store_true",
+        help="Send emails regarding the run to lab and clinicians",
+        required=False,
+        default=False,
+    )
+    parser.add_argument(
+        "--qc_stop",
+        action="store_true",
+        help="Stop pipeline if QC fail",
+        required=False,
+        default=False,
+    )
+
+
     args = parser.parse_args()
 
     if not args.outputdir.startswith("/"):
@@ -606,6 +638,8 @@ if __name__ == "__main__":
             args.starttype,
             args.notemp,
             args.dag,
+            args.send_email,
+            args.qc_stop
         )
 
         if args.tumorsample:
