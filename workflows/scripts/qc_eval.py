@@ -85,7 +85,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
             if send_email:
                 send_email("QC warning", message)
         else:
-            raise print("evaluate_qc crashed due to illogical logic", file?sys.stderr) #Should not happen 
+            raise RuntimeError(f"evaluate_qc crashed due to illogical logic for sample {sname}") #Should not happen 
 
     if coverage_pass:
         print(f"{sname} passed QC")
