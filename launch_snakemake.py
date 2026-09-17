@@ -600,13 +600,6 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
-        "--send_email",
-        action="store_true",
-        help="Send emails regarding the run to lab and clinicians",
-        required=False,
-        default=False,
-    )
-    parser.add_argument(
         "--qc_stop",
         action="store_true",
         help="Stop pipeline if QC fail",
@@ -641,7 +634,6 @@ if __name__ == "__main__":
             args.starttype,
             args.notemp,
             args.dag,
-            args.send_email,
             args.qc_stop
         )
 
