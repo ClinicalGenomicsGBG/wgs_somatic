@@ -87,6 +87,73 @@ CGG Cancer
     send_email(subject, body)
 
 
+def manual_start_email(tumor_sample=False, normal_sample=False):
+    """Send an email about starting wgs-somatic for samples in a manual run"""
+
+    subject = f"WGS Somatic start mail"
+
+    if tumor_sample:
+        if normal_sample:
+            message = f"""Paired analysis:
+Tumor: {tumor_sample} against
+Normal: {normal_sample}"""
+        else:
+            message = f"Unpaired analysis of tumor sample: {tumor_sample}"
+    elif normal_sample:
+        message = f"Unpaired analysis of tumor sample: {tumor_sample}"
+
+    body = f"""\
+Manual start of wgs_somatic initiated.
+
+{message}
+
+You will get an email when the results are ready.
+
+Best regards,
+CGG Cancer
+"""
+
+    send_email(subject, body)
+
+
+def manual_end_email(success=False, tumor_sample=False, normal_sample=False):
+    """Send an email about wgs-somatic finished a manual run"""
+
+    subject = f"WGS Somatic manual end mail"
+
+    if tumor_sample:
+        if normal_sample:
+            analysis = f"paired analysis of {tumor_sample} and {normal_sample}"
+        else:
+            analysis = f"unpaired analysis of tumor sample: {tumor_sample}"
+    elif normal_sample:
+        analysis = f"unpaired analysis of normal sample: {normal_sample}"
+    else:
+        raise ValueError("Neither tumor_sample nor normal_sample was provided")
+
+    if success:
+        body = f"""\
+Manual run of WGS somatic has finished successfully for
+{analysis}
+
+Best regards,
+CGG Cancer
+"""
+    else:
+        body = f"""\
+Manual run of WGS somatic failed for
+{analysis}
+
+Errors concerning the above samples will be investigated.
+
+
+Best regards,
+CGG Cancer
+"""
+
+    send_email(subject, body)
+
+
 def error_email(run_name, ok_samples, bad_samples):
     """Send an email about which samples have failed and which samples have succeeded"""
 
