@@ -15,7 +15,7 @@ from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, I
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir, translate_slims_info, SlimsSample
-from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
+from tools.custom_email import start_email, end_email, manual_start_email, manual_end_email, error_email, error_admin_qc_email, error_setup_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
@@ -343,7 +343,7 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
     except Exception as e:
         logger.error(f"Error combining qc stats: {e}")
         if send_email:
-            error_admin_qc_email(Rctx.run_name)
+            error_admin_qc_email(rctx.run_name)
  
 
 def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, send_email=False, qc_stop=False):
@@ -372,20 +372,32 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 
     threads = []
     outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, send_email, qc_stop)
+
+    if send_email:
+        manual_start_email(tumor_sample=tumorsample, normal_sample=normalsample)
+
     threads[0].start()  # For manual runs we only have one thread
     
     threads[0].join()  # Wait for the thread to finish
 
-    if copyresults and check_ok(outputdir):
-        copy_results(outputdir)
+    if check_ok(outputdir):
+        success=True
+        if copyresults:
+            copy_results(outputdir)
 
-    if qcsummary and check_ok(outputdir):
-        try:
-            logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
-            logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
-        except Exception as e:
-            logger.error(f"Error combining qc stats: {e}")
+        if qcsummary:
+            try:
+                logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
+                combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
+                logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
+            except Exception as e:
+                logger.error(f"Error combining qc stats: {e}")
+    else:
+        success=False
+
+    if send_email:
+        manual_end_email(success, tumor_sample=tumorsample, normal_sample=normalsample)
+
     return
 
 
