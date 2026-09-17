@@ -343,7 +343,7 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
     except Exception as e:
         logger.error(f"Error combining qc stats: {e}")
         if send_email:
-            error_admin_qc_email(rctx.run_name)
+            error_admin_qc_email(Rctx.run_name)
  
 
 def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, send_email=False, qc_stop=False):
