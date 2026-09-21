@@ -35,6 +35,9 @@ hcp:
     hcp_data:
       bucket: 'data'
       credentials_file: '/clinical/exec/wgs_somatic/dependencies/credentials/gmc-legacy_credentials.json'
+    ngp_data:
+      bucket: 'clinical-data'
+      credentials_file: '/clinical/exec/wgs_somatic/dependencies/credentials/gmc-west_ngp_credentials.json'
   queue: 'routine.q'
   threads: 20
   peta_script: 'tools/run_petasuite.sh'
