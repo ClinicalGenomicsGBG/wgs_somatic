@@ -352,11 +352,6 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
     wrapper_log_path = config["wrapper_log_path"]
     logger = setup_logger('wrapper', os.path.join(wrapper_log_path, 'Manual_WS_wrapper.log'))
 
-    if send_email:
-        print (f"email: {send_email}")
-    if qc_stop:
-        print (f"qc: {qc_stop}")
-
     # If outputpath is not specified, get from config
     if not outpath:
         try:
