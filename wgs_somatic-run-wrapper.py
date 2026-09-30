@@ -148,8 +148,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
     elif tumorsample:
@@ -164,8 +164,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
     elif normalsample:
@@ -180,8 +180,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
 
@@ -352,7 +352,6 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
     wrapper_log_path = config["wrapper_log_path"]
     logger = setup_logger('wrapper', os.path.join(wrapper_log_path, 'Manual_WS_wrapper.log'))
 
-    
     # If outputpath is not specified, get from config
     if not outpath:
         try:
@@ -360,8 +359,22 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
         except KeyError:
             logger.error('Output path for manual submission not specified in the configuration.')
             raise ValueError('Output path for manual submission not specified in the configuration.')
-   
-   # Get gender from slims when running manual
+
+    final_pairs = []
+    if tumorsample and normalsample:
+        final_pairs.append(
+            f'{tumorsample} (T) {normalsample} (N)'
+        )
+    elif tumorsample:
+        final_pairs.append(
+            f'{tumorsample} (T)'
+        )
+    elif normalsample:
+        final_pairs.append(
+            f'{normalsample} (N)'
+        )
+
+   # Get sex from slims
     if tumorsample:
         sample_info = SlimsSample(tumorsample)
     elif normalsample:
@@ -372,20 +385,33 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 
     threads = []
     outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, send_email, qc_stop)
+
+    if send_email:
+        start_email("manual", final_pairs)
+
     threads[0].start()  # For manual runs we only have one thread
-    
+
     threads[0].join()  # Wait for the thread to finish
 
-    if copyresults and check_ok(outputdir):
-        copy_results(outputdir)
+    if check_ok(outputdir):
+        if copyresults:
+            copy_results(outputdir)
 
-    if qcsummary and check_ok(outputdir):
-        try:
-            logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
-            logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
-        except Exception as e:
-            logger.error(f"Error combining qc stats: {e}")
+        if qcsummary:
+            try:
+                logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
+                combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
+                logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
+            except Exception as e:
+                logger.error(f"Error combining qc stats: {e}")
+
+        if send_email:
+                end_email("manual", final_pairs)
+
+    else:
+        if send_email:
+            error_email("manual", bad_sample=final_pairs)
+
     return
 
 
@@ -401,7 +427,7 @@ def main():
     parser.add_argument('-s', '--qc_stop', action="store_true", help="Stop pipeline if QC fail", required=False, default=False)
 
     args = parser.parse_args()
-
+    
     if args.instrument:
         if args.tumorsample or args.normalsample or args.copyresults:
             parser.warning("When specifying --instrument, --tumorsample, --normalsample and --copyresults are ignored.")
