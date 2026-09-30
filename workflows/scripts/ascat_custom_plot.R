@@ -192,12 +192,11 @@ if (is.null(opt$`output-baf`) || opt$`output-baf` == "") {
 ## Load ascat.bc from the Rdata file
 load(opt$`Rdata-file`)  # Load the Rdata file containing ascat.bc
 
-# Map "male" and "female" to "XY" and "XX"
-# Added for compatibility with the calc_sex() function
-if (opt$gender == "male") {
-  opt$gender <- "XY"
-} else if (opt$gender == "female") {
+# Map "female"/"XX" to "XX", otherwise use also Y chromosome (male or other)
+if (opt$gender %in% c("female", "XX")) {
   opt$gender <- "XX"
+} else {
+  opt$gender <- "XY"
 }
 
 # The fai is used to get the chromosome lengths and plot them sequentially

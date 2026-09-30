@@ -35,11 +35,11 @@ if (!opt$tumoronly) {
     opt$`normal-bam` <- normalizePath(opt$`normal-bam`)
 }
 
-# Map "male" and "female" to "XY" and "XX"
-if (opt$gender == "male") {
-  opt$gender <- "XY"
-} else if (opt$gender == "female") {
+# Map "female"/"XX" to "XX", otherwise use also Y chromosome (male or other)
+if (opt$gender %in% c("female", "XX")) {
   opt$gender <- "XX"
+} else {
+  opt$gender <- "XY"
 }
 
 # Ensure the output directory exists
