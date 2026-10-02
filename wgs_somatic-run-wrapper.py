@@ -148,8 +148,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
     elif tumorsample:
@@ -164,8 +164,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
     elif normalsample:
@@ -180,8 +180,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
 
