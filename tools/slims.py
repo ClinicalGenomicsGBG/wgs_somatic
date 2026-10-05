@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from slims.criteria import conjunction, equals
 from slims.slims import Slims
 
-from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
+from definitions import ROOT_DIR, WRAPPER_CONFIG_PATH
 from tools.helpers import read_config
 
 

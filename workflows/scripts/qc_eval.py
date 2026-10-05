@@ -28,8 +28,8 @@ import os
 import sys
 from textwrap import dedent
 
-from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
-from tools.custom_email import send_email_qc 
+from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
+from tools.custom_email import send_email_qc
 from tools.helpers import read_config
 
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)

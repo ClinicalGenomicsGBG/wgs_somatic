@@ -1,5 +1,6 @@
-import pysam
 import argparse
+
+import pysam
 
 
 def is_reciprocal_pair(bnd_pairs, key, mate_key):

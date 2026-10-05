@@ -23,7 +23,7 @@ def get_email_settings():
 
 def send_email(subject, body):
     """Send a simple email."""
-    smtp, sender, success_recipients, qc_recipients, cc = get_email_settings()
+    smtp, sender, success_recipients, cc = get_email_settings()
 
     msg = EmailMessage()
     msg.set_content(body)
@@ -41,7 +41,7 @@ def send_email(subject, body):
 
 def send_email_qc(subject, body):
     """Send a simple email."""
-    smtp, sender, success_recipients, qc_recipients, cc = get_email_settings()
+    smtp, sender, qc_recipients, cc = get_email_settings()
 
     msg = EmailMessage()
     msg.set_content(body)

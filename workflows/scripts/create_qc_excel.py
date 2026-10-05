@@ -9,7 +9,7 @@ import time
 import pandas as pd
 import xlsxwriter
 
-from tools.git_versions import get_git_commit, get_git_tag, get_git_reponame
+from tools.git_versions import get_git_commit, get_git_reponame, get_git_tag
 from workflows.scripts.parse_somalier import SomalierParser
 
 

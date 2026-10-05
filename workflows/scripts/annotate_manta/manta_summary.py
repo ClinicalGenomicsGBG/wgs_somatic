@@ -2,8 +2,9 @@ import re
 
 import pandas as pd
 
+
 def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=''):
-    
+
     df = pd.read_excel(str(mantaSV_vcf),engine='openpyxl')
 
     # Check for required columns
@@ -214,10 +215,10 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
                 column_idx +=1
                 try:
                     worksheet.write(row_idx, column_idx, cell, wrap_format)
-                except Exception:
-                    continue # noqa: S112
+                except Exception: # noqa: BLE001
+                    continue
             row_idx += 1
-    
+
 
         # Adjust font, color, etc
         header_format = workbook.add_format()

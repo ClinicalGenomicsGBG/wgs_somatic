@@ -10,19 +10,19 @@ import os
 import re
 import sys
 import threading
-from datetime import datetime, timezone
+from datetime import datetime
 
-from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH 
-from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
+from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR, WRAPPER_CONFIG_PATH
+from launch_snakemake import analysis_main, copy_results, get_timestamp, yearly_stats
 from tools.context import RunContext, SampleContext
 from tools.custom_email import (
-    end_email, 
+    end_email,
     error_admin_qc_email,
     error_email,
     error_setup_email,
     start_email,
 )
-from tools.helpers import setup_logger, read_config
+from tools.helpers import read_config, setup_logger
 from tools.slims import (
     SlimsSample,
     find_or_download_fastqs,
@@ -125,7 +125,6 @@ def check_ok(outputdir):
 
     if os.path.isfile(f"{outputdir}/workflow_finished.txt"):
         return True
-    return False
 
 
 def analysis_end(outputdir, tumorsample=None, normalsample=None):
@@ -397,9 +396,8 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
             logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
             combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
             logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
-        except Exception as e:
+        except Exception as e: # noqa: TRY002
             logger.error(f"Error combining qc stats: {e}")
-    return
 
 
 def main():
