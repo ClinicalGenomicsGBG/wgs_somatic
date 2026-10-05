@@ -1,8 +1,10 @@
 #!/apps/bio/software/anaconda2/envs/mathias_general/bin/python3.6
 import argparse
-import xlsxwriter
 import os
 import re
+
+import xlsxwriter
+
 
 def extract_variantlist(vcf):
     canvas_infofields = ["##OverallPloidy", "##DiploidCoverage", "##EstimatedTumorPurity", "##PurityModelFit", "##InterModelDistance", "##LocalSDmetric", "##EvennessScore", "##HeterogeneityProportion", "##EstimatedChromosomeCount"]
@@ -82,7 +84,6 @@ def create_refseq_dict(refseqgtf):
                     keep_cols_dict.update({keepcol:colnumber})
     
         for transcript in refseq:
-            transcript_dict = {}
             transcript_info_list = transcript.split("\t")
             chrom = transcript_info_list[keep_cols_dict["chrom"]]
             name = transcript_info_list[keep_cols_dict["name"]]
@@ -122,6 +123,38 @@ def find_overlapping_gene(refseq_dict, variant_chrom, variant_pos):
             if variant_pos >= smallest and variant_pos <= largest:
                 # variant is within transcript
                 # within or between exons?
+                previousexon = None
+
+                for exon in refseq_dict[variant_chrom][gene][transcript]["exon"]:
+                    start = int(refseq_dict[variant_chrom][gene][transcript]["exon"][exon]["start"])
+                    stop = int(refseq_dict[variant_chrom][gene][transcript]["exon"][exon]["stop"])
+                    if variant_pos >= start and variant_pos <= stop:
+                        # variant is within exon
+                        distance_start = abs(start - variant_pos)
+                        distance_stop = abs(stop - variant_pos)
+                        overlapping_dict["gene"] = gene
+                        overlapping_dict["transcript"] = transcript
+                        overlapping_dict["exon"] = f"exon{exon}"
+                        overlapping_dict["minus_distance"] = distance_start
+                        overlapping_dict["plus_distance"] = distance_stop
+                        gene_info_string = f"{gene}:{transcript}:exon{exon} (-{distance_start}:+{distance_stop})"
+                        overlapping_list.append(gene_info_string)    
+                        break
+                    else:
+                        if variant_pos < start:
+                            # variant is between this exon and the previous one
+                            previous_exon_stop = int(refseq_dict[variant_chrom][gene][transcript]["exon"][previousexon]["stop"])
+                            distance_upcoming_exon_start = abs(start - variant_pos)
+                            distance_previous_exon_stop = abs(previous_exon_stop - variant_pos)
+                            overlapping_dict["gene"] = gene
+                            overlapping_dict["transcript"] = transcript
+                            overlapping_dict["exon"] = f"exon{previousexon}-exon{exon}"
+                            overlapping_dict["minus_distance"] = distance_previous_exon_stop
+                            overlapping_dict["plus_distance"] = distance_upcoming_exon_start
+                            gene_info_string = f"{gene}:{transcript}:exon{previousexon}(-{distance_previous_exon_stop})-exon{exon}(+{distance_upcoming_exon_start})"
+                            overlapping_list.append(gene_info_string)
+                            break
+                        previousexon = exon            
                 for exon in refseq_dict[variant_chrom][gene][transcript]["exon"]:
                     start = int(refseq_dict[variant_chrom][gene][transcript]["exon"][exon]["start"])
                     stop = int(refseq_dict[variant_chrom][gene][transcript]["exon"][exon]["stop"])
@@ -172,14 +205,14 @@ def find_nearby_gene(refseq_dict, variant_chrom, variant_pos):
         min_upstream = min(upstream_distances, key=upstream_distances.get)
         up_gene, up_transcript = min_upstream.split(",")
         up_distance = upstream_distances[min_upstream]
-    except:
+    except (ValueError, KeyError):
         up_gene, up_transcript, up_distance = "N/A", "N/A", "N/A"
         
     try:
         min_downstream = min(downstream_distances, key=downstream_distances.get)
         down_gene, down_transcript = min_downstream.split(",")
         down_distance = downstream_distances[min_downstream]
-    except:
+    except (ValueError, KeyError):
         down_gene, down_transcript, down_distance = "N/A", "N/A", "N/A"
 
     nearby_dict = {}
@@ -203,10 +236,9 @@ def write_to_excel(output, vcfname, header, variantinfo, canvas_info):
     header_format = excelfile.add_format({'bold': True, 'font_color': 'white', 'bg_color': 'black'})
     inside_gene_format = excelfile.add_format({'bg_color': 'yellow'})
     inside_exon_format = excelfile.add_format({'bg_color': 'lime'})
-    for column_name in header:
+    for column, column_name in enumerate(header):
         worksheet.write(row, column, column_name, header_format)
-        column += 1
-    
+
     column = 0
     for variant in variantinfo:
         # count overlapping transcripts in pos and end
@@ -259,8 +291,7 @@ def annotate_vcf(vcf, refseq, output):
     
     # Prepare OutputNames
     vcfname = os.path.basename(vcf)
-    if output.endswith("/"):
-        output = output[:-1]
+    output = output.removesuffix("/")
     # Prepare Dict of Variants
     variantlist, vcf_header, canvas_info = extract_variantlist(vcf)
     variant_dict_list, unique_info_columns = prepare_variantdict(variantlist, vcf_header)
@@ -269,17 +300,15 @@ def annotate_vcf(vcf, refseq, output):
     variant_write_table_header = ["Varianttype", "Breakpoint 1", "GeneInfo 1", "Breakpoint 2", "GeneInfo 2"]
     for columnname in variant_dict_list[0]:
         if columnname == "INFO":
-            for info_columnname in unique_info_columns:
-                variant_write_table_header.append(info_columnname)
+            info_columnname = list(unique_info_columns)
+            variant_write_table_header.extend(info_columnname)
         else:
-                variant_write_table_header.append(columnname)
+            variant_write_table_header.append(columnname)
 
     # Prepare Dict of RefseqTranscripts
     refseq_dict = create_refseq_dict(refseq)
     # Chrom List
-    chrom_list = []
-    for chrom in refseq_dict:
-        chrom_list.append(chrom)
+    chrom_list = list(refseq_dict)
 
     # Loop Through each Variant in dict and find overlapping / nearby genes
     variant_write_table = []
@@ -306,7 +335,7 @@ def annotate_vcf(vcf, refseq, output):
             if not pos_gene_info:
                 pos_gene_info = find_nearby_gene(refseq_dict, variant_chrom, variant_pos)
                 
-        if not variant_type == "MantaINS":
+        if variant_type != "MantaINS":
             if end_chrom in chrom_list:
                 endpos_gene_info = find_overlapping_gene(refseq_dict, end_chrom, end_pos)
                 if not endpos_gene_info:

@@ -24,12 +24,13 @@ Outputs:
 """
 
 import argparse
-import sys
 import os
-from tools.helpers import read_config
+import sys
 from textwrap import dedent
-from tools.custom_email import send_email_qc 
+
 from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
+from tools.custom_email import send_email_qc 
+from tools.helpers import read_config
 
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)
 filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"]))
@@ -37,13 +38,13 @@ filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["fi
 def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, send_email=False):
 
     coverage_pass, coverage_message = evaluate_coverage(coverage_file, stype)
-    
+
     if expected_sex:
         somalier_pass, somalier_sex = evaluate_sex(somalier_file, expected_sex)
     else:
         somalier_pass = False
         somalier_sex = "unknown"
-    
+
     message = ''
     if not coverage_pass:
         message += f"""
@@ -127,7 +128,7 @@ def evaluate_coverage(coverage_file, stype):
     try:
         horizontal_coverage = round(wgs_stats[f'PCT_{hor_threshold}X'] * 100, 1)
     except ValueError as e:
-        logger.error(dedent(f"""\
+        print(dedent(f"""\
         Invalid horizontal coverage value: {e}
         See 'wgs_stats' for possible values
         """))
@@ -139,7 +140,7 @@ def evaluate_coverage(coverage_file, stype):
                     Bases >{hor_threshold}X coverage: {horizontal_coverage}% 
                     Threshold: {pct_horizontal}% of bases >{hor_threshold}X coverage
                     """
-    
+ 
     if mean_coverage <= cov_threshold or horizontal_coverage <= pct_horizontal:
         return False, message
     return True, message
@@ -148,11 +149,11 @@ def evaluate_coverage(coverage_file, stype):
 def evaluate_sex(somalier_file, expected_sex):
     with open(somalier_file) as f:
         sex = f.readline().rstrip()
-    
-    if sex == expected_sex:
-        return True, sex 
 
-    return False, sex 
+    if sex == expected_sex:
+        return True, sex
+
+    return False, sex
 
 
 def main():
@@ -193,10 +194,10 @@ def main():
             parser.error("--evaluate_qc requires: " + ", ".join(missing))
 
         evaluate_qc(args.stype, args.name, args.coverage, args.somalier, f"{args.name}.QC_PASS", args.sex, args.email)
-       
+
     else:
         if args.coverage:
-            coverage_pass, coverage_metrics = evaluate_coverage(args.coverage, args.stype)
+            _, coverage_metrics = evaluate_coverage(args.coverage, args.stype)
             print(coverage_metrics)
 
         if args.somalier:

@@ -1,14 +1,14 @@
-import os
 import json
+import os
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from slims.criteria import conjunction, equals
 from slims.slims import Slims
-from slims.criteria import is_one_of, equals, conjunction, not_equals
 
-from tools.helpers import read_config
 from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR
+from tools.helpers import read_config
 
 
 class slims_credentials:
@@ -46,7 +46,7 @@ class SlimsSample:
                                   .add(equals('cntn_fk_contentType', 6)))
 
             if len(records) > 1:
-                raise Exception('More than 1 DNA somehow.')
+                raise ValueError('More than 1 DNA somehow.')
 
             if records:
                 #print(records)
@@ -57,14 +57,14 @@ class SlimsSample:
     @property
     def fastq(self):
         if not self.run_tag:
-            raise Exception('Can not fetch fastq without a set run tag.')
+            raise ValueError('Can not fetch fastq without a set run tag.')
         if not self._fastq:
             records = slims_connection.fetch('Content', conjunction()
                                   .add(equals('cntn_id', self.sample_name))
                                   .add(equals('cntn_fk_contentType', 22))
                                   .add(equals('cntn_cstm_runTag', self.run_tag)))
             if len(records) > 1:
-                raise Exception('More than 1 fastq somehow.')
+                raise ValueError('More than 1 fastq somehow.')
 
             if records:
                 self._fastq = records[0]
@@ -95,7 +95,7 @@ def translate_slims_info(record):
     is_research = record.cntn_cstm_research.value
     research_project = record.cntn_cstm_researchProject.value
 
-    is_priority = True if record.cntn_cstm_priority.value else False
+    is_priority = bool(record.cntn_cstm_priority.value)
 
     gender = record.gender.value
 
@@ -211,7 +211,7 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
             else:
                 logger.warning(f"Failed to download from {location_name}")
 
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             logger.warning(f"Error while trying to download from {location_name}: {e}")
 
     # If none of the locations worked, raise an error
@@ -276,7 +276,7 @@ def link_fastqs_to_outputdir(fastq_dict, outputdir, logger):
     fastq_dir = os.path.join(outputdir, 'fastq')
     os.makedirs(fastq_dir, exist_ok=True)
 
-    for sample_tag, fastq_paths in fastq_dict.items():
+    for fastq_paths in fastq_dict.values():
         for fq_path in fastq_paths:
             link_name = os.path.join(fastq_dir, os.path.basename(fq_path))
             if not os.path.exists(link_name):
@@ -354,7 +354,7 @@ def find_or_download_fastqs(sample_name, logger):
                         fastq_dict[samplename_tag].append(decompressed_fq)
                     else:
                         fastq_dict[samplename_tag] = [decompressed_fq]
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     logger.error(f'{tag} generated an exception: {exc}')
             logger.info(f'Found fastqs for {sample_name}_{tag}')
     return fastq_dict

@@ -25,7 +25,7 @@ def filter_vcf(input_vcf, output_vcf, tumor_name, normal_name=None, min_tumor_su
     with pysam.VariantFile(input_vcf) as vcf_in, pysam.VariantFile(output_vcf, "w", header=vcf_in.header) as vcf_out:
         for record in vcf_in:
             # Check if the variant passes the FILTER column
-            if "PASS" not in record.filter.keys():
+            if "PASS" not in record.filter:
                 continue
 
             # Extract tumor sample data
@@ -41,10 +41,9 @@ def filter_vcf(input_vcf, output_vcf, tumor_name, normal_name=None, min_tumor_su
                 tumor_sr = tumor_sample["SR"][1]
             tumor_support = tumor_pr + tumor_sr
 
-            if pr_sr_filter:
-                # Ensure both PR and SR alt reads present in the tumor sample
-                if tumor_pr == 0 or tumor_sr == 0:
-                    continue
+            # Ensure both PR and SR alt reads present in the tumor sample
+            if pr_sr_filter and (tumor_pr == 0 or tumor_sr == 0):
+                continue
 
             # Apply the tumor support filter
             if tumor_support < min_tumor_support:
