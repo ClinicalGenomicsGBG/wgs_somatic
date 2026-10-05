@@ -193,7 +193,7 @@ if (is.null(opt$`output-baf`) || opt$`output-baf` == "") {
 load(opt$`Rdata-file`)  # Load the Rdata file containing ascat.bc
 
 # Map "female"/"XX" to "XX", otherwise use also Y chromosome (male or other)
-if (opt$gender %in% c("female", "XX")) {
+if (opt$gender %in% c("female", "XX", "xx")) {
   opt$gender <- "XX"
 } else {
   opt$gender <- "XY"
