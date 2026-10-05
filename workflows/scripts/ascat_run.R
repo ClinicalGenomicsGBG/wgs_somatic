@@ -36,7 +36,7 @@ if (!opt$tumoronly) {
 }
 
 # Map "female"/"XX" to "XX", otherwise use also Y chromosome (male or other)
-if (opt$gender %in% c("female", "XX")) {
+if (opt$gender %in% c("female", "XX", "xx")) {
   opt$gender <- "XX"
 } else {
   opt$gender <- "XY"
