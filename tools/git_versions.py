@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 
 def get_git_commit():
@@ -9,6 +9,7 @@ def get_git_commit():
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
+        check=False,
     )
     if completed_process.returncode != 0:
         raise Exception(f"Error: {completed_process.stderr}")
@@ -28,6 +29,7 @@ def get_git_tag(path=None):
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
+        check=False,
     )
     if completed_process.returncode != 0:
         raise Exception(f"Error: {completed_process.stderr}")
@@ -42,6 +44,7 @@ def is_branch_clean():
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
+        check=False,
     )
     if completed_process.returncode != 0:
         raise Exception(f"Error: {completed_process.stderr}")

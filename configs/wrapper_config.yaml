@@ -48,4 +48,4 @@ hcp:
 
 slims_credentials_path: '/clinical/exec/wgs_somatic/dependencies/credentials/slims_credentials.yaml'
 
-email_config_path: '/clinical/exec/wgs_somatic/dependencies/configs/mail_config.yaml'
+email_config_path: '/clinical/exec/wgs_somatic/dependencies/configs/mail_config_future.yaml'

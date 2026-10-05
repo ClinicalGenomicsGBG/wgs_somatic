@@ -6,13 +6,14 @@
 
 def vcf_conversion(vcf):
     vcf = str(vcf)
-    vcf_file = open(vcf, "rt")
-    data = vcf_file.read()
+
+    with open(vcf, "rt") as vcf_file:
+        data = vcf_file.read()
+
     data = data.replace('AFDP', 'DP')
-    vcf_file.close()
-    vcf_file = open(vcf, "wt")
-    vcf_file.write(data)
-    vcf_file.close()
+
+    with open(vcf, "wt") as vcf_file:
+        vcf_file.write(data)
 
 
 # Old code

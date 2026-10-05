@@ -1,9 +1,8 @@
-import os
 import smtplib
-
 from email.message import EmailMessage
-from tools.helpers import read_config
+
 from definitions import WRAPPER_CONFIG_PATH
+from tools.helpers import read_config
 
 new_line = "\n"
 

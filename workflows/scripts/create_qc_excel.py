@@ -2,22 +2,24 @@
 # vim: syntax=python tabstop=4 expandtab
 # coding: utf-8
 import argparse
-import xlsxwriter
-import os
-from tools.git_versions import get_git_commit, get_git_tag, get_git_reponame
-import time
-import pandas as pd
 import gzip
+import os
+import time
+
+import pandas as pd
+import xlsxwriter
+
+from tools.git_versions import get_git_commit, get_git_tag, get_git_reponame
 from workflows.scripts.parse_somalier import SomalierParser
 
 
 def extract_stats(statsfile, statstype, sampletype, statsdict):
-    with open(statsfile, "r") as statsfile:
+    with open(statsfile, "r") as infile:
         if statstype not in statsdict:
             statsdict[statstype] = {}
         statsdict[statstype][sampletype] = {}
 
-        for row in statsfile:
+        for row in infile:
             row = row.rstrip()
             row_list = row.split("\t")
             if 0 in statsdict[statstype][sampletype]:
@@ -28,13 +30,11 @@ def extract_stats(statsfile, statstype, sampletype, statsdict):
                 break
             if row_list[0] == "GENOME_TERRITORY" or row_list[0] == "LIBRARY":
                 headernames = row_list
-                headercount = 0
-                for headername in headernames:
+                for headercount, headername in enumerate(headernames):
                     statsdict[statstype][sampletype][headercount] = {}
                     statsdict[statstype][sampletype][headercount]["colname"] = (
                         headername
                     )
-                    headercount += 1
         return statsdict
 
 
@@ -55,13 +55,16 @@ def get_canvas_tumorinfo(canvasvcf):
         for variant in vcf:
             variant = variant.rstrip("\n")
             variant_info = variant.split("\t")
-            if variant_info[0].startswith("#"):
-                if variant_info[0].split("=")[0] in canvas_infofields:
-                    canvasfield = variant_info[0].split("=")[0]
-                    canvasfield = canvasfield.replace("#", "")
-                    canvasfield_value = variant_info[0].split("=")[1]
-                    canvasfield_value = canvasfield_value.replace(".", ",")
-                    canvasdict[canvasfield] = canvasfield_value
+
+            if (
+                variant_info[0].startswith("#")
+                and variant_info[0].split("=")[0] in canvas_infofields
+            ):
+                canvasfield = variant_info[0].split("=")[0]
+                canvasfield = canvasfield.replace("#", "")
+                canvasfield_value = variant_info[0].split("=")[1]
+                canvasfield_value = canvasfield_value.replace(".", ",")
+                canvasdict[canvasfield] = canvasfield_value
     return canvasdict
 
 
@@ -82,7 +85,7 @@ def read_tmb_file(filepath):
                     tmb_dict[key] = value
     except FileNotFoundError:
         print(f"No file found at {filepath}")
-    except Exception as e:
+    except Exception as e: # noqa: BLE001
         print(f"An error occurred: {e}")
     return tmb_dict
 
@@ -116,7 +119,7 @@ def get_msi_info(msi, msi_red):
 
     except FileNotFoundError:
         print(f"No file found at {msi} or {msi_red}")
-    except Exception as e:
+    except Exception as e: # noqa: BLE001
         print(f"An error occurred: {e}")
     return msi_dict
 
@@ -170,7 +173,7 @@ def read_sample_purities(info_files):
                         purity = None
         except FileNotFoundError:
             print(f"No file found at {info_file}")
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             print(f"An error occurred while reading {info_file}: {e}")
     return purities
 
@@ -181,11 +184,20 @@ def create_excel(
     somalier_obj,
     normalname="",
     tumorname="",
-    canvasdict={},
-    tmb_dict={},
-    msi_dict={},
-    ascatdict={},
+    canvasdict=None,
+    tmb_dict=None,
+    msi_dict=None,
+    ascatdict=None,
 ):
+    if canvasdict is None:
+        canvasdict = {}
+    if tmb_dict is None:
+        tmb_dict = {}
+    if msi_dict is None:
+        msi_dict = {}
+    if ascatdict is None:
+        ascatdict = {}
+
     current_date = time.strftime("%Y-%m-%d")
     excelfile = xlsxwriter.Workbook(output)
     worksheet = excelfile.add_worksheet("qc_stats")
