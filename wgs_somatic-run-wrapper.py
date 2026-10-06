@@ -410,7 +410,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 
     else:
         if send_email:
-            error_email("manual", bad_sample=final_pairs)
+            error_email("manual", bad_samples=final_pairs)
 
     return
 
