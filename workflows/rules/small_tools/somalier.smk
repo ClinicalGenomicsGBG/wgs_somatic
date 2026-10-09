@@ -2,7 +2,8 @@ from workflows.scripts.parse_somalier import SomalierParser
 
 rule somalier_extract:
     input:
-        "{stype}/realign/{sname}_REALIGNED.bam"
+        bam = "{stype}/realign/{sname}_REALIGNED.bam",
+        bai = "{stype}/realign/{sname}_REALIGNED.bam.bai"
     params:
         sites = pipeconfig["rules"]["somalier"]["sites"],
         reference = pipeconfig["referencegenome"],
@@ -25,7 +26,7 @@ rule somalier_extract:
             --sites {params.sites} \
             -f {params.reference} \
             --sample-prefix={wildcards.stype}_ \
-            {input}
+            {input.bam}
         mv {params.outdir}/*.somalier {output}
         """
 
