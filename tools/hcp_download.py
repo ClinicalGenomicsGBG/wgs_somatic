@@ -1,13 +1,14 @@
-import boto3
-from boto3.s3.transfer import TransferConfig
-from botocore.client import Config
-from botocore.utils import fix_s3_host
-import urllib3
 import argparse
 import json
 import logging
 import sys
+
+import boto3
 import botocore.exceptions
+import urllib3
+from boto3.s3.transfer import TransferConfig
+from botocore.client import Config
+from botocore.utils import fix_s3_host
 
 # Disable SSL warnings globally as they fill the stderr log otherwise
 # Ok to disable because we usually work with local non-443
@@ -35,7 +36,8 @@ def get_sg_s3_connector(credentials_path, logger, connect_timeout, read_timeout,
         logger.debug("Initializing S3 connector.")
 
         # Read credentials from the JSON file
-        credentials = json.load(open(credentials_path, 'r'))
+        with open(credentials_path, "r") as f:
+            credentials = json.load(f)
 
         s3_config = Config(signature_version='s3v4',
                            connect_timeout=connect_timeout,  # Time (s) to establish connection
@@ -115,7 +117,7 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
         try:
             s3.meta.client.head_object(Bucket=bucket, Key=remote_path)
             logger.info(f"File {remote_path} exists in the bucket.")
-        except Exception as e:
+        except botocore.exceptions.ClientError as e:
             logger.error(f"File {remote_path} does not exist in bucket {bucket}: {e}")
             raise FileNotFoundError(f"File {remote_path} does not exist in bucket {bucket}")
 
@@ -145,9 +147,9 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
             logger.error(f"An unexpected error occurred during the threaded download attempt: {e}")
             raise
 
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         # Propagate the FileNotFoundError explicitly
-        raise e
+        raise
 
     except Exception as e:
         logger.error(f"An unexpected error occurred while downloading file: {e}")
@@ -171,7 +173,7 @@ def main():
     except FileNotFoundError as e:
         print(f"File not found: {e}")
         sys.exit(1)  # Exit with a non-zero code for file not found
-    except Exception as e:
+    except Exception as e: # noqa: BLE001
         print(f"An error occurred: {e}")
         sys.exit(2)  # Exit with a different non-zero code for other errors
 

@@ -1,0 +1,24 @@
+name: WGS-Somatic CI
+
+on:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10.8"
+
+      - run: pip install ruff mypy
+
+      - run: ruff check .
+        continue-on-error: true
+      - run: ruff format --check .
+        continue-on-error: true
+      - run: mypy .
+        continue-on-error: true

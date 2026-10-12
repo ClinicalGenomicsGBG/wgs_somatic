@@ -1,5 +1,4 @@
 import xlsxwriter
-
 from pysam import VariantFile
 
 

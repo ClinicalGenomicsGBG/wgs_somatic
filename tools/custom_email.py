@@ -1,9 +1,8 @@
-import os
 import smtplib
-
 from email.message import EmailMessage
-from tools.helpers import read_config
+
 from definitions import WRAPPER_CONFIG_PATH
+from tools.helpers import read_config
 
 new_line = "\n"
 
@@ -65,7 +64,6 @@ CGG Cancer
 """
 
     send_email(subject, body, clinic, lab)
-
 
 def end_email(run_name, ok_samples=[], bad_samples=[], qc_stats=False, clinic=True, lab=True):
     """Send an email that wgs-somatic has finished running for samples in a run"""

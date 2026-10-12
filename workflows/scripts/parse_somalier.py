@@ -58,7 +58,7 @@ class SomalierParser:
                         'The value in the "relatedness" column is not a valid float.'
                     )
                     return None
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             logger.error(f"Error reading pairs file '{pairs_file}': {e}")
             return None
 

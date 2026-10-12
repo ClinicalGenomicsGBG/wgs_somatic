@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 
 def get_git_commit():
@@ -9,9 +9,10 @@ def get_git_commit():
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
+        check=False,
     )
     if completed_process.returncode != 0:
-        raise Exception(f"Error: {completed_process.stderr}")
+        raise Exception(f"Error: {completed_process.stderr}") # noqa: TRY002
     git_commit = completed_process.stdout.strip()
     return git_commit
 
@@ -28,9 +29,10 @@ def get_git_tag(path=None):
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
+        check=False,
     )
     if completed_process.returncode != 0:
-        raise Exception(f"Error: {completed_process.stderr}")
+        raise Exception(f"Error: {completed_process.stderr}") # noqa: TRY002
     git_tag = completed_process.stdout.strip()
     return git_tag
 
@@ -42,9 +44,10 @@ def is_branch_clean():
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
+        check=False,
     )
     if completed_process.returncode != 0:
-        raise Exception(f"Error: {completed_process.stderr}")
+        raise Exception(f"Error: {completed_process.stderr}") # noqa: TRY002
     git_tag_or_hash = completed_process.stdout.strip()
     return "dirty" not in git_tag_or_hash
 
@@ -73,10 +76,11 @@ def get_git_reponame(path=None):
         capture_output=True,
         text=True,
         cwd=os.path.dirname(os.path.abspath(__file__)),
+        check=False,
     )
 
     if completed_process.returncode != 0:
-        raise Exception(
+        raise Exception( # noqa: TRY002
             f"Error running git in get_git_reponame "
             f"(path={path!r}): {completed_process.stderr}"
         )
@@ -108,5 +112,4 @@ def main_info(outfile, **kwargs):
     tag = get_git_tag()
     with open(outfile, "a") as out:
         out.write(f"{name}-{tag}\n")
-        for title, path in kwargs.items():
-            out.write(f"{title}: {os.path.basename(path)}\n")
+        out.writelines(f"{title}: {os.path.basename(path)}\n" for title, path in kwargs.items())
