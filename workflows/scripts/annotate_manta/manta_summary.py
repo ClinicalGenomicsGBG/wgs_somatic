@@ -1,12 +1,10 @@
-from cmath import nan
-import enum
-import pandas as pd
 import re
-import os
+
+import pandas as pd
 
 
 def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=''):
-    
+
     df = pd.read_excel(str(mantaSV_vcf),engine='openpyxl')
 
     # Check for required columns
@@ -28,9 +26,8 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
     # this part of the script highlights genes from the gene list
 
     # open the genelist
-    genelist = open(genelist, "r")
-
-    genelist = genelist.readlines()
+    with open (genelist, "r") as genelist_file:
+        genelist = genelist_file.readlines()
 
     # make a list with genes from the genelist
     gene_list = []
@@ -61,29 +58,20 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
         match_output = re.search(raw_search_string, input_string)
 
         no_match_was_found = ( match_output is None )
-        if no_match_was_found:
-            return False
-        else:
-            return True
-    
+        return not no_match_was_found
+
     # function appending genes found to Genelist column
     def append_genes(col_patterns, col):
         for gene in gene_list:
             for row_of_genes in col_patterns:
-                if gene in row_of_genes:
-                    
-                    if find_only_whole_word(gene, row_of_genes) == True:
-                        
-                        if len(df[col==row_of_genes].index.values) > 1:
-                            
-                            for rowno in df[col==row_of_genes].index.values:
-                                
-                                index_value=int(rowno)
-                                df.at[index_value, 'Genelist'] = df.at[index_value, 'Genelist'] + gene + ' '
-
-                        else:
-                            index_value = int(df[col==row_of_genes].index.values)
+                if gene in row_of_genes and find_only_whole_word(gene, row_of_genes):
+                    if len(df[col==row_of_genes].index.values) > 1:
+                        for rowno in df[col==row_of_genes].index.values:
+                            index_value=int(rowno)
                             df.at[index_value, 'Genelist'] = df.at[index_value, 'Genelist'] + gene + ' '
+                    else:
+                        index_value = int(df[col==row_of_genes].index.values)
+                        df.at[index_value, 'Genelist'] = df.at[index_value, 'Genelist'] + gene + ' '
         return df
 
     if not column_patterns_genecrossings is False:
@@ -129,7 +117,7 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
                     if PR + PR_alt + SR + SR_alt == 0:
                         df.at[ind_val, 'TOTAL VAF (N)'] = ''
                     else:
-                        df.at[ind_val, 'TOTAL VAF (N)'] = str(int(round(float(PR_alt + SR_alt) / (PR + PR_alt + SR + SR_alt) *100))) + '%'        
+                        df.at[ind_val, 'TOTAL VAF (N)'] = str(round(float(PR_alt + SR_alt) / (PR + PR_alt + SR + SR_alt) *100)) + '%'        
             else:
                 row_index = int(df.loc[df[normalname] == row].index.values)
                 df.at[row_index, normalname + ':PR'] = PR
@@ -141,7 +129,7 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
                 if PR + PR_alt + SR + SR_alt == 0:
                     df.at[row_index, 'TOTAL VAF (N)'] = ''
                 else:
-                    df.at[row_index, 'TOTAL VAF (N)'] = str(int(round(float(PR_alt + SR_alt) / (PR + PR_alt + SR + SR_alt) *100))) + '%'
+                    df.at[row_index, 'TOTAL VAF (N)'] = str(round(float(PR_alt + SR_alt) / (PR + PR_alt + SR + SR_alt) *100)) + '%'
     
 
     # add columns for PR/SR for tumor sample
@@ -171,7 +159,7 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
                 if PR + PR_alt + SR + SR_alt == 0:
                     df.at[ind_val, 'TOTAL VAF (T)'] = ''
                 else:
-                    df.at[ind_val, 'TOTAL VAF (T)'] = str(int(round(float(PR_alt + SR_alt) / (PR + PR_alt + SR + SR_alt) *100))) + '%'        
+                    df.at[ind_val, 'TOTAL VAF (T)'] = str(round(float(PR_alt + SR_alt) / (PR + PR_alt + SR + SR_alt) *100)) + '%'        
         else:
             row_index = int(df.loc[df[tumorname] == row].index.values)
             df.at[row_index, tumorname + ':PR'] = PR
@@ -182,7 +170,7 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
             if PR + PR_alt + SR + SR_alt == 0:
                 df.at[row_index, 'TOTAL VAF (T)'] = ''
             else:
-                df.at[row_index, 'TOTAL VAF (T)'] = str(int(round(float(PR_alt + SR_alt) / (PR + PR_alt + SR + SR_alt) *100))) + '%'
+                df.at[row_index, 'TOTAL VAF (T)'] = str(round(float(PR_alt + SR_alt) / (PR + PR_alt + SR + SR_alt) *100)) + '%'
 
     # Second df with a selection of columns
 
@@ -227,10 +215,10 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
                 column_idx +=1
                 try:
                     worksheet.write(row_idx, column_idx, cell, wrap_format)
-                except:
+                except Exception: # noqa: BLE001, S112
                     continue
             row_idx += 1
-    
+
 
         # Adjust font, color, etc
         header_format = workbook.add_format()

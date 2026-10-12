@@ -1,20 +1,22 @@
 #!/apps/bio/software/anaconda2/envs/wgs_somatic/bin/python
-import json
 import argparse
-import os
 import glob
-from tools.helpers import read_config
+import json
+import os
+import random
+import stat
+import string
+import subprocess
 import sys
 import time
 import traceback
-from shutil import copyfile
-import subprocess
-import stat
-import yaml
-import random
-import string
 import zipfile
+from shutil import copyfile
+
+import yaml
+
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
+from tools.helpers import read_config
 
 
 def get_time():
@@ -32,11 +34,11 @@ def logger(message, logfile=False):
     current_date = time.strftime("%Y-%m-%d")
     if not logfile:
         logname = f"{logdir}/{current_date}.log"
-        logfile = open(logname, "a+")
-        logfile.write(f"{get_time()}: {message}" + "\n")
+        with open(logname, "a") as file:
+            file.write(f"{get_time()}: {message}" + "\n")
     else:
-        logfile = open(logfile, "a+")
-        logfile.write(f"{get_time()}: {message}" + "\n")
+        with open(logfile, "a") as file:
+            file.write(f"{get_time()}: {message}" + "\n")
     print(message)
 
 
@@ -123,18 +125,18 @@ def copy_results(outputdir):
                     resultdir = config_data.get("resultdir")
                     logger(f"Resultdir found in config file: {resultdir}")
                 except KeyError:
-                    logger(f"Key 'resultdir' not found in config file {runconfig}")
+                    logger(f"Key 'resultdir' not found in config file {snakemake_config}")
                     raise KeyError("Key 'resultdir' not found in config file")
                 try:
                     resultsconf = config_data.get("resultfilesconf")
                     logger(f"Results configuration file found: {resultsconf}")
                 except KeyError:
                     logger(
-                        f"Key 'resultfilesconf' not found in config file {runconfig}"
+                        f"Key 'resultfilesconf' not found in config file {snakemake_config}"
                     )
                     raise KeyError("Key 'resultfilesconf' not found in config file")
         except Exception as e:
-            logger(f"Error reading config file {runconfig}: {e}")
+            logger(f"Error reading config file {snakemake_config}: {e}")
             raise
 
         try:
@@ -176,9 +178,9 @@ def copy_results(outputdir):
                                 logger(f"Unzipping {dest_path} to {dest_dir}")
                                 zip_ref = zipfile.ZipFile(dest_path, "r")
                                 zip_ref.extractall(dest_dir)
-                            except Exception as e:
+                            except (zipfile.BadZipFile, OSError) as e:
                                 logger(f"Error unzipping {dest_path}: {e}")
-                    except Exception as e:
+                    except OSError as e:
                         logger(f"Error copying {src_path} to {dest_path}: {e}")
                 else:
                     logger(
@@ -218,28 +220,22 @@ def analysis_main(
         command = f"{sys.argv[0]}"
         current_date = time.strftime("%Y-%m-%d")
         commandlog = f"{commandlogs}/commands_{current_date}.log"
-        #TODO:Verify behaviour. 
-        #Takes 'args' instead of actual arguments. 
-        #Ok as long as arguments are set to False.
-        #What is the purpose of commandlog in exec folder?
-        #Command is written in runlogs.
+
         for arg in vars(args):
             command = f"{command} --{arg} {getattr(args, arg)}"
-        commandlogfile = open(commandlog, "a+")
-        commandlogfile.write(f"{get_time()}" + "\n")
-        commandlogfile.write(command + "\n")
+
+        with open(commandlog, "a") as commandlogfile:
+            commandlogfile.write(f"{get_time()}\n")
+            commandlogfile.write(command + "\n")
 
         #################################################################
         # Validate Inputs
         ################################################################
-        if outputdir.endswith("/"):
-            outputdir = outputdir[:-1]
+        outputdir = outputdir.removesuffix("/")
         if normalfastqs:
-            if normalfastqs.endswith("/"):
-                normalfastqs = normalfastqs[:-1]
+            normalfastqs = normalfastqs.removesuffix("/")
         if tumorfastqs:
-            if tumorfastqs.endswith("/"):
-                tumorfastqs = tumorfastqs[:-1]
+            tumorfastqs = tumorfastqs.removesuffix("/")
 
         error_list = []
 
@@ -278,7 +274,7 @@ def analysis_main(
         if not os.path.isdir(outputdir):
             try:
                 os.mkdir(outputdir)
-            except Exception as e:
+            except OSError as e:
                 error_list.append(
                     f"outputdirectory: {outputdir} does not exist and could not be created: {e}"
                 )
@@ -406,7 +402,7 @@ def analysis_main(
         with open(snakemake_config, "w") as analysisconf:
             json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
 
-    except Exception as e:
+    except Exception as e: # noqa: BLE001
         tb = traceback.format_exc()
         logger("Error in setting up the snakemake run:")
         logger(f"{e} Traceback: {tb}")
@@ -482,7 +478,7 @@ def analysis_main(
                 f"{samplelogs}/dag.svg",
             ]
             snakemake_args_dag_command = " ".join(snakemake_args_dag)
-            subprocess.run(snakemake_args_dag_command, env=my_env, shell=True)
+            subprocess.run(snakemake_args_dag_command, env=my_env, shell=True, check=False)
 
         snakemake_args = [
             "snakemake",
@@ -531,7 +527,7 @@ def analysis_main(
         logger(f"Error running Snakemake: {e}")
         logger(f"Traceback: {tb}")
         sys.exit(1)
-    except Exception as e:
+    except Exception as e: # noqa: BLE001
         tb = traceback.format_exc()
         logger(f"An error occurred: {e}\n{tb}")
         sys.exit(1)
@@ -623,14 +619,12 @@ if __name__ == "__main__":
     if args.onlycopyresults:
         copy_results(args.outputdir)
     else:
-        if args.tumorfastqs:
-            if not args.tumorfastqs.startswith("/"):
-                args.tumorfastqs = os.path.abspath(args.tumorfastqs)
-                logger(f"Adjusted tumorfastqs to {args.tumorfastqs}")
-        if args.normalfastqs:
-            if not args.normalfastqs.startswith("/"):
-                args.normalfastqs = os.path.abspath(args.normalfastqs)
-                logger(f"Adjusted normalfastqs to {args.normalfastqs}")
+        if args.tumorfastqs and not args.tumorfastqs.startswith("/"):
+            args.tumorfastqs = os.path.abspath(args.tumorfastqs)
+            logger(f"Adjusted tumorfastqs to {args.tumorfastqs}")
+        if args.normalfastqs and not args.normalfastqs.startswith("/"):
+            args.normalfastqs = os.path.abspath(args.normalfastqs)
+            logger(f"Adjusted normalfastqs to {args.normalfastqs}")
         analysis_main(
             args,
             args.outputdir,
@@ -642,7 +636,7 @@ if __name__ == "__main__":
             args.notemp,
             args.dag,
             args.send_email,
-            args.qc_stop
+            args.qc_stop,
         )
 
         if args.tumorsample:
