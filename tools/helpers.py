@@ -69,7 +69,7 @@ def collect_versions(version_dir, outpath, extension="*.txt"):
                         out.writelines(
                             f"    {line}" for line in infile
                         )  # Add indentation for YAML block style
-                except Exception as e_file: # noqa: BLE001
+                except Exception as e_file:  # noqa: BLE001
                     out.write(f"    # Error reading file {f}: {e_file}\n")
 
                 out.write("\n")  # Add a newline between tools

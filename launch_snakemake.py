@@ -81,9 +81,8 @@ def find_fastqs(directory, sample):
 
     Supports both .fastq.gz and .fq.gz extensions.
     """
-    return (
-        glob.glob(f"{directory}/{sample}_*.fastq.gz") +
-        glob.glob(f"{directory}/{sample}_*.fq.gz")
+    return glob.glob(f"{directory}/{sample}_*.fastq.gz") + glob.glob(
+        f"{directory}/{sample}_*.fq.gz"
     )
 
 
@@ -125,7 +124,9 @@ def copy_results(outputdir):
                     resultdir = config_data.get("resultdir")
                     logger(f"Resultdir found in config file: {resultdir}")
                 except KeyError:
-                    logger(f"Key 'resultdir' not found in config file {snakemake_config}")
+                    logger(
+                        f"Key 'resultdir' not found in config file {snakemake_config}"
+                    )
                     raise KeyError("Key 'resultdir' not found in config file")
                 try:
                     resultsconf = config_data.get("resultfilesconf")
@@ -144,7 +145,7 @@ def copy_results(outputdir):
         except Exception as e:
             logger(f"Failed to read results config from {resultsconf}: {e}")
             raise
-        #TODO:In development, stop or redirect this
+        # TODO:In development, stop or redirect this
 
         # Read the results into the subdirectories unless they are marked toplevel
         for category, relpaths in results.items():
@@ -204,8 +205,8 @@ def analysis_main(
     dag=False,
     send_email=False,
     qc_stop=False,
-    gender=False
-    ):
+    gender=False,
+):
 
     if not gender:
         gender = "missing"
@@ -372,7 +373,7 @@ def analysis_main(
         analysisdict["tumorid"] = tumorid
         analysisdict["tumorfastqs"] = [tumorfastqs]
         analysisdict["gender"] = gender
-        analysisdict["send_email"] = send_email 
+        analysisdict["send_email"] = send_email
         analysisdict["qc_stop"] = qc_stop
 
         # configs
@@ -402,7 +403,7 @@ def analysis_main(
         with open(snakemake_config, "w") as analysisconf:
             json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
 
-    except Exception as e: # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         tb = traceback.format_exc()
         logger("Error in setting up the snakemake run:")
         logger(f"{e} Traceback: {tb}")
@@ -478,7 +479,9 @@ def analysis_main(
                 f"{samplelogs}/dag.svg",
             ]
             snakemake_args_dag_command = " ".join(snakemake_args_dag)
-            subprocess.run(snakemake_args_dag_command, env=my_env, shell=True, check=False)
+            subprocess.run(
+                snakemake_args_dag_command, env=my_env, shell=True, check=False
+            )
 
         snakemake_args = [
             "snakemake",
@@ -527,7 +530,7 @@ def analysis_main(
         logger(f"Error running Snakemake: {e}")
         logger(f"Traceback: {tb}")
         sys.exit(1)
-    except Exception as e: # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         tb = traceback.format_exc()
         logger(f"An error occurred: {e}\n{tb}")
         sys.exit(1)
@@ -609,7 +612,6 @@ if __name__ == "__main__":
         required=False,
         default=False,
     )
-
 
     args = parser.parse_args()
 
