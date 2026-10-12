@@ -215,7 +215,7 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
                 column_idx +=1
                 try:
                     worksheet.write(row_idx, column_idx, cell, wrap_format)
-                except Exception: # noqa: BLE001
+                except Exception: # noqa: BLE001, S112
                     continue
             row_idx += 1
 

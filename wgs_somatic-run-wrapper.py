@@ -396,7 +396,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
             logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
             combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
             logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
-        except Exception as e: # noqa: TRY002
+        except Exception as e: # noqa: BLE001
             logger.error(f"Error combining qc stats: {e}")
 
 
