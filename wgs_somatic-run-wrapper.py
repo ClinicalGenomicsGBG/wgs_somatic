@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Wrapper to be used by cron for automatic start of wgs_somatic
 """

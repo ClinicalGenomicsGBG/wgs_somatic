@@ -14,11 +14,8 @@ jobs:
         with:
           python-version: "3.10.8"
 
-      - run: pip install ruff mypy
+      - run: pip install ruff mypy pandas-stubs types-PyYAML
 
       - run: ruff check .
-        continue-on-error: true
       - run: ruff format --check .
-        continue-on-error: true
-      - run: mypy .
-        continue-on-error: true
+      - run: mypy --config-file .github/workflows/mypy.ini .

@@ -121,8 +121,9 @@ if __name__ == "__main__":
         default=2,
     )
     parser.add_argument(
-        "--no_pr_sr_filter",
-        action="store_true",
+        "--pr_sr_filter",
+        type=bool,
+        default=False,
         help="Disable PR and SR filtering (optional; mainly for debugging)",
     )
 
@@ -135,5 +136,5 @@ if __name__ == "__main__":
         normal_name=args.normal_name,
         min_tumor_support=args.min_tumor_support,
         max_normal_support=args.max_normal_support,
-        no_pr_sr_filter=args.no_pr_sr_filter,
+        pr_sr_filter=args.pr_sr_filter,
     )

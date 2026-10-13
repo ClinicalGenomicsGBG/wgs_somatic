@@ -29,9 +29,9 @@ For paired tumor and normal FASTQs, the results contain:
 
 ### Installation
 
-- Clone the repository and submodules:
+- Clone the repository:
 
-    `git clone --recurse-submodules https://github.com/ClinicalGenomicsGBG/wgs_somatic`
+    `git clone https://github.com/ClinicalGenomicsGBG/wgs_somatic`
 
 - The logs will end up in `/clinical/exec/wgs_somatic/logs`, unless changed in the launcher_config.json (and wrapper_config.yaml)
 - If your samples are in slims you can perform a [standalone wrapper run](#standalone-wrapper-run); otherwise continue to [standalone-snakemake-run](#standalone-snakemake-run)
