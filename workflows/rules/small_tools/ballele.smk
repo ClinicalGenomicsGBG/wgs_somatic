@@ -18,9 +18,6 @@ rule ballele_plot:
     output:
         "{stype}/reports/{sname}_baf.igv",
     run:
-        # Version info
-        module_path = os.path.dirname(inspect.getfile(plot_freq))
-        submodule_info(module_path, params.vstamp)
-        
+ 
         # Parse B allele data to igv file
         plot_freq(f"{input}", f"{output}", f"{params.dbsnp}", f"{params.hg38ref}")

@@ -9,14 +9,12 @@ rule filter_canvas:
     params:
         annotate = pipeconfig["rules"]["canvas"].get("annotate", f"{ROOT_DIR}/workflows/scripts/annotate_manta_canvas/annotate_manta_canvas.py"),
         annotate_ref = pipeconfig["rules"]["canvas"]["annotate_ref"],
-        vstamp = f"{VDIR}/filter_canvas.txt"
     output:
         xlsx = "{stype}/canvas/{sname}_canvas_{mode}_filt.vcf.xlsx",
         vcf_out = "{stype}/canvas/{sname}_canvas_{mode}_filt.vcf"
     shadow:
         pipeconfig["rules"].get("canvas", {}).get("shadow", pipeconfig.get("shadow", False))
     run:
-        submodule_info(os.path.dirname(params.annotate), params.vstamp)
         vcf_unzipped = input.vcf[:-3]
         shell("gunzip {input.vcf}")
         shell("grep -v 'Canvas:REF' {vcf_unzipped} > {output.vcf_out}")

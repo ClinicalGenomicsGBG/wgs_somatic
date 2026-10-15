@@ -30,7 +30,6 @@ if normalid:
         run:
             # Version info
             shell("echo manta: $({params.mantaconf} --version) > {params.vstamp}")
-            submodule_info(os.path.dirname(params.annotate), params.vstamp)
 
             # Prepare and run manta
             if not os.path.isfile(f"{wildcards.stype}/manta/runWorkflow.py"):
@@ -71,7 +70,6 @@ else:
         run:
             # Version info
             shell("echo manta: $({params.mantaconf} --version) > {params.vstamp}")
-            submodule_info(os.path.dirname(params.annotate), params.vstamp)
 
             # Prepare and run manta
             if not os.path.isfile(f"{wildcards.stype}/manta/runWorkflow.py"):
@@ -103,8 +101,6 @@ if normalid:
             pipeconfig["rules"].get("manta_summary", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
             # Version info
-            module_path = os.path.dirname(inspect.getfile(manta_summary))
-            submodule_info(module_path, params.vstamp)
             shell("echo genelist: $(basename {params.genelist}) >> {params.vstamp}")
 
             # Compile summary
@@ -123,8 +119,6 @@ else:
             pipeconfig["rules"].get("manta_summary", {}).get("shadow", pipeconfig.get("shadow", False))
         run:
             # Version info
-            module_path = os.path.dirname(inspect.getfile(manta_summary))
-            submodule_info(module_path, params.vstamp)
             shell("echo genelist: $(basename {params.genelist}) >> {params.vstamp}")
 
             # Compile summary

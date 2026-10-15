@@ -9,7 +9,7 @@ import os
 import re
 import sys
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR, WRAPPER_CONFIG_PATH
 from launch_snakemake import analysis_main, copy_results, get_timestamp, yearly_stats
@@ -270,7 +270,7 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
         )
 
         # Register start time
-        start_time = datetime.now(tz=datetime.timezone.utc)
+        start_time = datetime.now(tz=timezone.utc)
         logger.info(f"Started {Rctx.run_name} at {start_time}")
 
         # Get T/N pair info in a dict for samples and link additional fastqs from other runs
