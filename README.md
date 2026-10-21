@@ -48,7 +48,7 @@ For paired tumor and normal FASTQs, the results contain:
 module load micromamba
 micromamba activate /clinical/exec/wgs_somatic/env/wgs_somatic_env/
 
-python wgs_somatic-run-wrapper.py \
+python wrapper.py \
   -t DNAtumor \
   [-n DNAnormal] \
   [-o outpath] \
@@ -139,7 +139,7 @@ The pipeline is started automatically when new runs with GMS-BT/AL samples appea
 
 Cron runs every 30 minutes (in crontab of cronuser)
 
-Wrapper script `wgs_somatic-run-wrapper.py` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file `/clinical/exec/wgs_somatic/runlists/novaseq_runlist.txt` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory `/clinical/data/wgs_somatic/cron/` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
+Wrapper script `wrapper.py` looks for runs in Demultiplexdir. Every time there is a new run in Demultiplexdir, it is added to text file `/clinical/exec/wgs_somatic/runlists/novaseq_runlist.txt` to keep track of which runs that have already been analyzed. If a new run has GMS-BT/AL samples, the pipeline starts for these samples. Output is placed in working directory `/clinical/data/wgs_somatic/cron/` and the final result files are then copied to webstore. You can find a more detailed description of the automation on GMS-BT confluence page.
 
 ## wgsadmin QC stats
 
