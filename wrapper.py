@@ -341,9 +341,14 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
     # the defaults for base_directory and output_directory are defined in the launcher config file
     # and don't need to be added as arguments
     try:
-        logger.info(f'Combining qc stats for run {Rctx.run_name}')
-        combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=outputdirs, runname=Rctx.run_name, logger=logger)
-        logger.info(f'Done with combining qc stats for run {Rctx.run_name}')
+        logger.info(f"Combining qc stats for run {Rctx.run_name}")
+        combine_qc_stats(
+            launcher_config=LAUNCHER_CONFIG_PATH,
+            outputdirs=outputdirs,
+            runname=Rctx.run_name,
+            logger=logger,
+        )
+        logger.info(f"Done with combining qc stats for run {Rctx.run_name}")
         qc_stats = True
     except Exception as e:
         logger.error(f"Error combining qc stats: {e}")
@@ -351,7 +356,7 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
 
     if send_email:
         end_email(Rctx.run_name, ok_samples, bad_samples, qc_stats)
- 
+
 
 def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, send_email=False, qc_stop=False):
     '''Manual pipeline submission'''
@@ -413,7 +418,12 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
         if qcsummary:
             try:
                 logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
-                combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
+                combine_qc_stats(
+                    launcher_config=LAUNCHER_CONFIG_PATH,
+                    outputdirs=[outputdir],
+                    runname=run_tag,
+                    logger=logger,
+                )
                 logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
             except Exception as e:
                 logger.error(f"Error combining qc stats: {e}")

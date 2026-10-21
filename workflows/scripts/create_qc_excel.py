@@ -1,6 +1,3 @@
-#!/apps/bio/software/anaconda2/envs/wgs_somatic/bin/python
-# vim: syntax=python tabstop=4 expandtab
-# coding: utf-8
 import argparse
 import gzip
 import os
@@ -85,7 +82,11 @@ def read_tmb_file(filepath):
                     tmb_dict[key] = value
     except FileNotFoundError:
         print(f"No file found at {filepath}")
+<<<<<<< HEAD
     except Exception as e: # noqa: BLE001
+=======
+    except Exception as e:
+>>>>>>> f84b7f0 (Final fixes)
         print(f"An error occurred: {e}")
     return tmb_dict
 
@@ -119,7 +120,11 @@ def get_msi_info(msi, msi_red):
 
     except FileNotFoundError:
         print(f"No file found at {msi} or {msi_red}")
+<<<<<<< HEAD
     except Exception as e: # noqa: BLE001
+=======
+    except Exception as e:
+>>>>>>> f84b7f0 (Final fixes)
         print(f"An error occurred: {e}")
     return msi_dict
 
@@ -173,7 +178,7 @@ def read_sample_purities(info_files):
                         purity = None
         except FileNotFoundError:
             print(f"No file found at {info_file}")
-        except Exception as e: # noqa: BLE001
+        except Exception as e:
             print(f"An error occurred while reading {info_file}: {e}")
     return purities
 
