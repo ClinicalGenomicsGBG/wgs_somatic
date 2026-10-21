@@ -61,8 +61,8 @@ def collect_wgsadmin_qc(outputdirs, logger):
         try:
             df = pd.read_excel(found_files[0])
             qc_data[outputdir] = df
-        except Exception as e:  # noqa: BLE001
-            logger.error(f"Error reading {found_files[0]}: {e}")
+        except Exception as e:
+            logger.error(f"Error reading{found_files[0]}: {e}")
             continue
     return qc_data
 

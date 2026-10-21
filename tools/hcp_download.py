@@ -251,7 +251,7 @@ def main():
     except FileNotFoundError as e:
         print(f"File not found: {e}")
         sys.exit(1)  # Exit with a non-zero code for file not found
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print(f"An error occurred: {e}")
         sys.exit(2)  # Exit with a different non-zero code for other errors
 

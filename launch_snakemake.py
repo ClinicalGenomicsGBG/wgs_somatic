@@ -403,7 +403,7 @@ def analysis_main(
         with open(snakemake_config, "w") as analysisconf:
             json.dump(analysisdict, analysisconf, ensure_ascii=False, indent=4)
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         tb = traceback.format_exc()
         logger("Error in setting up the snakemake run:")
         logger(f"{e} Traceback: {tb}")
@@ -530,7 +530,7 @@ def analysis_main(
         logger(f"Error running Snakemake: {e}")
         logger(f"Traceback: {tb}")
         sys.exit(1)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         tb = traceback.format_exc()
         logger(f"An error occurred: {e}\n{tb}")
         sys.exit(1)

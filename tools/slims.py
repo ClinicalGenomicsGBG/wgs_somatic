@@ -246,7 +246,7 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
             else:
                 logger.warning(f"Failed to download from {location_name}")
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.warning(f"Error while trying to download from {location_name}: {e}")
 
     # If none of the locations worked, raise an error
@@ -473,7 +473,7 @@ def find_or_download_fastqs(sample_name, logger):
                         fastq_dict[samplename_tag].append(decompressed_fq)
                     else:
                         fastq_dict[samplename_tag] = [decompressed_fq]
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     logger.error(f"{tag} generated an exception: {exc}")
             logger.info(f"Found fastqs for {sample_name}_{tag}")
     return fastq_dict

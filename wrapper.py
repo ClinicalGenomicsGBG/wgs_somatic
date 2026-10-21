@@ -426,7 +426,7 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
             logger=logger,
         )
         logger.info(f"Done with combining qc stats for run {Rctx.run_name}")
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         logger.error(f"Error combining qc stats: {e}")
         if send_email:
             error_admin_qc_email(Rctx.run_name)
@@ -500,7 +500,7 @@ def manual(
             logger.info(
                 f"Done with combining qc stats for manual run with outputdir {outputdir}"
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.error(f"Error combining qc stats: {e}")
 
 

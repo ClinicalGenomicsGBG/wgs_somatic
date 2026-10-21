@@ -12,7 +12,7 @@ def get_git_commit():
         check=False,
     )
     if completed_process.returncode != 0:
-        raise Exception(f"Error: {completed_process.stderr}")  # noqa: TRY002
+        raise Exception(f"Error: {completed_process.stderr}")
     git_commit = completed_process.stdout.strip()
     return git_commit
 
@@ -32,7 +32,7 @@ def get_git_tag(path=None):
         check=False,
     )
     if completed_process.returncode != 0:
-        raise Exception(f"Error: {completed_process.stderr}")  # noqa: TRY002
+        raise Exception(f"Error: {completed_process.stderr}")
     git_tag = completed_process.stdout.strip()
     return git_tag
 
@@ -47,7 +47,7 @@ def is_branch_clean():
         check=False,
     )
     if completed_process.returncode != 0:
-        raise Exception(f"Error: {completed_process.stderr}")  # noqa: TRY002
+        raise Exception(f"Error: {completed_process.stderr}")
     git_tag_or_hash = completed_process.stdout.strip()
     return "dirty" not in git_tag_or_hash
 
@@ -80,7 +80,7 @@ def get_git_reponame(path=None):
     )
 
     if completed_process.returncode != 0:
-        raise Exception(  # noqa: TRY002
+        raise Exception(
             f"Error running git in get_git_reponame "
             f"(path={path!r}): {completed_process.stderr}"
         )
