@@ -91,7 +91,7 @@ if __name__ == "__main__":
     parser.add_argument("--normal_name", help="Normal sample name (optional)", default=None)
     parser.add_argument("--min_tumor_support", type=int, help="Minimum tumor support (default: 3)", default=3)
     parser.add_argument("--max_normal_support", type=int, help="Maximum normal support (default: 2)", default=2)
-    parser.add_argument("--no_pr_sr_filter", action="store_true", help="Disable PR and SR filtering (optional; mainly for debugging)")
+    parser.add_argument("--pr_sr_filter", type=bool, default=False, help="Disable PR and SR filtering (optional; mainly for debugging)")
 
     args = parser.parse_args()
 
@@ -102,5 +102,5 @@ if __name__ == "__main__":
         normal_name=args.normal_name,
         min_tumor_support=args.min_tumor_support,
         max_normal_support=args.max_normal_support,
-        no_pr_sr_filter=args.no_pr_sr_filter
+        pr_sr_filter=args.pr_sr_filter,
     )
