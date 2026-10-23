@@ -1,0 +1,36 @@
+[tool.ruff]
+target-version = "py310"
+extend-exclude = [
+    "workflows/scripts/annotate_manta_canvas",
+    "workflows/scripts/b_allele_igv_plot",
+]
+
+[tool.ruff.lint]
+# E4: imports  E7: statements  E9: runtime  F: pyflakes
+# I: isort  PERF: performance anti-patterns  C4: comprehensions
+# SIM: simplify
+# select = ["E4", "E7", "E9", "F", "I", "PERF", "C4", "SIM"]
+# select = ["ALL"]
+ignore = [
+    "BLE001", # Blind exception handling
+    "TRY002", # Raise vanilla class
+]
+
+[tool.mypy]
+explicit_package_bases = true
+exclude = [
+    "workflows/scripts/annotate_manta_canvas",
+    "workflows/scripts/b_allele_igv_plot",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "pandas.*",
+    "xlsxwriter.*",
+    "boto3.*",
+    "botocore.*",
+    "slims.*",
+    "yaml"
+]
+ignore_missing_imports = true
+

@@ -1,15 +1,17 @@
-import yaml
+#!/usr/bin/env python3
+import glob
 import json
 import logging
 import os
-import glob
+
+import yaml
 
 
 def read_config(configpath):
     with open(configpath, "r") as configfile:
         if configpath.endswith(".json"):
             config_data = json.load(configfile)
-        elif configpath.endswith(".yaml") or configpath.endswith(".yml"):
+        elif configpath.endswith((".yaml", ".yml")):
             config_data = yaml.load(configfile, Loader=yaml.FullLoader)
         else:
             raise ValueError(
@@ -64,10 +66,9 @@ def collect_versions(version_dir, outpath, extension="*.txt"):
 
                 try:
                     with open(f, "r") as infile:
-                        for line in infile:
-                            out.write(
-                                f"    {line}"
-                            )  # Add indentation for YAML block style
+                        out.writelines(
+                            f"    {line}" for line in infile
+                        )  # Add indentation for YAML block style
                 except Exception as e_file:
                     out.write(f"    # Error reading file {f}: {e_file}\n")
 

@@ -1,30 +1,30 @@
-import os
 import smtplib
-
 from email.message import EmailMessage
-from tools.helpers import read_config
+
 from definitions import WRAPPER_CONFIG_PATH
+from tools.helpers import read_config
 
 new_line = "\n"
+
 
 def get_email_settings():
     """Load and return the email settings used for pipeline notifications."""
     config = read_config(WRAPPER_CONFIG_PATH)
-    email_config_path = config['email_config_path']
+    email_config_path = config["email_config_path"]
     email_config = read_config(email_config_path)
 
-    smtp = email_config['smtp_server']
-    sender = email_config['sender']
+    smtp = email_config["smtp_server"]
+    sender = email_config["sender"]
     success_recipients = ", ".join(email_config["recipients"])
     qc_recipients = ", ".join(email_config["qc"])
     cc = sender
-    
+
     return smtp, sender, success_recipients, qc_recipients, cc
 
 
 def send_email(subject, body):
     """Send a simple email."""
-    smtp, sender, success_recipients, qc_recipients, cc = get_email_settings()
+    smtp, sender, success_recipients, _, cc = get_email_settings()
 
     msg = EmailMessage()
     msg.set_content(body)
@@ -32,7 +32,7 @@ def send_email(subject, body):
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = success_recipients
-    msg["Cc"] = cc 
+    msg["Cc"] = cc
 
     # Send the message
     s = smtplib.SMTP(smtp)
@@ -42,7 +42,7 @@ def send_email(subject, body):
 
 def send_email_qc(subject, body):
     """Send a simple email."""
-    smtp, sender, success_recipients, qc_recipients, cc = get_email_settings()
+    smtp, sender, _, qc_recipients, cc = get_email_settings()
 
     msg = EmailMessage()
     msg.set_content(body)

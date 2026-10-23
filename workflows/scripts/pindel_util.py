@@ -1,5 +1,4 @@
 import xlsxwriter
-
 from pysam import VariantFile
 
 
@@ -25,13 +24,14 @@ def _position_gene(indel_chrom, indel_start, indel_stop, bed):
 
     return None
 
-def pindel_write_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
-    """ 
-    Write pindel results to excel file. 
 
-    If tumor and normal sample in vcf, only write variants that 
+def pindel_write_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
+    """
+    Write pindel results to excel file.
+
+    If tumor and normal sample in vcf, only write variants that
     - exist in tumor sample
-    - less than 3 reads in normal sample. 
+    - less than 3 reads in normal sample.
     """
     # Create excel file
     workbook = xlsxwriter.Workbook(xlsx_output)
@@ -74,7 +74,9 @@ def pindel_write_xlsx(vcf_input, xlsx_output, bedfile, tumor=None, normal=None):
         if tumor:
             sample_tumor = tumor
         else:
-            print(f"Warning: Tumor sample not specified but only one sample in vcf file. Using {samples[0]} as tumor sample.")
+            print(
+                f"Warning: Tumor sample not specified but only one sample in vcf file. Using {samples[0]} as tumor sample."
+            )
             sample_tumor = samples[0]
 
         if sample_tumor not in samples:
@@ -208,7 +210,9 @@ def pindel_fix_dpaf(vcf_input, vcf_output):
 
             # Handle missing or malformed AD safely
             if not ad:
-                print(f"Warning: {sample_name} has no AD at {record.contig}:{record.pos}")
+                print(
+                    f"Warning: {sample_name} has no AD at {record.contig}:{record.pos}"
+                )
                 dp = 0
                 af = 0.0
             else:
@@ -218,7 +222,9 @@ def pindel_fix_dpaf(vcf_input, vcf_output):
                 if len(ad) > 1 and ad[1] is not None:
                     alt_depth = ad[1]
                 else:
-                    print(f"Warning: {sample_name} has no ALT depth in AD at {record.contig}:{record.pos}")
+                    print(
+                        f"Warning: {sample_name} has no ALT depth in AD at {record.contig}:{record.pos}"
+                    )
                     alt_depth = 0
                 af = 0.0 if dp == 0 else alt_depth / dp
 
