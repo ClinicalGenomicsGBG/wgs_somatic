@@ -14,7 +14,7 @@ jobs:
         with:
           python-version: "3.10.8"
 
-      - run: pip install ruff mypy
+      - run: pip install ruff mypy pysam urllib3 click
 
       - run: ruff check .
       - run: ruff format --check .
