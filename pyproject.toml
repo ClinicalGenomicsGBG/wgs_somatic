@@ -15,3 +15,22 @@ ignore = [
     "BLE001", # Blind exception handling
     "TRY002", # Raise vanilla class
 ]
+
+[tool.mypy]
+explicit_package_bases = true
+exclude = [
+    "workflows/scripts/annotate_manta_canvas",
+    "workflows/scripts/b_allele_igv_plot",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "pandas.*",
+    "xlsxwriter.*",
+    "boto3.*",
+    "botocore.*",
+    "slims.*",
+    "yaml"
+]
+ignore_missing_imports = true
+
