@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import sys
+from contextlib import suppress
 
 import boto3
 import botocore.exceptions
@@ -179,7 +180,5 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
+    with suppress(KeyboardInterrupt):
         main()
-    except KeyboardInterrupt:
-        pass

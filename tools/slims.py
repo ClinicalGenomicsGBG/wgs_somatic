@@ -211,11 +211,7 @@ def download_hcp_fq(bucket, remote_key, logger, hcp_runtag):
             else:
                 logger.warning(f"Failed to download from {location_name}")
 
-<<<<<<< HEAD
-        except Exception as e: # noqa: BLE001
-=======
         except Exception as e:
->>>>>>> f84b7f0 (Final fixes)
             logger.warning(f"Error while trying to download from {location_name}: {e}")
 
     # If none of the locations worked, raise an error
@@ -358,15 +354,9 @@ def find_or_download_fastqs(sample_name, logger):
                         fastq_dict[samplename_tag].append(decompressed_fq)
                     else:
                         fastq_dict[samplename_tag] = [decompressed_fq]
-<<<<<<< HEAD
-                except Exception as exc:  # noqa: BLE001
-                    logger.error(f'{tag} generated an exception: {exc}')
-            logger.info(f'Found fastqs for {sample_name}_{tag}')
-=======
                 except Exception as exc:
                     logger.error(f"{tag} generated an exception: {exc}")
             logger.info(f"Found fastqs for {sample_name}_{tag}")
->>>>>>> f84b7f0 (Final fixes)
     return fastq_dict
 
 
@@ -393,7 +383,7 @@ def get_pair_dict(Sctx, Rctx, logger):
 
     # We want to make sure that we complement the tumorNormalType correctly, i.e. a tumor goes with normal and vice versa
     pair_type_d = {'tumor':'normal', 'normal':'tumor'}
-    pair_type = pair_type_d.get(Sctx.slims_info['tumorNormalType'],None)
+    pair_type = pair_type_d.get(Sctx.slims_info['tumorNormalType'])
     if not pair_type:
         logger.warning(f'The sample {Sctx.slims_info["content_id"]} does not have any assigned tumorNormalType')
 

@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import threading
+from contextlib import suppress
 from datetime import datetime, timezone
 
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR, WRAPPER_CONFIG_PATH
@@ -436,7 +437,5 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
+    with suppress(KeyboardInterrupt):
         main()
-    except KeyboardInterrupt:
-        pass
