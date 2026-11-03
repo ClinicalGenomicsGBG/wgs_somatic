@@ -301,7 +301,7 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
             logger.info("No samples to process for this run. Skipping emails and further processing.")
             sys.exit(0)
     except Exception as e:
-        print(f"Error during setup: {e}")
+        logger.error(f"Error during setup: {e}")
         if send_email:
             error_setup_email(instrument)
         raise
