@@ -30,9 +30,7 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
         genelist = genelist_file.readlines()
 
     # make a list with genes from the genelist
-    gene_list = []
-    for gene in genelist:
-        gene_list.append(gene.rstrip("\n"))
+    gene_list = [gene.rstrip("\n") for gene in genelist]
     # remove duplicates 
     gene_list = list(set(gene_list))
 
@@ -74,7 +72,7 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
                         df.at[index_value, 'Genelist'] = df.at[index_value, 'Genelist'] + gene + ' '
         return df
 
-    if not column_patterns_genecrossings is False:
+    if column_patterns_genecrossings is not False:
         append_genes(column_patterns_genecrossings, df['DEL/DUP Genecrossings'])
     append_genes(column_patterns_geneinfo1, df['GeneInfo 1'])
     append_genes(column_patterns_geneinfo2, df['GeneInfo 2'])
@@ -182,10 +180,7 @@ def manta_summary(mantaSV_vcf, mantaSV_summary, tumorname, genelist, normalname=
     # If more than 30 genes in DEL/DUP Genecrossings - write number of genes instead of names of genes 
     for deldup in df2['DEL/DUP Genecrossings']:
         deldup = str(deldup)
-        in_genes = []
-        for gene in deldup.split(','):
-            if 'in:' in gene:
-                in_genes.append(gene)
+        in_genes = [gene for gene in deldup.split(',') if 'in:' in gene]
         if len(deldup.split(',')) > 30:
             no_of_genes = len(deldup.split(','))
             new_deldup = f'No of genes: {no_of_genes}. \n {", ".join(in_genes)}'
