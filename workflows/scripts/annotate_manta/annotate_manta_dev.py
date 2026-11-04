@@ -202,14 +202,12 @@ def write_to_excel(output, vcfname, header, variantinfo, canvas_info):
     worksheet.set_column(2, 2, 70)
     worksheet.set_column(4, 4, 70)
     row = 0
-    column = 0
     header_format = excelfile.add_format({'bold': True, 'font_color': 'white', 'bg_color': 'black'})
     inside_gene_format = excelfile.add_format({'bg_color': 'yellow'})
     inside_exon_format = excelfile.add_format({'bg_color': 'lime'})
     for column, column_name in enumerate(header):
         worksheet.write(row, column, column_name, header_format)
-    
-    column = 0
+
     for variant in variantinfo:
         # count overlapping transcripts in pos and end
         # column 2 and 4
