@@ -2,21 +2,34 @@
 Wrapper to be used by cron for automatic start of wgs_somatic
 """
 
-import sys
 import argparse
+import glob
+import json
 import os
 import re
-import glob
-from datetime import datetime
-import json
+import sys
 import threading
+from datetime import datetime, timezone
 
-from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, INSILICO_CONFIG, INSILICO_PANELS_ROOT
+from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR, WRAPPER_CONFIG_PATH
+from launch_snakemake import analysis_main, copy_results, get_timestamp, yearly_stats
 from tools.context import RunContext, SampleContext
-from tools.helpers import setup_logger, read_config
-from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir, translate_slims_info, SlimsSample
-from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
-from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
+from tools.custom_email import (
+    end_email,
+    error_admin_qc_email,
+    error_email,
+    error_setup_email,
+    start_email,
+)
+from tools.helpers import read_config, setup_logger
+from tools.slims import (
+    SlimsSample,
+    find_or_download_fastqs,
+    get_pair_dict,
+    get_sample_slims_info,
+    link_fastqs_to_outputdir,
+    translate_slims_info,
+)
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
 
@@ -111,8 +124,6 @@ def check_ok(outputdir):
 
     if os.path.isfile(f"{outputdir}/workflow_finished.txt"):
         return True
-    else:
-        return False
 
 
 def analysis_end(outputdir, tumorsample=None, normalsample=None):
@@ -138,7 +149,7 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         logger.info(f'Preparing run: Tumor {tumorsample} and Normal {normalsample}')
         fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
         fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
-        tumorid = list(fastq_dict_tumor.keys())[0]  # E.g. DNA123456_250101_AHJLJHBGXF
+        tumorid = next(iter(fastq_dict_tumor)) # E.g. DNA123456_250101_AHJLJHBGXF
         outputdir = os.path.join(outpath, f"{tumorid}_{timestamp}")
         os.makedirs(outputdir, exist_ok=False)  # Make sure a new outputdir is created, not overwriting old results
         tumor_fastq_dir = link_fastqs_to_outputdir(fastq_dict_tumor, outputdir, logger)
@@ -148,8 +159,8 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
                          'normalfastqs': f'{normal_fastq_dir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
     elif tumorsample:
@@ -157,15 +168,15 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         fastq_dict_tumor = find_or_download_fastqs(tumorsample, logger)
         outpath = os.path.join(outpath, "tumor_only")
         os.makedirs(outpath, exist_ok=True)
-        tumorid = list(fastq_dict_tumor.keys())[0]
+        tumorid = next(iter(fastq_dict_tumor))
         outputdir = os.path.join(outpath, f"{tumorid}_{timestamp}")
         os.makedirs(outputdir, exist_ok=False)
         tumor_fastq_dir = link_fastqs_to_outputdir(fastq_dict_tumor, outputdir, logger)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'tumorname': f'{tumorsample}',
                          'tumorfastqs': f'{tumor_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
     elif normalsample:
@@ -173,15 +184,15 @@ def submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, 
         fastq_dict_normal = find_or_download_fastqs(normalsample, logger)
         outpath = os.path.join(outpath, "normal_only")
         os.makedirs(outpath, exist_ok=True)
-        normalid = list(fastq_dict_normal.keys())[0]
+        normalid = next(iter(fastq_dict_normal))
         outputdir = os.path.join(outpath, f"{normalid}_{timestamp}")
         os.makedirs(outputdir, exist_ok=False)
         normal_fastq_dir = link_fastqs_to_outputdir(fastq_dict_normal, outputdir, logger)
         pipeline_args = {'outputdir': f'{outputdir}',
                          'normalname': f'{normalsample}',
                          'normalfastqs': f'{normal_fastq_dir}',
-                         'send_email': f'{send_email}',
-                         'qc_stop': f'{qc_stop}',
+                         'send_email': send_email,
+                         'qc_stop': qc_stop,
                          'gender': f'{gender}'}
 
 
@@ -207,9 +218,9 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
         if not os.path.isdir(hcptmp):
             try:
                 os.makedirs(hcptmp)
-            except Exception as e:
+            except OSError:
                 logger.error(f"outputdirectory: {hcptmp} does not exist and could not be created")
-                raise e
+                raise
 
         # If outputpath is not specified, get from config
         if not outpath:
@@ -228,8 +239,8 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
         logger.info(f'Found {len(Rctx.sample_contexts)} samples for wgs_somatic in run {Rctx.run_name}.')
 
         # Register start time
-        start_time = datetime.now()
-        logger.info(f'Started {Rctx.run_name} at {start_time}')
+        start_time = datetime.now(tz=timezone.utc)
+        logger.info(f"Started {Rctx.run_name} at {start_time}")
 
         # Get T/N pair info in a dict for samples and link additional fastqs from other runs
         for sctx in Rctx.sample_contexts:
@@ -288,10 +299,10 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
             logger.info("No samples to process for this run. Skipping emails and further processing.")
             sys.exit(0)
     except Exception as e:
-        print(f"Error during setup: {e}")
+        logger.error(f"Error during setup: {e}")
         if send_email:
             error_setup_email(instrument)
-        raise e
+        raise
 
     # === Start analysis ===
     if send_email:
@@ -337,14 +348,19 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
     # the defaults for base_directory and output_directory are defined in the launcher config file
     # and don't need to be added as arguments
     try:
-        logger.info(f'Combining qc stats for run {Rctx.run_name}')
-        combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=outputdirs, runname=Rctx.run_name, logger=logger)
-        logger.info(f'Done with combining qc stats for run {Rctx.run_name}')
+        logger.info(f"Combining qc stats for run {Rctx.run_name}")
+        combine_qc_stats(
+            launcher_config=LAUNCHER_CONFIG_PATH,
+            outputdirs=outputdirs,
+            runname=Rctx.run_name,
+            logger=logger,
+        )
+        logger.info(f"Done with combining qc stats for run {Rctx.run_name}")
     except Exception as e:
         logger.error(f"Error combining qc stats: {e}")
         if send_email:
             error_admin_qc_email(Rctx.run_name)
- 
+
 
 def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, send_email=False, qc_stop=False):
     '''Manual pipeline submission'''
@@ -352,7 +368,7 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
     wrapper_log_path = config["wrapper_log_path"]
     logger = setup_logger('wrapper', os.path.join(wrapper_log_path, 'Manual_WS_wrapper.log'))
 
-    
+
     # If outputpath is not specified, get from config
     if not outpath:
         try:
@@ -381,12 +397,18 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
 
     if qcsummary and check_ok(outputdir):
         try:
-            logger.info(f'Combining qc stats for manual run with outputdir {outputdir}')
-            combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=[outputdir], runname='manual_run', logger=logger)
-            logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
+            logger.info(f"Combining qc stats for manual run with outputdir {outputdir}")
+            combine_qc_stats(
+                launcher_config=LAUNCHER_CONFIG_PATH,
+                outputdirs=[outputdir],
+                runname="manual_run",
+                logger=logger,
+            )
+            logger.info(
+                f"Done with combining qc stats for manual run with outputdir {outputdir}"
+            )
         except Exception as e:
             logger.error(f"Error combining qc stats: {e}")
-    return
 
 
 def main():
@@ -413,7 +435,4 @@ def main():
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        pass
+    main()

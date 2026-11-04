@@ -1,10 +1,11 @@
-import os
-import pandas as pd
-import click
+import glob
 import json
 import logging
-from collections import defaultdict
-import glob
+import os
+
+import click
+import pandas as pd
+
 from launch_snakemake import get_timestamp
 
 
@@ -47,7 +48,7 @@ def collect_wgsadmin_qc(outputdirs, logger):
             df = pd.read_excel(found_files[0])
             qc_data[outputdir] = df
         except Exception as e:
-            logger.error(f"Error reading {found_files[0]}: {e}")
+            logger.error(f"Error reading{found_files[0]}: {e}")
             continue
     return qc_data
 
