@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Wrapper to be used by cron for automatic start of wgs_somatic
 """
@@ -10,7 +9,6 @@ import os
 import re
 import sys
 import threading
-from contextlib import suppress
 from datetime import datetime, timezone
 
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR, WRAPPER_CONFIG_PATH
@@ -437,5 +435,4 @@ def main():
 
 
 if __name__ == '__main__':
-    with suppress(KeyboardInterrupt):
-        main()
+    main()
