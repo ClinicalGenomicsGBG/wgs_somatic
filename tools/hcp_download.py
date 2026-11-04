@@ -149,7 +149,6 @@ def download_file(local_path, remote_path, credentials_path, bucket, connect_tim
             raise
 
     except FileNotFoundError:
-        # Propagate the FileNotFoundError explicitly
         raise
 
     except Exception as e:
