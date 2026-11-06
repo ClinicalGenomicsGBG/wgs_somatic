@@ -15,7 +15,7 @@ from definitions import WRAPPER_CONFIG_PATH, ROOT_DIR, LAUNCHER_CONFIG_PATH #, I
 from tools.context import RunContext, SampleContext
 from tools.helpers import setup_logger, read_config
 from tools.slims import get_sample_slims_info, find_or_download_fastqs, get_pair_dict, link_fastqs_to_outputdir, translate_slims_info, SlimsSample
-from tools.custom_email import start_email, end_email, error_email, error_admin_qc_email, error_setup_email
+from tools.custom_email import start_email, end_email, error_setup_email
 from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.wgs_admin_summary.combine_wgsadmin_qc_summary import combine_qc_stats
 
@@ -319,13 +319,6 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
             logger.info(f'Not finished correctly: {sample_info}')
             bad_samples.append(sample_info)
 
-    if send_email:
-        if bad_samples:
-            # send emails about which samples ok and which not ok
-            error_email(Rctx.run_name, ok_samples, bad_samples)
-        else:
-            end_email(Rctx.run_name, final_pairs)
-
     # Run analysis_end for all samples in run, will check again which (if any) are ok
     # Will add ok samples to yearly stats and copy results
     for t in end_threads:
@@ -340,10 +333,12 @@ def wrapper(instrument=None, outpath=None, send_email=False, qc_stop=False):
         logger.info(f'Combining qc stats for run {Rctx.run_name}')
         combine_qc_stats(launcher_config = LAUNCHER_CONFIG_PATH, outputdirs=outputdirs, runname=Rctx.run_name, logger=logger)
         logger.info(f'Done with combining qc stats for run {Rctx.run_name}')
+        qc_stats = True
     except Exception as e:
         logger.error(f"Error combining qc stats: {e}")
-        if send_email:
-            error_admin_qc_email(Rctx.run_name)
+        qc_stats = False
+
+    end_email(Rctx.run_name, ok_samples, bad_samples, qc_stats)
  
 
 def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False, qcsummary=False, send_email=False, qc_stop=False):
@@ -381,19 +376,25 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
         sample_info = SlimsSample(normalsample)
 
     dna_info = translate_slims_info(sample_info.dna)
-    gender = dna_info["gender"] 
+    gender = dna_info["gender"]
+    run_tag = sample_info.get_runtag()
 
     threads = []
     outputdir = submit_pipeline(tumorsample, normalsample, gender, outpath, config, logger, threads, send_email, qc_stop)
 
     if send_email:
-        start_email("manual", final_pairs)
+        start_email(run_tag, final_pairs)
 
     threads[0].start()  # For manual runs we only have one thread
 
     threads[0].join()  # Wait for the thread to finish
 
+    ok_samples = []
+    bad_samples = []
+
+    qc_stats = True
     if check_ok(outputdir):
+        ok_samples = final_pairs
         if copyresults:
             copy_results(outputdir)
 
@@ -404,15 +405,12 @@ def manual(tumorsample=None, normalsample=None, outpath=None, copyresults=False,
                 logger.info(f'Done with combining qc stats for manual run with outputdir {outputdir}')
             except Exception as e:
                 logger.error(f"Error combining qc stats: {e}")
-
-        if send_email:
-                end_email("manual", final_pairs)
-
+                qc_stats = False
     else:
-        if send_email:
-            error_email("manual", bad_samples=final_pairs)
+        bad_samples = final_pairs
 
-    return
+    if send_email:
+        end_email(run_tag, ok_samples, bad_samples, qc_stats)
 
 
 def main():

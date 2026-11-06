@@ -29,82 +29,48 @@ def send_email(subject, body, clinic=False, lab=False):
 
     msg = EmailMessage()
     msg.set_content(body)
-    msg["Subject"] = subject
-    msg["From"] = sender
 
     recipients = []
 
     if not clinic and not lab:
         recipients.extend(bioinfo_mail)
     else:
-        msg["Cc"] = ", ".join(bioinfo_mail)
-
         if lab:
             recipients.extend(lab_mail)
-
         if clinic:
             recipients.extend(clinic_mail)
+        msg["Cc"] = ", ".join(bioinfo_mail)
 
-    msg["To"] = ", ".join(recipients)
+    recipients = ", ".join(recipients)
+
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = recipients
 
     # Send the message
-    s = smtplib.SMTP(smtp)
-    s.send_message(msg)
-    s.quit()
+    with smtplib.SMTP(smtp) as s:
+        s.send_message(msg)
 
 
-def start_email(run_name, samples):
+def start_email(run_name, samples, clinic=True, lab=True):
     """Send an email about starting wgs-somatic for samples in a run"""
 
-    if run_name != "manual":
-        subject = f"WGS Somatic start mail {run_name}"
+    subject = f"WGS Somatic start mail {run_name}"
 
-        body = f"""Starting wgs_somatic for the following samples in run {run_name}:\n
-{new_line.join(samples)}\n
-You will get an email when the results are ready.\n
-Best regards,
-CGG Cancer
-"""
-    else:
-        subject = "WGS Somatic manual start mail"
-
-        body = f"""Starting wgs_somatic manually for:\n
+    body = f"""Starting wgs_somatic for the following samples in run {run_name}:\n
 {new_line.join(samples)}\n
 You will get an email when the results are ready.\n
 Best regards,
 CGG Cancer
 """
 
-    send_email(subject, body, clinic=True, lab=True)
+    send_email(subject, body, clinic, lab)
 
 
-def end_email(run_name, samples):
+def end_email(run_name, ok_samples=[], bad_samples=[], qc_stats=False, clinic=True, lab=True):
     """Send an email that wgs-somatic has finished running for samples in a run"""
 
-    if run_name != "manual":
-        subject = f"WGS Somatic end mail {run_name}"
-
-        body = f"""WGS somatic has finished successfully for the following samples in run {run_name}:\n
-{new_line.join(samples)}\n
-Best regards,
-CGG Cancer
-"""
-    else:
-        subject = "WGS Somatic manual end mail"
-
-        body = f"""WGS somatic has finished a manual run successfully for the following samples:\n
-{new_line.join(samples)}\n
-Best regards,
-CGG Cancer
-"""
-
-    send_email(subject, body, clinic=True, lab=True)
-
-
-def error_email(run_name, ok_samples=None, bad_samples=None):
-    """Send an email about which samples have failed and which samples have succeeded"""
-
-    if run_name != "manual":
+    if bad_samples:
         subject = f"Crashed WGS Somatic {run_name}"
 
         body = f"""WGS somatic failed for the following samples in run {run_name}:\n
@@ -112,24 +78,27 @@ def error_email(run_name, ok_samples=None, bad_samples=None):
 The following samples did finish correctly:\n
 {new_line.join(ok_samples)}\n
 Errors concerning the above samples will be investigated.\n
-Best regards,
-CGG Cancer
 """
+
     else:
-        subject = f"Manual start of WGS Somatic crashed"
+        subject = f"WGS Somatic end mail {run_name}"
 
-        body = f"""WGS somatic failed a manual run for samples:
-{new_line.join(bad_samples)}\n
-
-Errors concerning the above samples will be investigated.\n
+        body = f"""WGS somatic has finished successfully for the following samples in run {run_name}:\n
+{new_line.join(ok_samples)}\n
+"""
+    if not qc_stats:
+        body += f"""Generating the WGS Admin QC report failed.\n
+Please create the report manually.\n
+"""
+    
+    body +="""
 Best regards,
 CGG Cancer
 """
+    send_email(subject, body, clinic, lab)
 
-    send_email(subject, body, clinic=True, lab=True)
 
-
-def error_setup_email(instrument):
+def error_setup_email(instrument, clinic=False, lab=True):
     """Send an email when the setup of wgs-somatic fails"""
 
     subject = f"Crashed WGS somatic setup for {instrument}"
@@ -140,16 +109,4 @@ Best regards,
 CGG Cancer
     """
 
-    send_email(subject, body, lab=True)
-
-
-def error_admin_qc_email(run_name):
-    """Send an email when the generating the qd admin summary report fails"""
-
-    subject = f"WGS somatic - admin QC failed {run_name}"
-
-    body = f"""Generating the WGS Admin QC report failed for run {run_name}.\n
-Please create the report manually.\n
-    """
-
-    send_email(subject, body, lab=True)
+    send_email(subject, body, clinic, lab)
