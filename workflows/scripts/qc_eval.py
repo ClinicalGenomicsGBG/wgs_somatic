@@ -28,13 +28,13 @@ import sys
 import os
 from tools.helpers import read_config
 from textwrap import dedent
-from tools.custom_email import send_email_qc 
+from tools.custom_email import send_email 
 from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
 
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)
 filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"]))
 
-def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, send_email=False):
+def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, send_email_enabled=False):
 
     coverage_pass, coverage_message = evaluate_coverage(coverage_file, stype)
     
@@ -72,9 +72,9 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
                     ========================================================================================
                     {message}
                     """)
-            if send_email:
-                send_email_qc("WGS-somatic has stopped for a sample", message)
-                #TODO add mail to geneticists
+            if send_email_enabled:
+                send_email("WGS-somatic has stopped for a sample", message, lab=True, clinic=True)
+
         elif not somalier_pass:
             message = dedent(f"""
                     WGS-somatic is running with a warning for sample:
@@ -82,8 +82,8 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
                     ========================================================================================
                     {message}
                     """)
-            if send_email:
-                send_email("QC warning", message)
+            if send_email_enabled:
+                send_email("WGS-somatic QC warning", message, lab=True, clinic=True)
         else:
             raise RuntimeError(f"evaluate_qc crashed due to illogical logic for sample {sname}") #Should not happen 
 
@@ -94,6 +94,8 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
     else:
         print(f"{sname} failed QC", file=sys.stderr)
         print(message, file=sys.stderr)
+        print(f"{sname} failed QC", file=sys.stdout)
+        print(message, file=sys.stdout)
 
 
 def evaluate_coverage(coverage_file, stype):
