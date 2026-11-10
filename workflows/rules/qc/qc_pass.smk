@@ -13,4 +13,5 @@ rule qc_pass:
                     input.somalier,
                     output.passfile,
                     gender,
-                    send_email)
+                    send_email,
+                    paired=bool(tumorid and normalid))

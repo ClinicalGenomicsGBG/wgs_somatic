@@ -18,10 +18,13 @@ gnomad_filter:
   max_allele_frequency: 0.01
 
 qc_pass:
-  pct_horizontal: 95
-  tumor_thresholds:
+  pct_horizontal: 96
+  tumor_paired_thresholds:
     coverage: 85
     horizontal: 30
+  tumor_only_thresholds:
+    coverage: 60
+    horizontal:
   normal_thresholds:
     coverage: 25
     horizontal: 10
