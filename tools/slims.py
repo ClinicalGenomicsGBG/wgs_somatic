@@ -71,7 +71,6 @@ class SlimsSample:
 
         return self._fastq
 
-    property
     def get_runtag(self):
         records = slims_connection.fetch(
             'Content',
