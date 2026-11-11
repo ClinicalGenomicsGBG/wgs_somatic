@@ -26,6 +26,7 @@ Outputs:
 import argparse
 import sys
 import os
+from typing import Tuple
 from tools.helpers import read_config
 from textwrap import dedent
 from tools.custom_email import send_email 
@@ -34,9 +35,9 @@ from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)
 filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"]))
 
-def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, send_email_enabled=False):
+def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, send_email=False, paired=False):
 
-    coverage_pass, coverage_message = evaluate_coverage(coverage_file, stype)
+    coverage_status, coverage_message = evaluate_coverage(coverage_file, stype, paired)
     
     if expected_sex:
         somalier_pass, somalier_sex = evaluate_sex(somalier_file, expected_sex)
@@ -45,49 +46,25 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
         somalier_sex = "unknown"
     
     message = ''
-    if not coverage_pass:
-        message += f"""
-                    Coverage threshold not reached
-                    {coverage_message}
-                    ----------------------------------------------------------------------------------------
-                    """
+    if coverage_status != "pass":
+        message += f"Coverage threshold not reached\n{coverage_message}{'-' * 88}\n"
     if not somalier_pass:
         if somalier_sex == "unknown":
-            message += """
-                    Somalier warning:
-                    No information regarding sex for patient. 
-                    """
+            message += "Somalier warning:\nNo information regarding sex for patient.\n"
         else:
-            message += f"""
-                    Somalier warning:
-                    Patient sex is: {expected_sex}
-                    Somalier estimate: {somalier_sex}
-                    """
-        print(dedent(message))
+            message += f"Somalier warning:\nPatient sex is: {expected_sex}\nSomalier estimate: {somalier_sex}\n"
+        print(message)
     if message:
-        if not coverage_pass:
-            message = dedent(f"""
-                    WGS-somatic pipeline has stopped due to QC error for sample:
-                    {sname}
-                    ========================================================================================
-                    {message}
-                    """)
-            if send_email_enabled:
-                send_email("WGS-somatic has stopped for a sample", message, lab=True, clinic=True)
-
-        elif not somalier_pass:
-            message = dedent(f"""
-                    WGS-somatic is running with a warning for sample:
-                    {sname}
-                    ========================================================================================
-                    {message}
-                    """)
-            if send_email_enabled:
-                send_email("WGS-somatic QC warning", message, lab=True, clinic=True)
+        if coverage_status == "stop":
+            message = f"WGS-somatic pipeline has stopped due to QC error for sample:\n{sname}\n{'=' * 88}\n{message}"
+            subject = "WGS-somatic has stopped for a sample"
         else:
-            raise RuntimeError(f"evaluate_qc crashed due to illogical logic for sample {sname}") #Should not happen 
+            message = f"WGS-somatic is running with a warning for sample:\n{sname}\n{'=' * 88}\n{message}"
+            subject = "WGS-somatic QC warning"
+        if send_email:
+            send_email_qc(subject, message)
 
-    if coverage_pass:
+    if coverage_status != "stop":
         print(f"{sname} passed QC")
         with open(qc_pass_file, "w"):
             pass
@@ -98,7 +75,13 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
         print(message, file=sys.stdout)
 
 
-def evaluate_coverage(coverage_file, stype):
+def evaluate_coverage(coverage_file, stype, paired=False) -> Tuple[str, str]:
+    """Return (status, message), with status "pass", "warn", or "stop".
+
+    With two configured checks, one failure warns and two failures stop.
+    With one check, failure stops.
+    The message contains measured values and limits.
+    """
 
     with open (coverage_file) as f:
         lines = f.readlines()
@@ -110,8 +93,10 @@ def evaluate_coverage(coverage_file, stype):
     
     pct_horizontal = filterconfig["qc_pass"]["pct_horizontal"]
     if stype == "tumor":
-        cov_threshold = filterconfig["qc_pass"]["tumor_thresholds"]["coverage"] 
-        hor_threshold = filterconfig["qc_pass"]["tumor_thresholds"]["horizontal"]
+        threshold_group = "tumor_paired_thresholds" if paired else "tumor_only_thresholds"
+        tumor_thresholds = filterconfig["qc_pass"][threshold_group]
+        cov_threshold = tumor_thresholds["coverage"]
+        hor_threshold = tumor_thresholds["horizontal"]
     elif stype == "normal":
         cov_threshold = filterconfig["qc_pass"]["normal_thresholds"]["coverage"]
         hor_threshold = filterconfig["qc_pass"]["normal_thresholds"]["horizontal"]
@@ -126,25 +111,31 @@ def evaluate_coverage(coverage_file, stype):
 
     mean_coverage = wgs_stats['MEAN_COVERAGE']
 
-    try:
-        horizontal_coverage = round(wgs_stats[f'PCT_{hor_threshold}X'] * 100, 1)
-    except ValueError as e:
-        logger.error(dedent(f"""\
-        Invalid horizontal coverage value: {e}
-        See 'wgs_stats' for possible values
-        """))
+    horizontal_coverage = None
+    if hor_threshold is not None:
+        horizontal_coverage = wgs_stats[f'PCT_{hor_threshold}X'] * 100
 
-    message = f"""
-                    Mean coverage: {mean_coverage} 
-                    Threshold: {cov_threshold}
+    mean_ok = cov_threshold is None or mean_coverage >= cov_threshold
+    horizontal_ok = hor_threshold is None or horizontal_coverage >= pct_horizontal
 
-                    Bases >{hor_threshold}X coverage: {horizontal_coverage}% 
-                    Threshold: {pct_horizontal}% of bases >{hor_threshold}X coverage
-                    """
-    
-    if mean_coverage <= cov_threshold or horizontal_coverage <= pct_horizontal:
-        return False, message
-    return True, message
+    message = f"Mean coverage: {mean_coverage}\n"
+    if cov_threshold is not None:
+        message += f"Threshold: {cov_threshold}X\n"
+    if hor_threshold is not None:
+        message += f"\nBases >{hor_threshold}X coverage: {horizontal_coverage:.1f}%\n"
+        message += f"Threshold: {pct_horizontal}% of bases >{hor_threshold}X coverage\n"
+
+    if cov_threshold is None and hor_threshold is None:
+        return "pass", message
+    if cov_threshold is None:
+        return ("pass" if horizontal_ok else "stop"), message
+    if hor_threshold is None:
+        return ("pass" if mean_ok else "stop"), message
+    if mean_ok and horizontal_ok:
+        return "pass", message
+    if mean_ok or horizontal_ok:
+        return "warn", message
+    return "stop", message
 
 
 def evaluate_sex(somalier_file, expected_sex):
@@ -198,7 +189,7 @@ def main():
        
     else:
         if args.coverage:
-            coverage_pass, coverage_metrics = evaluate_coverage(args.coverage, args.stype)
+            _, coverage_metrics = evaluate_coverage(args.coverage, args.stype)
             print(coverage_metrics)
 
         if args.somalier:
