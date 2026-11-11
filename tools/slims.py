@@ -71,6 +71,25 @@ class SlimsSample:
 
         return self._fastq
 
+    def get_runtag(self):
+        records = slims_connection.fetch(
+            'Content',
+            conjunction()
+                .add(equals('cntn_id', self.sample_name))
+                .add(equals('cntn_fk_contentType', 22))
+        )
+
+        if not records:
+            raise Exception(f'No FASTQ records found for {self.sample_name}.')
+
+        run_tags = {record.cntn_cstm_runTag.value for record in records}
+
+        if len(run_tags) > 1:
+            raise Exception(
+                f'Multiple run tags found for {self.sample_name}: {run_tags}'
+            )
+
+        return run_tags.pop()
 
 def translate_slims_info(record):
     sample_name = record.cntn_id.value

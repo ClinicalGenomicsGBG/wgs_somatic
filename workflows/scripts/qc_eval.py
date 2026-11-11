@@ -29,7 +29,7 @@ import os
 from typing import Tuple
 from tools.helpers import read_config
 from textwrap import dedent
-from tools.custom_email import send_email_qc 
+from tools.custom_email import send_email 
 from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
 
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)
@@ -71,6 +71,8 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
     else:
         print(f"{sname} failed QC", file=sys.stderr)
         print(message, file=sys.stderr)
+        print(f"{sname} failed QC", file=sys.stdout)
+        print(message, file=sys.stdout)
 
 
 def evaluate_coverage(coverage_file, stype, paired=False) -> Tuple[str, str]:
