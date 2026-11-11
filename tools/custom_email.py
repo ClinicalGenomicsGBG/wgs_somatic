@@ -17,7 +17,6 @@ def get_email_settings():
     clinic_mail = email_config["clinicians"]
     lab_mail = email_config["lab"]
     bioinfo_mail = email_config["bioinfo"]
-    cc = sender
 
     return smtp, sender, clinic_mail, lab_mail, bioinfo_mail
 
@@ -85,7 +84,7 @@ Errors concerning the above samples will be investigated.\n
 {new_line.join(ok_samples)}\n
 """
     if not qc_stats:
-        body += f"""Generating the WGS Admin QC report failed.\n
+        body += """Generating the WGS Admin QC report failed.\n
 Please create the report manually.\n
 """
     

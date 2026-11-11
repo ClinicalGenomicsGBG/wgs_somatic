@@ -29,9 +29,9 @@ import sys
 from textwrap import dedent
 from typing import Tuple
 
+from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
+from tools.custom_email import send_email as mail
 from tools.helpers import read_config
-from tools.custom_email import send_email 
-from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
 
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)
 filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"]))
@@ -63,7 +63,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
             message = f"WGS-somatic is running with a warning for sample:\n{sname}\n{'=' * 88}\n{message}"
             subject = "WGS-somatic QC warning"
         if send_email:
-            send_email_qc(subject, message)
+            mail(subject, message)
 
     if coverage_status != "stop":
         print(f"{sname} passed QC")

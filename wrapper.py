@@ -14,7 +14,6 @@ from datetime import datetime, timezone
 from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR, WRAPPER_CONFIG_PATH
 from launch_snakemake import analysis_main, copy_results, get_timestamp, yearly_stats
 from tools.context import RunContext, SampleContext
-from launch_snakemake import analysis_main, yearly_stats, copy_results, get_timestamp
 from tools.custom_email import (
     end_email,
     error_setup_email,
