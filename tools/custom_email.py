@@ -1,9 +1,8 @@
-import os
 import smtplib
-
 from email.message import EmailMessage
-from tools.helpers import read_config
+
 from definitions import WRAPPER_CONFIG_PATH
+from tools.helpers import read_config
 
 new_line = "\n"
 
@@ -18,7 +17,6 @@ def get_email_settings():
     clinic_mail = email_config["clinicians"]
     lab_mail = email_config["lab"]
     bioinfo_mail = email_config["bioinfo"]
-    cc = sender
 
     return smtp, sender, clinic_mail, lab_mail, bioinfo_mail
 
@@ -66,7 +64,6 @@ CGG Cancer
 
     send_email(subject, body, clinic, lab)
 
-
 def end_email(run_name, ok_samples=[], bad_samples=[], qc_stats=False, clinic=True, lab=True):
     """Send an email that wgs-somatic has finished running for samples in a run"""
 
@@ -87,7 +84,7 @@ Errors concerning the above samples will be investigated.\n
 {new_line.join(ok_samples)}\n
 """
     if not qc_stats:
-        body += f"""Generating the WGS Admin QC report failed.\n
+        body += """Generating the WGS Admin QC report failed.\n
 Please create the report manually.\n
 """
     

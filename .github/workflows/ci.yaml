@@ -1,0 +1,33 @@
+name: WGS-Somatic CI
+
+on:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: wgs_somatic
+          auto-activate: false
+          conda-remove-defaults: true
+
+      - name: Install linting tools
+        run: pip install ruff mypy
+
+      - name: Run ruff
+        run: ruff check .
+
+      - name: Run mypy
+        run: mypy .

@@ -24,13 +24,14 @@ Outputs:
 """
 
 import argparse
-import sys
 import os
-from typing import Tuple
-from tools.helpers import read_config
+import sys
 from textwrap import dedent
-from tools.custom_email import send_email 
-from definitions import ROOT_DIR, LAUNCHER_CONFIG_PATH
+from typing import Tuple
+
+from definitions import LAUNCHER_CONFIG_PATH, ROOT_DIR
+from tools.custom_email import send_email as mail
+from tools.helpers import read_config
 
 launcher_config = read_config(LAUNCHER_CONFIG_PATH)
 filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["filterconf"]))
@@ -38,13 +39,13 @@ filterconfig = read_config(os.path.join(ROOT_DIR, "configs", launcher_config["fi
 def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expected_sex=False, send_email=False, paired=False):
 
     coverage_status, coverage_message = evaluate_coverage(coverage_file, stype, paired)
-    
+
     if expected_sex:
         somalier_pass, somalier_sex = evaluate_sex(somalier_file, expected_sex)
     else:
         somalier_pass = False
         somalier_sex = "unknown"
-    
+
     message = ''
     if coverage_status != "pass":
         message += f"Coverage threshold not reached\n{coverage_message}{'-' * 88}\n"
@@ -62,7 +63,7 @@ def evaluate_qc(stype, sname, coverage_file, somalier_file, qc_pass_file, expect
             message = f"WGS-somatic is running with a warning for sample:\n{sname}\n{'=' * 88}\n{message}"
             subject = "WGS-somatic QC warning"
         if send_email:
-            send_email_qc(subject, message)
+            mail(subject, message)
 
     if coverage_status != "stop":
         print(f"{sname} passed QC")
@@ -90,7 +91,7 @@ def evaluate_coverage(coverage_file, stype, paired=False) -> Tuple[str, str]:
     values = [float(x) for x in lines[2].strip().split("\t")]
 
     wgs_stats = dict(zip(keys, values))
-    
+
     pct_horizontal = filterconfig["qc_pass"]["pct_horizontal"]
     if stype == "tumor":
         threshold_group = "tumor_paired_thresholds" if paired else "tumor_only_thresholds"
@@ -141,11 +142,11 @@ def evaluate_coverage(coverage_file, stype, paired=False) -> Tuple[str, str]:
 def evaluate_sex(somalier_file, expected_sex):
     with open(somalier_file) as f:
         sex = f.readline().rstrip()
-    
-    if sex == expected_sex:
-        return True, sex 
 
-    return False, sex 
+    if sex == expected_sex:
+        return True, sex
+
+    return False, sex
 
 
 def main():
@@ -186,7 +187,7 @@ def main():
             parser.error("--evaluate_qc requires: " + ", ".join(missing))
 
         evaluate_qc(args.stype, args.name, args.coverage, args.somalier, f"{args.name}.QC_PASS", args.sex, args.email)
-       
+
     else:
         if args.coverage:
             _, coverage_metrics = evaluate_coverage(args.coverage, args.stype)

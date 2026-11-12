@@ -1,5 +1,6 @@
-import pysam
 import argparse
+
+import pysam
 
 
 def is_reciprocal_pair(bnd_pairs, key, mate_key):
@@ -25,7 +26,7 @@ def filter_vcf(input_vcf, output_vcf, tumor_name, normal_name=None, min_tumor_su
     with pysam.VariantFile(input_vcf) as vcf_in, pysam.VariantFile(output_vcf, "w", header=vcf_in.header) as vcf_out:
         for record in vcf_in:
             # Check if the variant passes the FILTER column
-            if "PASS" not in record.filter.keys():
+            if "PASS" not in record.filter:
                 continue
 
             # Extract tumor sample data
@@ -41,10 +42,9 @@ def filter_vcf(input_vcf, output_vcf, tumor_name, normal_name=None, min_tumor_su
                 tumor_sr = tumor_sample["SR"][1]
             tumor_support = tumor_pr + tumor_sr
 
-            if pr_sr_filter:
-                # Ensure both PR and SR alt reads present in the tumor sample
-                if tumor_pr == 0 or tumor_sr == 0:
-                    continue
+            # Ensure both PR and SR alt reads present in the tumor sample
+            if pr_sr_filter and (tumor_pr == 0 or tumor_sr == 0):
+                continue
 
             # Apply the tumor support filter
             if tumor_support < min_tumor_support:
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     parser.add_argument("--normal_name", help="Normal sample name (optional)", default=None)
     parser.add_argument("--min_tumor_support", type=int, help="Minimum tumor support (default: 3)", default=3)
     parser.add_argument("--max_normal_support", type=int, help="Maximum normal support (default: 2)", default=2)
-    parser.add_argument("--no_pr_sr_filter", action="store_true", help="Disable PR and SR filtering (optional; mainly for debugging)")
+    parser.add_argument("--pr_sr_filter", type=bool, default=False, help="Disable PR and SR filtering (optional; mainly for debugging)")
 
     args = parser.parse_args()
 
@@ -102,5 +102,5 @@ if __name__ == "__main__":
         normal_name=args.normal_name,
         min_tumor_support=args.min_tumor_support,
         max_normal_support=args.max_normal_support,
-        no_pr_sr_filter=args.no_pr_sr_filter
+        pr_sr_filter=args.pr_sr_filter,
     )
