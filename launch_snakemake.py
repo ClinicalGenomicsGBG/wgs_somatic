@@ -628,7 +628,7 @@ if __name__ == "__main__":
             args.starttype,
             args.notemp,
             args.dag,
-            args.qc_stop
+            qc_stop=args.qc_stop,
         )
 
         if args.tumorsample:
