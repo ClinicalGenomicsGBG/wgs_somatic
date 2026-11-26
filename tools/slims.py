@@ -281,8 +281,9 @@ def decompress_downloaded_fastq(complete_file_path, logger):
             logger.info(f"Done with petasuite for file {filename}")
         return complete_decompressed_file_path
     else:
-        logger.error(f"Unknown compression type {compression_type} for file {filename}")
-        return None
+        message = f"Unknown compression type {compression_type} for file {filename}"
+        logger.error(message)
+        raise ValueError(message)
 
 
 def link_fastqs_to_outputdir(fastq_dict, outputdir, logger):
@@ -309,6 +310,8 @@ def link_fastqs_to_outputdir(fastq_dict, outputdir, logger):
 
 def download_and_decompress(bucket, remote_key, logger, hcp_runtag):
     downloaded_fq = download_hcp_fq(bucket, remote_key, logger, hcp_runtag)
+    if downloaded_fq.endswith(".fastq.gz"):
+        return downloaded_fq
     decompressed_fq = decompress_downloaded_fastq(downloaded_fq, logger)
     return decompressed_fq
 
